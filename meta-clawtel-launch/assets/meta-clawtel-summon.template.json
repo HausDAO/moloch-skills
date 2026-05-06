@@ -1,9 +1,9 @@
 {
-  "daoName": "Metal Cartel",
-  "tokenName": "Metal Cartel",
-  "tokenSymbol": "METAL",
-  "lootTokenName": "Metal Cartel Loot",
-  "lootTokenSymbol": "METALLOOT",
+  "daoName": "Meta Clawtel",
+  "tokenName": "Meta Clawtel",
+  "tokenSymbol": "CLAW",
+  "lootTokenName": "Meta Clawtel Loot",
+  "lootTokenSymbol": "CLAWLOOT",
   "votingTransferable": false,
   "nvTransferable": true,
   "memberAddresses": [

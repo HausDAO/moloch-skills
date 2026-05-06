@@ -1,11 +1,11 @@
 ---
-name: metal-cartel-launch
-description: Launch the specific Metal Cartel DAO on Base using DAOhaus/Moloch V3/Baal. Use when summoning or preparing the Metal Cartel DAO with METAL voting token, 4 hour voting/grace periods, 3 founding members, 10,000 initial shares each, .01 ETH proposal offering, quorum/sponsor/min-retention defaults, and a managed Ethereum wallet.
+name: meta-clawtel-launch
+description: Launch the specific Meta Clawtel DAO on Base using DAOhaus/Moloch V3/Baal. Use when summoning or preparing the Meta Clawtel DAO with CLAW voting token, 4 hour voting/grace periods, 3 founding members, 10,000 initial shares each, .01 ETH proposal offering, quorum/sponsor/min-retention defaults, and a managed Ethereum wallet.
 ---
 
-# Metal Cartel Launch
+# Meta Clawtel Launch
 
-Use this skill only for launching the Metal Cartel DAO.
+Use this skill only for launching the Meta Clawtel DAO.
 
 ## Dependencies
 
@@ -16,21 +16,21 @@ Use these sibling skills:
 
 ## Fixed Launch Settings
 
-- DAO name: `Metal Cartel`
-- Voting token name: `Metal Cartel`
-- Voting token symbol: `METAL`
-- Loot token name: `Metal Cartel Loot`
-- Loot token symbol: `METALLOOT`
+- DAO name: `Meta Clawtel`
+- Voting token name: `Meta Clawtel`
+- Voting token symbol: `CLAW`
+- Loot token name: `Meta Clawtel Loot`
+- Loot token symbol: `CLAWLOOT`
 - Voting token transferable: `false`
 - Loot token transferable: `true`
 - Voting period: `4 hours` = `14400` seconds
 - Grace period: `4 hours` = `14400` seconds
 - Initial members: `3`
-- Initial voting shares per member: `10000 METAL`
+- Initial voting shares per member: `10000 CLAW`
 - Initial loot per member: `0`
 - Proposal offering: `.01 ETH` = `10000000000000000` wei
 - Quorum: `50%` = `500000000000000000`
-- Sponsor threshold: `10000 METAL` = `10000000000000000000000`
+- Sponsor threshold: `10000 CLAW` = `10000000000000000000000`
 - Minimum retention: `66.6%` = `666000000000000000`
 - Shamans: none initially
 - Network: Base, chain id `8453`
@@ -51,15 +51,15 @@ Validate:
 
 - all three are valid Ethereum addresses
 - no duplicates
-- the deployer confirms each address should receive `10000 METAL`
+- the deployer confirms each address should receive `10000 CLAW`
 
 ## Build Params
 
-Copy `assets/metal-cartel-summon.template.json` to a working file, replace the three placeholder addresses, then build:
+Copy `assets/meta-clawtel-summon.template.json` to a working file, replace the three placeholder addresses, then build:
 
 ```bash
 cd /home/dekanjbrown/Projects/raidguild/skills/moloch
-node moloch-shared/scripts/moloch.mjs summon --params metal-cartel-summon.json
+node moloch-shared/scripts/moloch.mjs summon --params meta-clawtel-summon.json
 ```
 
 Review the unsigned transaction:
@@ -72,7 +72,7 @@ Review the unsigned transaction:
 Broadcast only when explicitly requested:
 
 ```bash
-node moloch-shared/scripts/moloch.mjs summon --params metal-cartel-summon.json --send
+node moloch-shared/scripts/moloch.mjs summon --params meta-clawtel-summon.json --send
 ```
 
 ## Post-Launch
@@ -90,7 +90,7 @@ After confirmation:
 
 ## Settings Rationale
 
-- `10000 METAL` sponsor threshold means any founding member can sponsor a proposal, but a non-member or dust holder cannot.
+- `10000 CLAW` sponsor threshold means any founding member can sponsor a proposal, but a non-member or dust holder cannot.
 - `50%` quorum keeps execution possible with three founders while still requiring meaningful participation.
 - `66.6%` min retention is a two-thirds style retention guard.
 - `.01 ETH` proposal offering adds a small cost to proposal creation without being a major barrier on Base.

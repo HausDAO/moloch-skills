@@ -9,7 +9,7 @@ This directory contains Codex skills and a shared script for interacting with DA
 - `moloch-proposals`: create signal, governance settings, token/admin settings, and custom proposals.
 - `moloch-proposal-actions`: sponsor, vote, process, and cancel proposals.
 - `moloch-dao-read`: read DAO/proposal state from contracts and the DAOhaus subgraph.
-- `metal-cartel-launch`: specific launch instructions and params template for the Metal Cartel DAO.
+- `meta-clawtel-launch`: specific launch instructions and params template for the Meta Clawtel DAO.
 
 ## Setup
 
@@ -89,7 +89,7 @@ These are the Base `0x2105` addresses from the DAOhaus admin contract keychain.
 | `GNOSIS_SIGNLIB` | `0x98FFBBF51bb33A056B08ddf711f289936AafF717` | Safe signature helper |
 | `ZODIAC_FACTORY` | `0x000000000000aDdB49795b0f9bA5BC298cDda236` | Zodiac module factory |
 
-For Metal Cartel summon, the critical address is `V3_FACTORY_ADV_TOKEN`. After summon, proposal actions go to the newly created Baal DAO address, not the summoner.
+For Meta Clawtel summon, the critical address is `V3_FACTORY_ADV_TOKEN`. After summon, proposal actions go to the newly created Baal DAO address, not the summoner.
 
 ## Common Commands
 
@@ -136,7 +136,7 @@ node moloch-shared/scripts/moloch.mjs vote --dao 0xDAO --proposal 1 --approved t
 
 ## Onchain Submission Requirements
 
-To submit any transaction onchain, including summoning Metal Cartel, the agent needs:
+To submit any transaction onchain, including summoning Meta Clawtel, the agent needs:
 
 ```bash
 export RPC_URL="https://mainnet.base.org"
