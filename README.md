@@ -61,6 +61,7 @@ Notes:
 - `PRIVATE_KEY` is never needed for building unsigned transaction JSON.
 - `GRAPH_URL` and `GRAPH_API_KEY` are read-only indexing inputs. They cannot submit transactions.
 - Do not commit `.env` files, private keys, mnemonics, or raw signer credentials.
+- For production use, prefer a pre-provisioned managed wallet or custody system. Local key generation is mainly for fresh operator or test wallets.
 
 ## Base Constants
 
@@ -92,6 +93,14 @@ These are the Base `0x2105` addresses from the DAOhaus admin contract keychain.
 For Meta Clawtel summon, the critical address is `V3_FACTORY_ADV_TOKEN`. After summon, proposal actions go to the newly created Baal DAO address, not the summoner.
 
 ## Common Commands
+
+Generate a fresh local Ethereum account:
+
+```bash
+node moloch-shared/scripts/moloch.mjs new-account
+```
+
+This prints a private key once. Store it securely before funding the address. The repo does not persist, encrypt, rotate, or recover generated keys.
 
 Read direct contract state:
 

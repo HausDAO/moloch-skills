@@ -12,6 +12,7 @@ import {
   parseAbiParameters,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
+import { generatePrivateKey } from 'viem/accounts';
 import { base } from 'viem/chains';
 import { request, gql } from 'graphql-request';
 
@@ -216,7 +217,14 @@ async function sendIfRequested(unsigned) {
 async function main() {
   const command = process.argv[2];
   if (!command || command === '--help') {
-    console.log('Commands: read-dao, read-proposal, graph-dao, graph-proposal, graph-proposals, details, decode-proposal-data, decode-submit-proposal, signal, gov-settings, token-settings, sponsor, vote, process, cancel, summon. Add --send to broadcast write txs.');
+    console.log('Commands: new-account, read-dao, read-proposal, graph-dao, graph-proposal, graph-proposals, details, decode-proposal-data, decode-submit-proposal, signal, gov-settings, token-settings, sponsor, vote, process, cancel, summon. Add --send to broadcast write txs.');
+    return;
+  }
+
+  if (command === 'new-account') {
+    const privateKey = generatePrivateKey();
+    const account = privateKeyToAccount(privateKey);
+    console.log(stringify({ address: account.address, privateKey }));
     return;
   }
 

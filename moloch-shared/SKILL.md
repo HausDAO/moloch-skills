@@ -41,6 +41,7 @@ The script prints JSON. Without `--send`, commands return `{ to, value, data, ch
 Common commands:
 
 ```bash
+node scripts/moloch.mjs new-account
 node scripts/moloch.mjs read-dao --dao 0xDAO
 node scripts/moloch.mjs read-proposal --dao 0xDAO --proposal 1
 node scripts/moloch.mjs graph-dao --dao 0xDAO
