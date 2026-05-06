@@ -24,9 +24,9 @@
   "votingPeriodInSeconds": 14400,
   "gracePeriodInSeconds": 14400,
   "newOffering": "10000000000000000",
-  "quorum": "500000000000000000",
+  "quorum": "50",
   "sponsorThreshold": "10000000000000000000000",
-  "minRetention": "666000000000000000",
+  "minRetention": "67",
   "shamanAddresses": [],
   "shamanPermissions": []
 }

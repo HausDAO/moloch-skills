@@ -69,6 +69,7 @@ Moloch V3 proposals call `submitProposal(bytes proposalData, uint32 expiration, 
 - Signal proposals post metadata through Poster.
 - Governance settings encode `setGovernanceConfig(bytes)` where the inner bytes are:
   `uint32 votingPeriodInSeconds, uint32 gracePeriodInSeconds, uint256 newOffering, uint256 quorum, uint256 sponsorThreshold, uint256 minRetention`.
+- `quorum` and `minRetention` are raw whole-number percentages from `0` to `100`, not 18-decimal fixed-point values. Use `30` for 30%, `50` for 50%, and `67` for an approximate 66.6% retention guard.
 - Token settings encode `setAdminConfig(bool pauseShares, bool pauseLoot)`.
 - `details` is a JSON string with title, description, optional `contentURI`, `contentURIType`, and `proposalType`.
 

@@ -56,9 +56,9 @@ Create `params.json`:
   "votingPeriodInSeconds": 604800,
   "gracePeriodInSeconds": 604800,
   "newOffering": "0",
-  "quorum": "50000000000000000",
+  "quorum": "50",
   "sponsorThreshold": "0",
-  "minRetention": "660000000000000000",
+  "minRetention": "66",
   "expiration": 0,
   "baalGas": "0",
   "value": "0"
@@ -93,6 +93,8 @@ For custom action proposals, use the shared script pattern:
 - Call `submitProposal(proposalData, expiration, baalGas, details)`.
 
 Keep details JSON small and include `title`, `description`, optional `contentURI`, `contentURIType`, and `proposalType`.
+
+For governance settings, `quorum` and `minRetention` are raw whole-number percentages from `0` to `100`. Do not use 18-decimal fixed point values.
 
 Review:
 

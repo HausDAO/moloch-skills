@@ -29,9 +29,9 @@ Use these sibling skills:
 - Initial voting shares per member: `10000 CLAW`
 - Initial loot per member: `0`
 - Proposal offering: `.01 ETH` = `10000000000000000` wei
-- Quorum: `50%` = `500000000000000000`
+- Quorum: `50%` = `50`
 - Sponsor threshold: `10000 CLAW` = `10000000000000000000000`
-- Minimum retention: `66.6%` = `666000000000000000`
+- Minimum retention: approximately `66.6%`, encoded as whole-number `67`
 - Shamans: none initially
 - Network: Base, chain id `8453`
 
@@ -92,6 +92,5 @@ After confirmation:
 
 - `10000 CLAW` sponsor threshold means any founding member can sponsor a proposal, but a non-member or dust holder cannot.
 - `50%` quorum keeps execution possible with three founders while still requiring meaningful participation.
-- `66.6%` min retention is a two-thirds style retention guard.
+- `67%` min retention is the closest whole-number encoding for a two-thirds style retention guard.
 - `.01 ETH` proposal offering adds a small cost to proposal creation without being a major barrier on Base.
-

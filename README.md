@@ -168,6 +168,7 @@ export GRAPH_URL="https://gateway-arbitrum.network.thegraph.com/api/YOUR_GRAPH_K
 - Read direct contract state immediately before sending. Graph data can lag.
 - Use Graph data for proposal metadata, votes, and the original indexed `proposalData`.
 - Use direct contract reads for permission, timing, and current threshold checks.
+- Governance `quorum` and `minRetention` are raw whole-number percentages from `0` to `100`, not 18-decimal fixed-point values.
 - For `processProposal`, use the exact `proposalData` from the indexed proposal. Do not reconstruct it if Graph has the original payload.
 - Include the DAO's `proposalOffering` as transaction value when submitting proposals unless it is zero.
 - Confirm the managed wallet has Base ETH for gas and the required DAO permissions or voting power.

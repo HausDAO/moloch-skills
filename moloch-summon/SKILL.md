@@ -35,9 +35,9 @@ Use this skill to build or send a Base Moloch V3 DAO summon transaction.
   "votingPeriodInSeconds": 604800,
   "gracePeriodInSeconds": 604800,
   "newOffering": "0",
-  "quorum": "50000000000000000",
+  "quorum": "50",
   "sponsorThreshold": "0",
-  "minRetention": "660000000000000000",
+  "minRetention": "66",
   "shamanAddresses": [],
   "shamanPermissions": [],
   "safeAddress": "0x0000000000000000000000000000000000000000"
@@ -50,4 +50,4 @@ Use this skill to build or send a Base Moloch V3 DAO summon transaction.
 - Init actions include `setGovernanceConfig`, `setShamans`, and a Poster metadata post executed as Baal.
 - If no Safe exists yet, leave `safeAddress` unset or zero.
 - Use Base first. Do not switch chains unless the user asks.
-
+- `quorum` and `minRetention` are raw whole-number percentages from `0` to `100`, not 18-decimal fixed-point values.

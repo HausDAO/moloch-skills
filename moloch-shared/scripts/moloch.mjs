@@ -86,6 +86,18 @@ function encodeValues(types, values) {
   return encodeAbiParameters(parseAbiParameters(types.join(',')), values);
 }
 
+function rawPercent(name, value) {
+  const normalized = String(value).trim().replace(/%$/, '');
+  if (normalized.includes('.')) {
+    throw new Error(`${name} must be a whole-number percent from 0 to 100. Baal does not accept decimal or 18-decimal percentages.`);
+  }
+  const percent = BigInt(normalized);
+  if (percent < 0n || percent > 100n) {
+    throw new Error(`${name} must be a raw percent from 0 to 100, not 18-decimal fixed point.`);
+  }
+  return percent;
+}
+
 function encodeMultiSend(txs) {
   const packed = txs.map((t) => {
     const op = Number(t.operation ?? 0).toString(16).padStart(2, '0');
@@ -314,7 +326,7 @@ async function main() {
   } else if (command === 'gov-settings') {
     const dao = requireDao();
     const p = jsonFile(arg('params'));
-    const inner = encodeValues(['uint32', 'uint32', 'uint256', 'uint256', 'uint256', 'uint256'], [p.votingPeriodInSeconds, p.gracePeriodInSeconds, BigInt(p.newOffering), BigInt(p.quorum), BigInt(p.sponsorThreshold), BigInt(p.minRetention)]);
+    const inner = encodeValues(['uint32', 'uint32', 'uint256', 'uint256', 'uint256', 'uint256'], [p.votingPeriodInSeconds, p.gracePeriodInSeconds, BigInt(p.newOffering), rawPercent('quorum', p.quorum), BigInt(p.sponsorThreshold), rawPercent('minRetention', p.minRetention)]);
     const action = encodeFunctionData({ abi: BAAL_ABI, functionName: 'setGovernanceConfig', args: [inner] });
     out = proposalTx({ dao, title: p.title, description: p.description || '', link: p.link || '', proposalType: 'UPDATE_GOV_SETTINGS', expiration: p.expiration || 0, baalGas: BigInt(p.baalGas || 0), value: BigInt(p.value || 0), actions: [{ to: dao, value: 0, data: action, operation: 0 }] });
   } else if (command === 'token-settings') {
@@ -333,7 +345,7 @@ async function main() {
     const p = jsonFile(arg('params'));
     const mint = encodeValues(['address[]', 'uint256[]', 'uint256[]'], [p.memberAddresses, p.memberShares.map(BigInt), p.memberLoot.map(BigInt)]);
     const tokens = encodeValues(['string', 'string', 'string', 'string', 'bool', 'bool'], [p.tokenName, p.tokenSymbol, p.lootTokenName, p.lootTokenSymbol, !!p.votingTransferable, !!p.nvTransferable]);
-    const gov = encodeValues(['uint32', 'uint32', 'uint256', 'uint256', 'uint256', 'uint256'], [p.votingPeriodInSeconds, p.gracePeriodInSeconds, BigInt(p.newOffering), BigInt(p.quorum), BigInt(p.sponsorThreshold), BigInt(p.minRetention)]);
+    const gov = encodeValues(['uint32', 'uint32', 'uint256', 'uint256', 'uint256', 'uint256'], [p.votingPeriodInSeconds, p.gracePeriodInSeconds, BigInt(p.newOffering), rawPercent('quorum', p.quorum), BigInt(p.sponsorThreshold), rawPercent('minRetention', p.minRetention)]);
     const govTx = encodeFunctionData({ abi: BAAL_ABI, functionName: 'setGovernanceConfig', args: [gov] });
     const shamanTx = encodeFunctionData({ abi: BAAL_ABI, functionName: 'setShamans', args: [p.shamanAddresses || [], (p.shamanPermissions || []).map(BigInt)] });
     const metadataPost = encodeFunctionData({ abi: POSTER_ABI, functionName: 'post', args: [JSON.stringify({ name: p.daoName }), POSTER_TAG_SUMMONER] });
