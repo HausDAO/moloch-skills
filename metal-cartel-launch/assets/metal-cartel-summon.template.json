@@ -1,0 +1,32 @@
+{
+  "daoName": "Metal Cartel",
+  "tokenName": "Metal Cartel",
+  "tokenSymbol": "METAL",
+  "lootTokenName": "Metal Cartel Loot",
+  "lootTokenSymbol": "METALLOOT",
+  "votingTransferable": false,
+  "nvTransferable": true,
+  "memberAddresses": [
+    "0xFOUNDER_1_ADDRESS",
+    "0xFOUNDER_2_ADDRESS",
+    "0xFOUNDER_3_ADDRESS"
+  ],
+  "memberShares": [
+    "10000000000000000000000",
+    "10000000000000000000000",
+    "10000000000000000000000"
+  ],
+  "memberLoot": [
+    "0",
+    "0",
+    "0"
+  ],
+  "votingPeriodInSeconds": 14400,
+  "gracePeriodInSeconds": 14400,
+  "newOffering": "10000000000000000",
+  "quorum": "500000000000000000",
+  "sponsorThreshold": "10000000000000000000000",
+  "minRetention": "666000000000000000",
+  "shamanAddresses": [],
+  "shamanPermissions": []
+}
