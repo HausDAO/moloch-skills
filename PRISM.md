@@ -116,6 +116,12 @@ Install HausDAO moloch skills as Prism-managed custom skills.
 Source repo:
 https://github.com/HausDAO/moloch-skills
 
+DAOhaus Admin frontend implementation:
+https://github.com/HausDAO/daohaus-admin
+
+Hosted admin instance:
+https://admin.daohaus.club/
+
 Use:
 - runtime assets: /data/custom/moloch-skills
 - managed skill definitions: POST /api/internal/skills

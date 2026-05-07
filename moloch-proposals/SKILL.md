@@ -29,6 +29,7 @@ Choose the proposal path by operator intent:
 | --- | --- |
 | signal, temperature check, text-only governance intent | `signal` |
 | join DAO, membership, admission, shares, loot, tribute | `tribute` / `join-dao` |
+| update DAO profile, charter URI, join rules URI, manifesto/docs links | `dao-meta` / `dao-record` |
 | change voting period, grace period, offering, quorum, retention | `gov-settings` |
 | change share/loot pause or transferability setting | `token-settings` |
 | arbitrary contract execution | custom proposal path |
@@ -92,6 +93,37 @@ node ../moloch-shared/scripts/moloch.mjs tribute \
 ```
 
 For ERC-20 tribute, check and approve Tribute Minion allowance before broadcasting. For ETH tribute, tx `value` equals `amount`.
+
+## DAO Metadata / Charter / Join Rules Proposal
+
+Use this for DAOhaus-readable metadata and agent-readable rules.
+
+Profile links:
+
+```bash
+node ../moloch-shared/scripts/moloch.mjs dao-meta \
+  --dao 0xDAO \
+  --name "DAO Name" \
+  --charter-uri ipfs://... \
+  --join-rules-uri ipfs://... \
+  --goals-uri ipfs://...
+```
+
+Custom records:
+
+```bash
+node ../moloch-shared/scripts/moloch.mjs dao-record \
+  --dao 0xDAO \
+  --table charter \
+  --content-file charter-record.json
+
+node ../moloch-shared/scripts/moloch.mjs dao-record \
+  --dao 0xDAO \
+  --table joinRules \
+  --content-file join-rules-record.json
+```
+
+These build a proposal that posts a Poster record if passed. Use IPFS/Pinata CIDs for larger charter, manifesto, join rules, or hosted docs content.
 
 Zero-tribute membership request example:
 

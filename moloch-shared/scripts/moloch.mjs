@@ -27,6 +27,7 @@ const DAOHAUS_BASE_SUBGRAPH_ID = '7yh4eHJ4qpHEiLPAk9BXhL5YgYrTrRE6gWy8x4oHyAqW';
 const THE_GRAPH_GATEWAY = 'https://gateway.thegraph.com/api';
 const POSTER_TAG_DAO_DB = 'daohaus.proposal.database';
 const POSTER_TAG_SUMMONER = 'daohaus.summoner.daoProfile';
+const POSTER_TAG_DAO_PROFILE_UPDATE = 'daohaus.shares.daoProfile';
 
 const BAAL_ABI = [
   { type: 'function', name: 'submitProposal', stateMutability: 'payable', inputs: [{ name: 'proposalData', type: 'bytes' }, { name: 'expiration', type: 'uint32' }, { name: 'baalGas', type: 'uint256' }, { name: 'details', type: 'string' }], outputs: [] },
@@ -172,6 +173,53 @@ function details({ title, description, link, proposalType }) {
     contentURIType: link ? 'url' : '',
     proposalType,
   });
+}
+
+function compactLinks(p) {
+  const labels = [
+    ['discord', 'Discord'],
+    ['github', 'Github'],
+    ['blog', 'Blog'],
+    ['telegram', 'Telegram'],
+    ['twitter', 'Twitter'],
+    ['web', 'Web'],
+    ['charterURI', 'Charter'],
+    ['joinRulesURI', 'Join Rules'],
+    ['goalsURI', 'Goals'],
+    ['manifestoURI', 'Manifesto'],
+    ['docsURI', 'Docs'],
+  ];
+  const links = labels
+    .filter(([key]) => p[key])
+    .map(([key, label]) => ({ url: p[key], label }));
+  for (const i of [1, 2, 3]) {
+    if (p[`custom${i}`]) links.push({ url: p[`custom${i}`], label: p[`custom${i}Label`] || `Custom ${i}` });
+  }
+  return links;
+}
+
+function daoRecordContent(dao, table, content) {
+  return {
+    daoId: dao,
+    table,
+    queryType: 'latest',
+    ...content,
+  };
+}
+
+function daoProfileContent(dao, p) {
+  return daoRecordContent(dao, 'daoProfile', Object.fromEntries(Object.entries({
+    name: p.name,
+    description: p.description,
+    longDescription: p.longDescription || p.long_description,
+    avatarImg: p.avatarImg || p.icon,
+    tags: p.tags,
+    links: p.links || compactLinks(p),
+    charterURI: p.charterURI,
+    joinRulesURI: p.joinRulesURI,
+    goalsURI: p.goalsURI,
+    manifestoURI: p.manifestoURI,
+  }).filter(([, value]) => value !== undefined && value !== null && value !== '')));
 }
 
 function looksLikeMembershipIntent(text) {
@@ -660,6 +708,8 @@ async function main() {
   proposal-lifecycle   Derived status: unsponsored/voting/grace/needsProcessing/failed/processed
   process-queue        Oldest ready-to-process proposals first
   signal               Text/metadata governance signal. Not for membership, shares, or loot.
+  dao-meta             Proposal to update daoProfile metadata/links through Poster
+  dao-record           Proposal to post a charter/joinRules/manifesto record through Poster
   tribute, join-dao    Real tokens-for-shares or tokens-for-loot proposal via Tribute Minion
   gov-settings         Governance config proposal
   token-settings       Share/loot pause config proposal
@@ -821,6 +871,26 @@ Options:
     ensureSignalIntent({ title, description });
     const postData = encodeFunctionData({ abi: POSTER_ABI, functionName: 'post', args: [JSON.stringify({ daoId: dao, table: 'signal', queryType: 'list', title, description, link }), POSTER_TAG_DAO_DB] });
     out = withSummary(proposalTx({ dao, title, description, link, proposalType: 'SIGNAL', expiration: Number(arg('expiration', 0)), baalGas: BigInt(arg('baal-gas', 0)), value: BigInt(arg('value', 0)), actions: [{ to: POSTER, value: 0, data: postData, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'SIGNAL', submissionTarget: 'BAAL', dao });
+  } else if (command === 'dao-meta') {
+    const dao = requireDao();
+    const p = arg('params') ? jsonFile(arg('params')) : {};
+    const title = arg('title', p.title || 'Update DAO metadata');
+    const description = arg('description', p.proposalDescription || p.description || '');
+    const content = daoProfileContent(dao, { ...p, name: arg('name', p.name), description: arg('dao-description', p.description), charterURI: arg('charter-uri', p.charterURI), joinRulesURI: arg('join-rules-uri', p.joinRulesURI), goalsURI: arg('goals-uri', p.goalsURI), manifestoURI: arg('manifesto-uri', p.manifestoURI), web: arg('web', p.web) });
+    const postData = encodeFunctionData({ abi: POSTER_ABI, functionName: 'post', args: [JSON.stringify(content), POSTER_TAG_DAO_PROFILE_UPDATE] });
+    out = withSummary(proposalTx({ dao, title, description, link: arg('link', p.link || ''), proposalType: 'UPDATE_METADATA_SETTINGS', expiration: Number(arg('expiration', p.expiration || 0)), baalGas: BigInt(arg('baal-gas', p.baalGas || 0)), value: BigInt(arg('value', p.value || 0)), actions: [{ to: POSTER, value: 0, data: postData, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'UPDATE_METADATA_SETTINGS', submissionTarget: 'BAAL', dao, recordTable: 'daoProfile' });
+  } else if (command === 'dao-record') {
+    const dao = requireDao();
+    const table = arg('table');
+    if (!table) throw new Error('Missing --table, for example charter or joinRules');
+    const p = arg('params') ? jsonFile(arg('params')) : {};
+    const contentFile = arg('content-file');
+    const content = contentFile ? jsonFile(contentFile) : p.content || p;
+    const record = daoRecordContent(dao, table, content);
+    const title = arg('title', p.title || `Update ${table} record`);
+    const description = arg('description', p.proposalDescription || `Post latest ${table} record for DAO agents and members.`);
+    const postData = encodeFunctionData({ abi: POSTER_ABI, functionName: 'post', args: [JSON.stringify(record), POSTER_TAG_DAO_PROFILE_UPDATE] });
+    out = withSummary(proposalTx({ dao, title, description, link: arg('link', p.link || content.uri || content.contentURI || ''), proposalType: 'UPDATE_METADATA_SETTINGS', expiration: Number(arg('expiration', p.expiration || 0)), baalGas: BigInt(arg('baal-gas', p.baalGas || 0)), value: BigInt(arg('value', p.value || 0)), actions: [{ to: POSTER, value: 0, data: postData, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'UPDATE_METADATA_SETTINGS', submissionTarget: 'BAAL', dao, recordTable: table });
   } else if (command === 'tribute' || command === 'join-dao') {
     const dao = requireDao();
     const title = arg('title', 'Tribute for DAO tokens');

@@ -25,6 +25,7 @@ Use a managed account only through environment variables or an existing signer s
 - Poster: `0x000000000000cd17345801aa8147b8D3950260FF`
 - Moloch skills source: `https://github.com/HausDAO/moloch-skills`
 - DAOhaus frontend source: `https://github.com/HausDAO/daohaus-admin`
+- DAOhaus hosted admin: `https://admin.daohaus.club/`
 - Daohaus routes: `/summon` and `/molochv3/:daochain/:daoid`
 
 ## Script
@@ -63,6 +64,8 @@ node scripts/moloch.mjs details --title "..." --description "..." --proposal-typ
 node scripts/moloch.mjs decode-proposal-data --data 0x...
 node scripts/moloch.mjs decode-submit-proposal --data 0x...
 node scripts/moloch.mjs signal --dao 0xDAO --title "..." --description "..."
+node scripts/moloch.mjs dao-meta --dao 0xDAO --name "DAO Name" --charter-uri ipfs://... --join-rules-uri ipfs://...
+node scripts/moloch.mjs dao-record --dao 0xDAO --table charter --content-file charter-record.json
 node scripts/moloch.mjs tribute --dao 0xDAO --token ETH --amount 1000000000000000 --shares 0 --loot 1000000000000000000000
 node scripts/moloch.mjs gov-settings --dao 0xDAO --params params.json
 node scripts/moloch.mjs token-settings --dao 0xDAO --pause-shares false --pause-loot false

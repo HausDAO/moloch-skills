@@ -5,6 +5,8 @@ This directory contains Codex skills and a shared script for interacting with DA
 For scheduled agent task patterns, see [AGENT_TASKS.md](AGENT_TASKS.md).
 
 Maintained repo: `https://github.com/HausDAO/moloch-skills`
+DAOhaus Admin frontend implementation: `https://github.com/HausDAO/daohaus-admin`
+Hosted DAOhaus Admin instance: `https://admin.daohaus.club/`
 
 ## Skills
 
@@ -161,6 +163,9 @@ Build unsigned transactions:
 
 ```bash
 node moloch-shared/scripts/moloch.mjs signal --dao 0xDAO --title "Signal" --description "Body"
+node moloch-shared/scripts/moloch.mjs dao-meta --dao 0xDAO --name "DAO Name" --charter-uri ipfs://... --join-rules-uri ipfs://...
+node moloch-shared/scripts/moloch.mjs dao-record --dao 0xDAO --table charter --content-file charter-record.json
+node moloch-shared/scripts/moloch.mjs dao-record --dao 0xDAO --table joinRules --content-file join-rules-record.json
 node moloch-shared/scripts/moloch.mjs tribute --dao 0xDAO --token ETH --amount 1000000000000000 --shares 0 --loot 1000000000000000000000
 node moloch-shared/scripts/moloch.mjs gov-settings --dao 0xDAO --params params.json
 node moloch-shared/scripts/moloch.mjs token-settings --dao 0xDAO --pause-shares false --pause-loot false
@@ -212,6 +217,8 @@ Raw JSON/calldata should be saved to a file or shown only on request.
 
 Use `signal` only for text-only governance intent. If the operator asks to join, request shares, request loot, create a membership proposal, or make a tribute proposal, use `tribute` / `join-dao`. A signal about shares does not issue shares.
 
+Use `dao-meta` or `dao-record` for DAO profile, charter, manifesto, hosted docs, and join-rule pointers.
+
 ## Onchain Submission Requirements
 
 To submit any transaction onchain, including summoning Meta Clawtel, the agent needs:
@@ -252,6 +259,31 @@ For richer or changing rules, use Poster/DAO records and proposal ratification:
 - `joinRules`: how agents or humans request membership.
 
 Routine snapshots write `dao-records.json` and `operating-context.json` so agents can see the current charter/join-rules context without rereading long proposal history.
+
+Example charter record:
+
+```json
+{
+  "title": "Meta Clawtel Charter",
+  "version": "0.1.0",
+  "uri": "ipfs://...",
+  "contentHash": "bafy...",
+  "summary": "Alignment, onboarding, distribution, and rules of engagement."
+}
+```
+
+Example join-rules record:
+
+```json
+{
+  "title": "Meta Clawtel Join Rules",
+  "version": "0.1.0",
+  "token": "ETH",
+  "tributeAmount": "1000000000000000",
+  "sharesRequested": "1000000000000000000000",
+  "expectations": ["align with charter", "contribute to onboarding or distribution", "participate in votes"]
+}
+```
 
 ## Membership Context
 
