@@ -37,10 +37,12 @@ node scripts/moloch.mjs --help
 ```
 
 The script prints JSON. Without `--send`, commands return `{ to, value, data, chainId }`.
+Use `--compact` for operator-facing output that hides large calldata fields.
 
 Common commands:
 
 ```bash
+node scripts/moloch.mjs capabilities
 node scripts/moloch.mjs new-account
 node scripts/moloch.mjs read-dao --dao 0xDAO
 node scripts/moloch.mjs read-proposal --dao 0xDAO --proposal 1
@@ -48,6 +50,8 @@ node scripts/moloch.mjs graph-dao --dao 0xDAO
 node scripts/moloch.mjs graph-proposal --dao 0xDAO --proposal 1
 node scripts/moloch.mjs graph-proposals --dao 0xDAO --first 20
 node scripts/moloch.mjs graph-dao-history --dao 0xDAO --first 100
+node scripts/moloch.mjs proposal-lifecycle --dao 0xDAO --proposal 1
+node scripts/moloch.mjs process-queue --dao 0xDAO --first 100
 node scripts/moloch.mjs details --title "..." --description "..." --proposal-type SIGNAL
 node scripts/moloch.mjs decode-proposal-data --data 0x...
 node scripts/moloch.mjs decode-submit-proposal --data 0x...
@@ -63,11 +67,19 @@ node scripts/moloch.mjs summon --params summon.json
 
 Add `--send` only after reviewing the tx JSON and confirming the managed wallet has permission and funds.
 
+Lifecycle reference fixtures live in `fixtures/proposal-lifecycle.fixture.json`.
+
 Use `--vault-provider 1password --vault-item <item> --vault-field private_key` with `--send` to load a private key from 1Password CLI without exporting `PRIVATE_KEY`.
 
 ## Operator Output
 
 Default to abstract summaries for humans. Do not print ABI fragments, large calldata, or full Graph JSON unless the user asks. If raw data is needed for review, save it to a file and summarize the file path, target, value, and risk.
+
+Use these helpers instead of raw tuple interpretation:
+
+- `read-proposal` returns named `getProposalStatus` flags: `cancelled`, `processed`, `passed`, `actionFailed`.
+- `proposal-lifecycle` derives statuses such as `unsponsored`, `voting`, `grace`, `needsProcessing`, `failed`, and `processedPassed`.
+- `process-queue` sorts ready proposals oldest first.
 
 ## Proposal Data
 
@@ -101,6 +113,7 @@ Use direct contract reads for:
 - permission/timing preflight immediately before sending
 - raw `proposalOffering`, `sponsorThreshold`, `proposalCount`
 - chain truth when Graph indexing lags
+- `state(prevProposalId)` gating before processing proposals
 
 ## Safety Checks
 

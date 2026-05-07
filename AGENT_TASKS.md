@@ -54,8 +54,8 @@ Steps:
    - relevant passed-proposal context
    - recommended action: sponsor, vote yes, vote no, abstain, process, cancel, or no action
    - reason
-6. Build unsigned transactions only when action is clearly recommended.
-7. Do not broadcast unless the user explicitly confirms sending in this same conversation.
+6. If the agent has auto-send authorization from the harness policy, it may broadcast only within that policy. Otherwise build unsigned transactions only.
+7. Do not broadcast unless auto-send policy permits it or the user explicitly confirms sending in this same conversation.
 
 Priority order:
 1. Vote on proposals in voting before their voting period ends.
@@ -99,7 +99,7 @@ Steps:
    - avoid conflict with current DAO rules unless explicitly framed as an amendment
    - include a clear title, description, expected outcome, and success criteria
    - explain why now
-9. Build unsigned transaction JSON only. Do not broadcast unless the user explicitly confirms sending in this same conversation.
+9. Build unsigned transaction JSON by default. Broadcast only if auto-send policy permits it or the user explicitly confirms sending in this same conversation.
 ```
 
 ## Persistent Context
@@ -135,3 +135,9 @@ Read one proposal:
 node moloch-shared/scripts/moloch.mjs graph-proposal --dao 0xDAO --proposal 1
 ```
 
+Derive lifecycle and processing queue:
+
+```bash
+node moloch-shared/scripts/moloch.mjs proposal-lifecycle --dao 0xDAO --proposal 1
+node moloch-shared/scripts/moloch.mjs process-queue --dao 0xDAO --first 100
+```

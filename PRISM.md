@@ -79,6 +79,8 @@ Use a dedicated RPC provider such as Alchemy or Infura for agent runs. Public Ba
 - Graph data can lag; use direct contract reads for permissions, timing, and threshold checks.
 - Record transaction hashes and re-read state after confirmation.
 - Keep operator output abstract by default. Do not paste ABI fragments, large calldata, or full Graph JSON unless requested.
+- Use `proposal-lifecycle` and `process-queue` instead of raw Graph fields when deciding whether to vote or process.
+- Prism may define an explicit auto-send policy, but it must be separate from low-level transaction building and should still require post-action rereads.
 
 ## Recommended Prism Skill Split
 

@@ -24,6 +24,14 @@ npm install
 node scripts/moloch.mjs --help
 ```
 
+Check local capabilities and commit:
+
+```bash
+node scripts/moloch.mjs capabilities
+```
+
+If `tribute` / `join-dao` is missing from help or capabilities, the local bundle is stale.
+
 ## Environment
 
 Required for direct contract reads and sending transactions:
@@ -120,6 +128,8 @@ node moloch-shared/scripts/moloch.mjs graph-dao --dao 0xDAO
 node moloch-shared/scripts/moloch.mjs graph-proposal --dao 0xDAO --proposal 1
 node moloch-shared/scripts/moloch.mjs graph-proposals --dao 0xDAO --first 20
 node moloch-shared/scripts/moloch.mjs graph-dao-history --dao 0xDAO --first 100
+node moloch-shared/scripts/moloch.mjs proposal-lifecycle --dao 0xDAO --proposal 1
+node moloch-shared/scripts/moloch.mjs process-queue --dao 0xDAO --first 100
 ```
 
 Build proposal details or decode proposal calldata:
@@ -167,6 +177,7 @@ Do not print the revealed key. The CLI reads it in-process and uses it only for 
 ## Operator Output Style
 
 Agents should default to concise, human-readable summaries. Do not paste full ABI fragments, large calldata blobs, or raw Graph JSON unless the operator asks for them.
+Use `--compact` for CLI output intended for operators.
 
 Good default output:
 
@@ -179,6 +190,10 @@ Good default output:
 - tx hash after broadcast
 
 Raw JSON/calldata should be saved to a file or shown only on request.
+
+## Proposal Intent Guardrail
+
+Use `signal` only for text-only governance intent. If the operator asks to join, request shares, request loot, create a membership proposal, or make a tribute proposal, use `tribute` / `join-dao`. A signal about shares does not issue shares.
 
 ## Onchain Submission Requirements
 

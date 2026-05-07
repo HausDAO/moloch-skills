@@ -12,13 +12,28 @@ Default to high-level commands and concise summaries. Do not expose ABI fragment
 ## Workflow
 
 1. Use `../moloch-shared` for RPC, wallet, and transaction script setup.
-2. Read DAO state first:
+2. Run proposal intent preflight before choosing a command.
+3. Read DAO state first:
    `node ../moloch-shared/scripts/moloch.mjs read-dao --dao 0xDAO`
-3. Optionally read indexed DAO/proposal context with `graph-dao` or `graph-proposals`.
-4. Include `proposalOffering` as tx value for `submitProposal` unless the DAO uses zero offering.
-5. Build the proposal tx and review the JSON.
-6. Decode the full calldata with `decode-submit-proposal` when reviewing complex proposals.
-7. Send only when explicitly requested by adding `--send`.
+4. Optionally read indexed DAO/proposal context with `graph-dao` or `graph-proposals`.
+5. Include `proposalOffering` as tx value for `submitProposal` unless the DAO uses zero offering.
+6. Build the proposal tx and review the compact summary.
+7. Decode the full calldata with `decode-submit-proposal` only when reviewing complex proposals or when asked.
+8. Send only when explicitly requested by adding `--send`.
+
+## Proposal Intent Preflight
+
+Choose the proposal path by operator intent:
+
+| Operator asks for | Use |
+| --- | --- |
+| signal, temperature check, text-only governance intent | `signal` |
+| join DAO, membership, admission, shares, loot, tribute | `tribute` / `join-dao` |
+| change voting period, grace period, offering, quorum, retention | `gov-settings` |
+| change share/loot pause or transferability setting | `token-settings` |
+| arbitrary contract execution | custom proposal path |
+
+If the operator asks for shares, loot, membership, admission, or a join request, do not use `signal`. A signal can express support for admission, but it does not create a real tokens-for-shares proposal. The CLI will warn and stop if `signal` appears to be used for this by mistake; add `--force-signal` only when text-only signaling is intentional.
 
 ## Details JSON
 
@@ -46,10 +61,12 @@ node ../moloch-shared/scripts/moloch.mjs signal \
 ```
 
 Signal proposals encode a Poster `post` action inside `submitProposal`.
+They do not issue shares, issue loot, transfer funds, or admit members.
 
 ## Tribute / Join DAO Proposal
 
 Use this for tokens-for-shares or tokens-for-loot requests through the DAOhaus Tribute Minion.
+This is the first-class membership/admission path.
 
 Native ETH tribute:
 
@@ -75,6 +92,18 @@ node ../moloch-shared/scripts/moloch.mjs tribute \
 ```
 
 For ERC-20 tribute, check and approve Tribute Minion allowance before broadcasting. For ETH tribute, tx `value` equals `amount`.
+
+Zero-tribute membership request example:
+
+```bash
+node ../moloch-shared/scripts/moloch.mjs join-dao \
+  --dao 0xDAO \
+  --token ETH \
+  --amount 0 \
+  --shares 10000000000000000000000 \
+  --loot 0 \
+  --title "Admit Charter Steward"
+```
 
 ## Governance Settings Proposal
 

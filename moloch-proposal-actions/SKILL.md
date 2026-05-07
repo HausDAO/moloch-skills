@@ -14,9 +14,11 @@ Use this skill for proposal lifecycle actions.
    `node ../moloch-shared/scripts/moloch.mjs read-proposal --dao 0xDAO --proposal 1`
 3. Read indexed proposal details before acting:
    `node ../moloch-shared/scripts/moloch.mjs graph-proposal --dao 0xDAO --proposal 1`
-4. Build the unsigned tx.
-5. Send only when the user explicitly asks and the wallet has permission.
-6. Re-read the proposal after confirmation.
+4. Derive lifecycle before acting:
+   `node ../moloch-shared/scripts/moloch.mjs proposal-lifecycle --dao 0xDAO --proposal 1`
+5. Build the unsigned tx.
+6. Send only when the user explicitly asks and the wallet has permission.
+7. Re-read the proposal after confirmation.
 
 ## Commands
 
@@ -45,6 +47,12 @@ For processing, get `proposalData` from `graph-proposal`. Decode it before sendi
 node ../moloch-shared/scripts/moloch.mjs decode-proposal-data --data 0xPROPOSAL_DATA
 ```
 
+Queue processing oldest ready proposal first:
+
+```bash
+node ../moloch-shared/scripts/moloch.mjs process-queue --dao 0xDAO --first 100
+```
+
 Cancel:
 
 ```bash
@@ -57,7 +65,13 @@ Add `--send` only to broadcast.
 
 - Sponsor requires delegated voting tokens at or above `sponsorThreshold`.
 - Vote requires current voting power and an active voting period.
-- Process requires the proposal to be ready for processing and needs the exact original Graph-indexed `proposalData`.
+- Process requires `proposal-lifecycle` to show `processableNow: true` and needs the exact original Graph-indexed `proposalData`.
+- Do not treat indexed `passed` alone as ready to process. Check `graceEnds`, quorum, yes/no balance, processed flag, proposalData availability, and previous-proposal state.
+- `process --send` runs lifecycle preflight by default when Graph/RPC are configured. Use `--skip-preflight` only for a deliberate expert override.
+
+## Sponsor Then Vote Race
+
+After sponsoring, do not immediately assume voting is available. Re-read `proposal-lifecycle` or poll briefly until status becomes `voting`. If an immediate vote reverts with `!determined`, wait and retry after state/indexing advances.
 - Cancel is usually proposer, sponsor-below-threshold, or governance shaman behavior.
 
 If eligibility is unclear, read Daohaus indexed state from the frontend/subgraph before sending.

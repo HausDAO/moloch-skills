@@ -18,6 +18,8 @@ node ../moloch-shared/scripts/moloch.mjs graph-dao --dao 0xDAO
 node ../moloch-shared/scripts/moloch.mjs graph-proposal --dao 0xDAO --proposal 1
 node ../moloch-shared/scripts/moloch.mjs graph-proposals --dao 0xDAO --first 20
 node ../moloch-shared/scripts/moloch.mjs graph-dao-history --dao 0xDAO --first 100
+node ../moloch-shared/scripts/moloch.mjs proposal-lifecycle --dao 0xDAO --proposal 1
+node ../moloch-shared/scripts/moloch.mjs process-queue --dao 0xDAO --first 100
 ```
 
 Required env:
@@ -43,7 +45,8 @@ DAO-level:
 Proposal-level:
 
 - raw `proposals(id)` tuple
-- `getProposalStatus(id)` result
+- named `getProposalStatus(id)` flags: `cancelled`, `processed`, `passed`, `actionFailed`
+- derived lifecycle status from `proposal-lifecycle`
 - whether the relevant action is currently valid
 - exact `proposalData` for processing, preferably from the indexed proposal payload
 - indexed `details`, `title`, `description`, `proposalType`, and vote history from Graph
