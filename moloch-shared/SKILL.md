@@ -78,7 +78,7 @@ node scripts/moloch.mjs summon --params summon.json
 
 For autonomous action skills, add `--send` after live preflight confirms the managed wallet has permission and funds. Omit `--send` only for dry-run/review/draft tasks or when policy blocks broadcast.
 
-When `RPC_URL` or `--rpc` is configured, proposal builders estimate `baalGas` through the DAO Safe/module path: wrap the MultiSend action in `execTransactionFromModule`, estimate from the Baal address, then add `150000` gas per inner action. This follows DAOhaus Admin's action-gas estimate pattern. If estimation fails, the builder falls back to `0` and reports `baalGasEstimateError`; use `--require-baal-gas-estimate` to make estimation failure a hard error.
+When `RPC_URL` or `--rpc` is configured, proposal builders estimate `baalGas` through the DAO Safe/module path, add `150000` gas per inner action, then apply a default `1.2x` buffer. If estimation fails, the builder falls back to `0` and reports `baalGasEstimateError`; use `--baal-gas-buffer`, `--baal-gas`, or `--require-baal-gas-estimate` for explicit policy.
 
 Lifecycle reference fixtures live in `fixtures/proposal-lifecycle.fixture.json`.
 

@@ -90,6 +90,17 @@ function boolArg(name, fallback = false) {
   return value === 'true' || value === '1' || value === 'yes';
 }
 
+function decimalArg(name, fallback) {
+  const value = arg(name, fallback);
+  const normalized = String(value).trim();
+  if (!/^\d+(\.\d+)?$/.test(normalized)) throw new Error(`${name} must be a positive decimal number.`);
+  const [whole, frac = ''] = normalized.split('.');
+  const scale = 1000n;
+  const scaled = BigInt(whole) * scale + BigInt((frac + '000').slice(0, 3));
+  if (scaled < 0n) throw new Error(`${name} must be positive.`);
+  return scaled;
+}
+
 function jsonFile(path) {
   return JSON.parse(fs.readFileSync(path, 'utf8'));
 }
@@ -103,7 +114,7 @@ function tx(to, data, value = 0n) {
 }
 
 function withSummary(unsigned, summary) {
-  return { summary: { chainId: unsigned.chainId, to: unsigned.to, value: unsigned.value, baalGas: unsigned.baalGas, estimatedBaalGas: unsigned.estimatedBaalGas, baalGasEstimateError: unsigned.baalGasEstimateError, ...summary }, ...unsigned };
+  return { summary: { chainId: unsigned.chainId, to: unsigned.to, value: unsigned.value, baalGas: unsigned.baalGas, estimatedBaalGas: unsigned.estimatedBaalGas, baalGasRawEstimate: unsigned.baalGasRawEstimate, baalGasBuffer: unsigned.baalGasBuffer, baalGasEstimateError: unsigned.baalGasEstimateError, ...summary }, ...unsigned };
 }
 
 function compact(value) {
@@ -729,14 +740,24 @@ async function estimateBaalGas(dao, actions, proposalData) {
   return BigInt(estimate || 0) + BigInt(actions.length) * ACTION_GAS_LIMIT_ADDITION;
 }
 
+function applyGasBuffer(gas, bufferScale) {
+  return (gas * bufferScale + 999n) / 1000n;
+}
+
 async function proposalTx({ dao, actions, title, description, link, proposalType, expiration = 0, baalGas, value = 0n }) {
   const proposalData = encodeMultiAction(actions);
   let resolvedBaalGas = baalGas == null ? 0n : BigInt(baalGas);
   let estimatedBaalGas = false;
+  let baalGasRawEstimate;
+  let baalGasBuffer;
   let baalGasEstimateError;
   if (baalGas == null && (process.env.RPC_URL || arg('rpc')) && !has('no-estimate-baal-gas')) {
     try {
-      resolvedBaalGas = await estimateBaalGas(dao, actions, proposalData);
+      const bufferScale = decimalArg('baal-gas-buffer', 1.2);
+      const rawEstimate = await estimateBaalGas(dao, actions, proposalData);
+      resolvedBaalGas = applyGasBuffer(rawEstimate, bufferScale);
+      baalGasRawEstimate = rawEstimate.toString();
+      baalGasBuffer = (Number(bufferScale) / 1000).toString();
       estimatedBaalGas = true;
     } catch (error) {
       baalGasEstimateError = error.shortMessage || error.message;
@@ -749,7 +770,7 @@ async function proposalTx({ dao, actions, title, description, link, proposalType
     functionName: 'submitProposal',
     args: [proposalData, Number(expiration), resolvedBaalGas, details({ title, description, link, proposalType })],
   });
-  return { ...tx(dao, data, value), proposalData, baalGas: resolvedBaalGas.toString(), estimatedBaalGas, baalGasEstimateError };
+  return { ...tx(dao, data, value), proposalData, baalGas: resolvedBaalGas.toString(), estimatedBaalGas, baalGasRawEstimate, baalGasBuffer, baalGasEstimateError };
 }
 
 function requireDao() {
@@ -833,6 +854,7 @@ async function main() {
 Options:
   --compact            Hide large calldata/proposalData in output
   --no-estimate-baal-gas  Keep Baal submitProposal baalGas at 0 unless --baal-gas is provided
+  --baal-gas-buffer <n>  Multiplier for estimated baalGas; default 1.2
   --require-baal-gas-estimate  Error if baalGas cannot be estimated
   --safe 0xSAFE        DAO Safe address for DAOhaus-style baalGas estimation
   --send               Broadcast a write tx
