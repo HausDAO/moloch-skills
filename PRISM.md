@@ -82,15 +82,16 @@ Use a dedicated RPC provider such as Alchemy or Infura for agent runs. Public Ba
 ## Safety Rules
 
 - Read-only skills may run without extra confirmation.
-- Transaction-building skills may build unsigned transaction JSON.
-- Broadcasting requires explicit user confirmation in the same conversation.
-- Never broadcast with `--send` unless the user explicitly asks to send the transaction.
+- Prism action skills should broadcast by default when the action is inside the agent mandate, Prism auto-send policy, and live preflight passes.
+- Transaction-building skills may build unsigned transaction JSON for dry-run/review/draft mode.
+- Human confirmation is only required when the mandate, Prism policy, or task prompt requires escalation.
+- Never broadcast with `--send` when policy blocks broadcast, preflight fails, or the task explicitly asks for build-only mode.
 - Before broadcasting, re-read current DAO/proposal state from chain.
 - Graph data can lag; use direct contract reads for permissions, timing, and threshold checks.
 - Record transaction hashes and re-read state after confirmation.
 - Keep operator output abstract by default. Do not paste ABI fragments, large calldata, or full Graph JSON unless requested.
 - Use `proposal-lifecycle` and `process-queue` instead of raw Graph fields when deciding whether to vote or process.
-- Prism may define an explicit auto-send policy, but it must be separate from low-level transaction building and should still require post-action rereads.
+- Prism should define an explicit auto-send policy separate from low-level transaction building and should require post-action rereads.
 
 ## Recommended Prism Skill Split
 
@@ -147,7 +148,7 @@ Verify:
 - Skills appear in Prism Skills UI.
 - A read-only command works.
 - task-snapshot writes artifacts.
-- Transaction skills require explicit confirmation before broadcasting.
+- Transaction skills broadcast authorized actions by default and require escalation only when policy says so.
 ```
 
 ## Future Machine-Readable Pack

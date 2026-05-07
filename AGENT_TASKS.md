@@ -101,8 +101,8 @@ Steps:
    - relevant passed-proposal context
    - recommended action: sponsor, vote yes, vote no, abstain, process, cancel, or no action
    - reason
-7. If the agent has auto-send authorization from the harness policy, it may broadcast only within that policy. Otherwise build unsigned transactions only.
-8. Do not broadcast unless auto-send policy permits it or the user explicitly confirms sending in this same conversation.
+7. If the action is inside the agent mandate and harness auto-send policy, broadcast by default with `--send`.
+8. Build unsigned only when policy blocks broadcast, an escalation rule triggers, or the task explicitly asks for dry-run/review mode.
 9. After any send, reread state and append an action log entry.
 
 Priority order:
@@ -147,7 +147,7 @@ Steps:
    - avoid conflict with current DAO rules unless explicitly framed as an amendment
    - include a clear title, description, expected outcome, and success criteria
    - explain why now
-9. Build unsigned transaction JSON by default and save it as an artifact. Broadcast only if auto-send policy permits it or the user explicitly confirms sending in this same conversation.
+9. Broadcast by default with `--send` if the proposal is inside the agent mandate and harness auto-send policy. Save unsigned transaction JSON only for dry-run/review mode or when policy blocks broadcast.
 ```
 
 ## Artifacts, Logs, And Checkpoints

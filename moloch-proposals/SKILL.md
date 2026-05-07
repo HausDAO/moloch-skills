@@ -19,7 +19,7 @@ Default to high-level commands and concise summaries. Do not expose ABI fragment
 5. Include `proposalOffering` as tx value for `submitProposal` unless the DAO uses zero offering.
 6. Build the proposal tx and review the compact summary.
 7. Decode the full calldata with `decode-submit-proposal` only when reviewing complex proposals or when asked.
-8. Send only when explicitly requested by adding `--send`.
+8. For autonomous proposal tasks, broadcast with `--send` when the proposal is inside mandate/harness policy and live preflight passes. Omit `--send` only for dry-run, review, or draft mode.
 
 ## Proposal Intent Preflight
 
@@ -58,7 +58,8 @@ node ../moloch-shared/scripts/moloch.mjs signal \
   --title "Signal title" \
   --description "Signal body" \
   --link "https://..." \
-  --value 0
+  --value 0 \
+  --send
 ```
 
 Signal proposals encode a Poster `post` action inside `submitProposal`.
@@ -80,7 +81,8 @@ node ../moloch-shared/scripts/moloch.mjs tribute \
   --amount 1000000000000000 \
   --shares 0 \
   --loot 1000000000000000000000 \
-  --title "Join the DAO"
+  --title "Join the DAO" \
+  --send
 ```
 
 ERC-20 tribute:
@@ -91,7 +93,8 @@ node ../moloch-shared/scripts/moloch.mjs tribute \
   --token 0xTOKEN \
   --amount 1000000 \
   --shares 1000000000000000000 \
-  --loot 0
+  --loot 0 \
+  --send
 ```
 
 For ERC-20 tribute, check and approve Tribute Minion allowance before broadcasting. For ETH tribute, tx `value` equals `amount`.
@@ -108,7 +111,8 @@ node ../moloch-shared/scripts/moloch.mjs dao-meta \
   --name "DAO Name" \
   --charter-uri ipfs://... \
   --join-rules-uri ipfs://... \
-  --goals-uri ipfs://...
+  --goals-uri ipfs://... \
+  --send
 ```
 
 Custom records:
@@ -117,12 +121,14 @@ Custom records:
 node ../moloch-shared/scripts/moloch.mjs dao-record \
   --dao 0xDAO \
   --table charter \
-  --content-file charter-record.json
+  --content-file charter-record.json \
+  --send
 
 node ../moloch-shared/scripts/moloch.mjs dao-record \
   --dao 0xDAO \
   --table joinRules \
-  --content-file join-rules-record.json
+  --content-file join-rules-record.json \
+  --send
 ```
 
 These build a proposal that posts a Poster record if passed. Use IPFS/Pinata CIDs for larger charter, manifesto, join rules, or hosted docs content.
@@ -136,7 +142,8 @@ node ../moloch-shared/scripts/moloch.mjs join-dao \
   --amount 0 \
   --shares 10000000000000000000000 \
   --loot 0 \
-  --title "Admit Charter Steward"
+  --title "Admit Charter Steward" \
+  --send
 ```
 
 ## Governance Settings Proposal
@@ -162,7 +169,7 @@ Create `params.json`:
 Build:
 
 ```bash
-node ../moloch-shared/scripts/moloch.mjs gov-settings --dao 0xDAO --params params.json
+node ../moloch-shared/scripts/moloch.mjs gov-settings --dao 0xDAO --params params.json --send
 ```
 
 ## Token/Admin Settings Proposal
@@ -174,7 +181,8 @@ node ../moloch-shared/scripts/moloch.mjs token-settings \
   --dao 0xDAO \
   --pause-shares false \
   --pause-loot false \
-  --title "Update token transfer settings"
+  --title "Update token transfer settings" \
+  --send
 ```
 
 ## Custom Proposal

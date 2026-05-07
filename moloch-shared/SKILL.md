@@ -1,6 +1,6 @@
 ---
 name: moloch-shared
-description: Shared Base-first Moloch V3/Baal wallet, RPC, ABI, and transaction-building workflow. Use when an agent needs managed Ethereum account setup, Base contract addresses, unsigned tx objects, calldata, or execution conventions for DAOhaus/Moloch contracts.
+description: Shared Base-first Moloch V3/Baal wallet, RPC, ABI, and transaction execution workflow. Use when an agent needs managed Ethereum account setup, Base contract addresses, transaction objects, calldata, or execution conventions for DAOhaus/Moloch contracts.
 ---
 
 # Moloch Shared Toolkit
@@ -15,7 +15,8 @@ Use a managed account only through environment variables or an existing signer s
 - Required for Daohaus indexed reads: `GRAPH_API_KEY`, or pass `--graph-url`
 - Optional: `CHAIN_ID`, defaults to `8453`
 - Never print, commit, or paste private keys or mnemonics.
-- Default to building unsigned tx objects. Send only when the user explicitly asks to broadcast.
+- Autonomous agents should broadcast authorized actions by default after preflight. Use build-only mode when the operator, task, or harness asks for dry-run, review, or draft mode.
+- The CLI still requires `--send` as the explicit execution flag. In autonomous action tasks, add `--send` unless broadcast is outside policy.
 - Before sending, read the DAO/proposal state and confirm the action is valid.
 
 ## Base Addresses
@@ -75,7 +76,7 @@ node scripts/moloch.mjs process --dao 0xDAO --proposal 1 --proposal-data 0x...
 node scripts/moloch.mjs summon --params summon.json
 ```
 
-Add `--send` only after reviewing the tx JSON and confirming the managed wallet has permission and funds.
+For autonomous action skills, add `--send` after live preflight confirms the managed wallet has permission and funds. Omit `--send` only for dry-run/review/draft tasks or when policy blocks broadcast.
 
 Lifecycle reference fixtures live in `fixtures/proposal-lifecycle.fixture.json`.
 

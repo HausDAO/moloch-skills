@@ -16,29 +16,29 @@ Use this skill for proposal lifecycle actions.
    `node ../moloch-shared/scripts/moloch.mjs graph-proposal --dao 0xDAO --proposal 1`
 4. Derive lifecycle before acting:
    `node ../moloch-shared/scripts/moloch.mjs proposal-lifecycle --dao 0xDAO --proposal 1`
-5. Build the unsigned tx.
-6. Send only when the user explicitly asks and the wallet has permission.
-7. Re-read the proposal after confirmation.
+5. If the action is inside the agent mandate/harness policy, broadcast with `--send`.
+6. Build unsigned only when the task asks for dry-run/review/draft mode or policy blocks broadcast.
+7. Re-read the proposal after confirmation and record the tx hash.
 
 ## Commands
 
 Sponsor:
 
 ```bash
-node ../moloch-shared/scripts/moloch.mjs sponsor --dao 0xDAO --proposal 1
+node ../moloch-shared/scripts/moloch.mjs sponsor --dao 0xDAO --proposal 1 --send
 ```
 
 Vote:
 
 ```bash
-node ../moloch-shared/scripts/moloch.mjs vote --dao 0xDAO --proposal 1 --approved true
-node ../moloch-shared/scripts/moloch.mjs vote --dao 0xDAO --proposal 1 --approved false
+node ../moloch-shared/scripts/moloch.mjs vote --dao 0xDAO --proposal 1 --approved true --send
+node ../moloch-shared/scripts/moloch.mjs vote --dao 0xDAO --proposal 1 --approved false --send
 ```
 
 Process:
 
 ```bash
-node ../moloch-shared/scripts/moloch.mjs process --dao 0xDAO --proposal 1 --proposal-data 0x...
+node ../moloch-shared/scripts/moloch.mjs process --dao 0xDAO --proposal 1 --proposal-data 0x... --send
 ```
 
 For processing, get `proposalData` from `graph-proposal`. Decode it before sending if there is any ambiguity:
@@ -56,10 +56,10 @@ node ../moloch-shared/scripts/moloch.mjs process-queue --dao 0xDAO --first 100
 Cancel:
 
 ```bash
-node ../moloch-shared/scripts/moloch.mjs cancel --dao 0xDAO --proposal 1
+node ../moloch-shared/scripts/moloch.mjs cancel --dao 0xDAO --proposal 1 --send
 ```
 
-Add `--send` only to broadcast.
+Omit `--send` only for dry-run/review mode.
 
 ## Eligibility
 

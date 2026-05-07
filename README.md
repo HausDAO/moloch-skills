@@ -53,7 +53,7 @@ For a more reliable Base RPC, use Alchemy or another provider:
 export RPC_URL="https://base-mainnet.g.alchemy.com/v2/YOUR_ALCHEMY_KEY"
 ```
 
-Required only when broadcasting transactions:
+Required for autonomous action tasks or any transaction broadcast:
 
 ```bash
 export PRIVATE_KEY="0x..."
@@ -118,6 +118,17 @@ These are the Base `0x2105` addresses from the DAOhaus admin contract keychain.
 
 For Meta Clawtel summon, the critical address is `V3_FACTORY_ADV_TOKEN`. After summon, proposal actions go to the newly created Baal DAO address, not the summoner.
 
+## Autonomy Model
+
+This pack is intended for always-on DAO agents. In that mode, the agent should broadcast by default when all of these are true:
+
+- the agent has a configured managed signer, `RPC_URL`, and gas funds
+- the action is inside the agent's mandate, scheduled task, or harness policy
+- direct chain preflight confirms the action is currently valid
+- the action does not trigger an escalation rule in the agent mandate
+
+The CLI still uses `--send` as the explicit execution bit. Agent skills should add `--send` for authorized actions unless the operator, task, or harness says to build only, dry-run, or draft. Read-only tasks never need a private key.
+
 ## Common Commands
 
 Generate a fresh local Ethereum account:
@@ -160,7 +171,7 @@ node moloch-shared/scripts/moloch.mjs decode-submit-proposal --data 0xFULL_CALLD
 node moloch-shared/scripts/moloch.mjs decode-proposal-data --data 0xINNER_PROPOSAL_DATA
 ```
 
-Build unsigned transactions:
+Build or broadcast transactions:
 
 ```bash
 node moloch-shared/scripts/moloch.mjs signal --dao 0xDAO --title "Signal" --description "Body"
@@ -176,7 +187,9 @@ node moloch-shared/scripts/moloch.mjs process --dao 0xDAO --proposal 1 --proposa
 node moloch-shared/scripts/moloch.mjs summon --params summon.json
 ```
 
-Broadcast only after review:
+Append `--send` for authorized autonomous broadcasts. Omit it for dry-run/review/draft mode.
+
+Autonomous action example:
 
 ```bash
 node moloch-shared/scripts/moloch.mjs vote --dao 0xDAO --proposal 1 --approved true --send
@@ -206,10 +219,10 @@ Good default output:
 
 - command run
 - relevant defaults used
-- whether the tx is unsigned or broadcast
+- whether the tx was broadcast or intentionally left unsigned
 - target contract/address
 - value in ETH/wei
-- risk or confirmation needed
+- risk, policy reason, or escalation needed
 - tx hash after broadcast
 
 Raw JSON/calldata should be saved to a file or shown only on request.
@@ -299,7 +312,8 @@ node moloch-shared/scripts/moloch.mjs graph-member --dao 0xDAO --member 0xMEMBER
 
 ## Operational Concerns
 
-- Build first, send second. Every write command returns unsigned tx JSON unless `--send` is provided.
+- Autonomous agents should send by default for authorized actions after preflight. Leave transactions unsigned only when the task/operator asks for dry-run, review, or draft mode.
+- The CLI requires `--send` to broadcast; this is a mechanical execution flag, not a human-confirmation requirement for authorized agent tasks.
 - Read direct contract state immediately before sending. Graph data can lag.
 - Use Graph data for proposal metadata, votes, and the original indexed `proposalData`.
 - Use Graph member data for membership, shares, loot, delegation, and vote history context.

@@ -47,7 +47,7 @@ Reason:
 Confidence:
 ```
 
-Only build a vote transaction if the memo reaches a clear recommendation under the mandate. If the agent has permission to broadcast, still require explicit user confirmation before `--send`.
+Only broadcast a vote transaction if the memo reaches a clear recommendation under the mandate and live chain preflight passes. If the agent has auto-send authority from its harness or task policy, use `--send` without waiting for operator confirmation. If the memo is unclear or an escalation rule triggers, do not broadcast.
 
 ## Default Decision Rules
 
@@ -62,7 +62,7 @@ Use these defaults unless the conviction profile overrides them:
 ## Safety Rules
 
 - Never invent values. If the mandate is missing, ask for or draft one first.
-- Never treat conviction as authorization to broadcast. Broadcasting still requires explicit user confirmation in the same conversation.
+- Conviction alone is not authorization to broadcast. Broadcasting requires mandate alignment plus harness/task auto-send authority and live preflight.
 - Re-read direct chain state before any sponsor/vote/process/cancel action.
 - Use Graph for proposal metadata and vote history, but direct contract reads for current permission/timing checks.
 - If the proposal changes agent authority, treasury custody, token permissions, or the mandate itself, escalate for human review.
