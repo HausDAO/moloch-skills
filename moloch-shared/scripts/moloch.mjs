@@ -24,6 +24,7 @@ const SUMMONER = '0x97Aaa5be8B38795245f1c38A883B44cccdfB3E11';
 const POSTER = '0x000000000000cd17345801aa8147b8D3950260FF';
 const TRIBUTE_MINION = '0x00768B047f73D88b6e9c14bcA97221d6E179d468';
 const DAOHAUS_BASE_SUBGRAPH_ID = '7yh4eHJ4qpHEiLPAk9BXhL5YgYrTrRE6gWy8x4oHyAqW';
+const THE_GRAPH_GATEWAY = 'https://gateway.thegraph.com/api';
 const POSTER_TAG_DAO_DB = 'daohaus.proposal.database';
 const POSTER_TAG_SUMMONER = 'daohaus.summoner.daoProfile';
 
@@ -189,7 +190,7 @@ function graphUrl() {
   const url = process.env.GRAPH_URL || arg('graph-url');
   if (url) return url;
   if (!key) throw new Error('Set GRAPH_API_KEY, pass --graph-key, or pass --graph-url');
-  return `https://gateway-arbitrum.network.thegraph.com/api/${key}/subgraphs/id/${DAOHAUS_BASE_SUBGRAPH_ID}`;
+  return `${THE_GRAPH_GATEWAY}/${key}/subgraphs/id/${DAOHAUS_BASE_SUBGRAPH_ID}`;
 }
 
 const DAO_FIELDS = `
@@ -218,6 +219,33 @@ const PROPOSAL_FIELDS = `
   votes { id txHash createdAt approved balance member { memberAddress } }
 `;
 
+const MEMBER_FIELDS = `
+  id
+  createdAt
+  txHash
+  memberAddress
+  shares
+  loot
+  sharesLootDelegateShares
+  delegatingTo
+  delegateShares
+  delegateOfCount
+  lastDelegateUpdateTxHash
+  votes { txHash createdAt approved balance }
+`;
+
+const RECORD_FIELDS = `
+  id
+  createdAt
+  createdBy
+  tag
+  table
+  contentType
+  content
+  queryType
+  dao { id name }
+`;
+
 async function graphDao(dao) {
   return request(graphUrl(), gql`query dao($daoid: String!) { dao(id: $daoid) { ${DAO_FIELDS} } }`, { daoid: dao.toLowerCase() });
 }
@@ -242,6 +270,30 @@ async function graphDaoHistory(dao) {
       ${PROPOSAL_FIELDS}
     }
   }`, { daoid: dao.toLowerCase(), first: Number(arg('first', 100)), skip: Number(arg('skip', 0)) });
+}
+
+async function graphMembers(dao) {
+  return request(graphUrl(), gql`query members($daoid: String!, $first: Int!, $skip: Int!) {
+    members(first: $first, skip: $skip, orderBy: createdAt, orderDirection: desc, where: { dao: $daoid }) {
+      ${MEMBER_FIELDS}
+    }
+  }`, { daoid: dao.toLowerCase(), first: Number(arg('first', 100)), skip: Number(arg('skip', 0)) });
+}
+
+async function graphMember(dao, member) {
+  if (!member) throw new Error('Missing --member 0x...');
+  return request(graphUrl(), gql`query member($memberid: String!) {
+    member(id: $memberid) { ${MEMBER_FIELDS} }
+  }`, { memberid: `${dao.toLowerCase()}-member-${member.toLowerCase()}` });
+}
+
+async function graphRecords(dao) {
+  const table = arg('table', 'daoProfile');
+  return request(graphUrl(), gql`query records($daoid: String!, $table: String!, $first: Int!, $skip: Int!) {
+    records(first: $first, skip: $skip, orderBy: createdAt, orderDirection: desc, where: { dao: $daoid, table: $table }) {
+      ${RECORD_FIELDS}
+    }
+  }`, { daoid: dao.toLowerCase(), table, first: Number(arg('first', 20)), skip: Number(arg('skip', 0)) });
 }
 
 async function readDaoDirect(dao) {
@@ -391,6 +443,28 @@ function summarizeProposals(proposals) {
   };
 }
 
+function summarizeMembers(members = []) {
+  return {
+    count: members.length,
+    members: members.map((member) => ({
+      memberAddress: member.memberAddress,
+      shares: member.shares,
+      loot: member.loot,
+      delegateShares: member.delegateShares,
+      delegatingTo: member.delegatingTo,
+      voteCount: member.votes?.length || 0,
+    })),
+  };
+}
+
+function latestRecord(records = []) {
+  return records[0] || null;
+}
+
+function safeJsonParse(value) {
+  try { return JSON.parse(value); } catch { return value || null; }
+}
+
 function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
@@ -404,12 +478,18 @@ async function taskSnapshot(dao) {
   const outDir = arg('out-dir', path.join(process.cwd(), 'artifacts', dao.toLowerCase()));
   const first = Number(arg('first', 100));
   const timestamp = new Date().toISOString();
-  const [direct, history] = await Promise.all([
+  const [direct, history, membersResult, profileRecords, charterRecords, joinRulesRecords] = await Promise.all([
     process.env.RPC_URL || arg('rpc') ? readDaoDirect(dao) : Promise.resolve(null),
     graphDaoHistory(dao),
+    graphMembers(dao),
+    graphRecordsWithTable(dao, 'daoProfile'),
+    graphRecordsWithTable(dao, 'charter'),
+    graphRecordsWithTable(dao, 'joinRules'),
   ]);
   const proposals = history.proposals || [];
+  const members = membersResult.members || [];
   const summary = summarizeProposals(proposals);
+  const membershipSummary = summarizeMembers(members);
   const processQueue = processQueueFromProposals(proposals);
   const checkpointFile = path.join(outDir, 'checkpoint.json');
   let previousCheckpoint = {};
@@ -419,6 +499,11 @@ async function taskSnapshot(dao) {
   const checkpoint = {
     dao,
     updatedAt: timestamp,
+    lastProcessedProposalId: previousCheckpoint.lastProcessedProposalId || null,
+    currentOperatingContext: previousCheckpoint.currentOperatingContext || null,
+    openProposalCount: summary.votingCount,
+    pendingActionList: processQueue.map((item) => ({ action: 'process', proposalId: item.proposalId })),
+    mandateChecklistStatus: previousCheckpoint.mandateChecklistStatus || null,
     lastGraphProposalIdSeen: proposals.reduce((max, p) => Math.max(max, Number(p.proposalId || 0)), Number(previousCheckpoint.lastGraphProposalIdSeen || 0)),
     lastPassedProposalIdIncorporated: previousCheckpoint.lastPassedProposalIdIncorporated || null,
     votingCount: summary.votingCount,
@@ -428,12 +513,32 @@ async function taskSnapshot(dao) {
     directState: path.join(outDir, 'direct-state.json'),
     graphHistory: path.join(outDir, 'graph-history.json'),
     proposalSummary: path.join(outDir, 'proposal-summary.json'),
+    membershipSummary: path.join(outDir, 'membership-summary.json'),
+    daoRecords: path.join(outDir, 'dao-records.json'),
+    operatingContext: path.join(outDir, 'operating-context.json'),
     processQueue: path.join(outDir, 'process-queue.json'),
     checkpoint: checkpointFile,
   };
   if (direct) writeJson(files.directState, direct);
   writeJson(files.graphHistory, { dao: history.dao, proposals });
   writeJson(files.proposalSummary, summary);
+  writeJson(files.membershipSummary, membershipSummary);
+  const records = {
+    daoProfile: profileRecords.records || [],
+    charter: charterRecords.records || [],
+    joinRules: joinRulesRecords.records || [],
+  };
+  writeJson(files.daoRecords, records);
+  writeJson(files.operatingContext, {
+    dao,
+    updatedAt: timestamp,
+    currentProfile: safeJsonParse(latestRecord(records.daoProfile)?.content),
+    currentCharter: safeJsonParse(latestRecord(records.charter)?.content),
+    currentJoinRules: safeJsonParse(latestRecord(records.joinRules)?.content),
+    membershipSummaryPath: files.membershipSummary,
+    proposalSummaryPath: files.proposalSummary,
+    processQueuePath: files.processQueue,
+  });
   writeJson(files.processQueue, { queue: processQueue });
   writeJson(files.checkpoint, checkpoint);
   return {
@@ -450,6 +555,29 @@ async function taskSnapshot(dao) {
       oldestProcessableProposalId: processQueue[0]?.proposalId || null,
     },
   };
+}
+
+async function graphRecordsWithTable(dao, table) {
+  return request(graphUrl(), gql`query records($daoid: String!, $table: String!) {
+    records(first: 20, orderBy: createdAt, orderDirection: desc, where: { dao: $daoid, table: $table }) {
+      ${RECORD_FIELDS}
+    }
+  }`, { daoid: dao.toLowerCase(), table });
+}
+
+function summonProfile(p) {
+  return Object.fromEntries(Object.entries({
+    name: p.daoName,
+    description: p.description,
+    longDescription: p.longDescription,
+    avatarImg: p.avatarImg,
+    bannerImg: p.bannerImg,
+    links: p.links,
+    goalsURI: p.goalsURI,
+    charterURI: p.charterURI,
+    joinRulesURI: p.joinRulesURI,
+    rulesURI: p.rulesURI,
+  }).filter(([, value]) => value !== undefined && value !== null && value !== ''));
 }
 
 function proposalTx({ dao, actions, title, description, link, proposalType, expiration = 0, baalGas = 0, value = 0n }) {
@@ -526,6 +654,9 @@ async function main() {
   graph-proposal       Indexed proposal details, votes, proposalData
   graph-proposals      Indexed proposal list
   graph-dao-history    DAO plus proposal history in one Graph query
+  graph-members        Indexed members with shares, loot, delegation, vote history
+  graph-member         One indexed member: --member 0x...
+  graph-records        DAO Poster records: --table daoProfile|charter|joinRules
   proposal-lifecycle   Derived status: unsponsored/voting/grace/needsProcessing/failed/processed
   process-queue        Oldest ready-to-process proposals first
   signal               Text/metadata governance signal. Not for membership, shares, or loot.
@@ -563,6 +694,8 @@ Options:
         privateKey: Boolean(process.env.PRIVATE_KEY),
         vaultProvider: arg('vault-provider') || null,
       },
+      maintainedAt: 'https://github.com/HausDAO/moloch-skills',
+      graphEndpoint: `${THE_GRAPH_GATEWAY}/<api-key>/subgraphs/id/${DAOHAUS_BASE_SUBGRAPH_ID}`,
       warning: 'If tribute/join-dao is missing from --help, the local skill bundle is outdated.',
     }));
     return;
@@ -631,6 +764,21 @@ Options:
 
   if (command === 'graph-dao-history') {
     console.log(stringify(await graphDaoHistory(requireDao())));
+    return;
+  }
+
+  if (command === 'graph-members') {
+    console.log(stringify(await graphMembers(requireDao())));
+    return;
+  }
+
+  if (command === 'graph-member') {
+    console.log(stringify(await graphMember(requireDao(), arg('member'))));
+    return;
+  }
+
+  if (command === 'graph-records') {
+    console.log(stringify(await graphRecords(requireDao())));
     return;
   }
 
@@ -727,7 +875,7 @@ Options:
     const gov = encodeValues(['uint32', 'uint32', 'uint256', 'uint256', 'uint256', 'uint256'], [p.votingPeriodInSeconds, p.gracePeriodInSeconds, BigInt(p.newOffering), rawPercent('quorum', p.quorum), BigInt(p.sponsorThreshold), rawPercent('minRetention', p.minRetention)]);
     const govTx = encodeFunctionData({ abi: BAAL_ABI, functionName: 'setGovernanceConfig', args: [gov] });
     const shamanTx = encodeFunctionData({ abi: BAAL_ABI, functionName: 'setShamans', args: [p.shamanAddresses || [], (p.shamanPermissions || []).map(BigInt)] });
-    const metadataPost = encodeFunctionData({ abi: POSTER_ABI, functionName: 'post', args: [JSON.stringify({ name: p.daoName }), POSTER_TAG_SUMMONER] });
+    const metadataPost = encodeFunctionData({ abi: POSTER_ABI, functionName: 'post', args: [JSON.stringify(summonProfile(p)), POSTER_TAG_SUMMONER] });
     const metadataTx = encodeFunctionData({ abi: BAAL_ABI, functionName: 'executeAsBaal', args: [POSTER, 0n, metadataPost] });
     const salt = p.saltNonce || BigInt(`0x${crypto.randomBytes(16).toString('hex')}`);
     out = withSummary(tx(SUMMONER, encodeFunctionData({ abi: SUMMONER_ABI, functionName: 'summonBaalFromReferrer', args: [p.safeAddress || ZERO, ZERO, BigInt(salt), mint, tokens, [govTx, shamanTx, metadataTx]] })), { action: 'summonBaalFromReferrer', proposalKind: 'SUMMON', submissionTarget: 'V3_FACTORY_ADV_TOKEN', daoName: p.daoName });

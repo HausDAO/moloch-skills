@@ -23,6 +23,7 @@ Use a managed account only through environment variables or an existing signer s
 - Base chain id: `8453`, hex `0x2105`
 - Advanced token summoner: `0x97Aaa5be8B38795245f1c38A883B44cccdfB3E11`
 - Poster: `0x000000000000cd17345801aa8147b8D3950260FF`
+- Moloch skills source: `https://github.com/HausDAO/moloch-skills`
 - DAOhaus frontend source: `https://github.com/HausDAO/daohaus-admin`
 - Daohaus routes: `/summon` and `/molochv3/:daochain/:daoid`
 
@@ -50,6 +51,11 @@ node scripts/moloch.mjs graph-dao --dao 0xDAO
 node scripts/moloch.mjs graph-proposal --dao 0xDAO --proposal 1
 node scripts/moloch.mjs graph-proposals --dao 0xDAO --first 20
 node scripts/moloch.mjs graph-dao-history --dao 0xDAO --first 100
+node scripts/moloch.mjs graph-members --dao 0xDAO --first 100
+node scripts/moloch.mjs graph-member --dao 0xDAO --member 0xMEMBER
+node scripts/moloch.mjs graph-records --dao 0xDAO --table daoProfile
+node scripts/moloch.mjs graph-records --dao 0xDAO --table charter
+node scripts/moloch.mjs graph-records --dao 0xDAO --table joinRules
 node scripts/moloch.mjs task-snapshot --dao 0xDAO --out-dir /data/custom/moloch-skills/artifacts/0xDAO
 node scripts/moloch.mjs proposal-lifecycle --dao 0xDAO --proposal 1
 node scripts/moloch.mjs process-queue --dao 0xDAO --first 100
@@ -101,6 +107,12 @@ Use `details` to create valid proposal details JSON. Use `decode-submit-proposal
 Daohaus uses The Graph Gateway for indexed DAO data. Base DAOhaus subgraph id:
 `7yh4eHJ4qpHEiLPAk9BXhL5YgYrTrRE6gWy8x4oHyAqW`.
 
+Use:
+
+```bash
+https://gateway.thegraph.com/api/<api-key>/subgraphs/id/7yh4eHJ4qpHEiLPAk9BXhL5YgYrTrRE6gWy8x4oHyAqW
+```
+
 Use Graph reads for:
 
 - proposal metadata: `details`, `title`, `description`, `proposalType`
@@ -108,6 +120,8 @@ Use Graph reads for:
 - vote history and member vote balances
 - Safe/vault/shaman lists and DAO profile data
 - broad proposal history with `graph-dao-history`
+- membership, delegation, shares, loot, and member vote history with `graph-members`
+- charter/join-rules/profile records with `graph-records`
 
 Use direct contract reads for:
 

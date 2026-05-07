@@ -54,6 +54,14 @@ GRAPH_API_KEY=...
 GRAPH_URL=...
 ```
 
+Use `https://mainnet.base.org` only as a fallback for small tests. Dedicated RPC providers such as Alchemy or Infura are recommended for scheduled agents.
+
+Base DAOhaus Graph endpoint:
+
+```bash
+GRAPH_URL=https://gateway.thegraph.com/api/YOUR_GRAPH_KEY/subgraphs/id/7yh4eHJ4qpHEiLPAk9BXhL5YgYrTrRE6gWy8x4oHyAqW
+```
+
 Broadcasting transactions:
 
 ```bash

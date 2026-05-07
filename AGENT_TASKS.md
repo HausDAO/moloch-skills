@@ -34,6 +34,9 @@ The command writes:
 - `direct-state.json`: direct contract state, if `RPC_URL` is configured.
 - `graph-history.json`: DAOhaus indexed DAO/proposal history.
 - `proposal-summary.json`: compact lifecycle summary for proposals.
+- `membership-summary.json`: members, shares, loot, delegation, and vote counts.
+- `dao-records.json`: latest profile, charter, and join-rules records.
+- `operating-context.json`: compact current profile/charter/join-rules pointers and paths.
 - `process-queue.json`: oldest ready-to-process proposals first.
 - `checkpoint.json`: stable task checkpoint fields.
 
@@ -167,6 +170,9 @@ Recommended artifact layout:
   direct-state.json
   graph-history.json
   proposal-summary.json
+  membership-summary.json
+  dao-records.json
+  operating-context.json
   process-queue.json
   checkpoint.json
   cron.log
@@ -184,6 +190,11 @@ Recommended `checkpoint.json` fields:
 {
   "dao": "0x...",
   "updatedAt": "2026-05-07T00:00:00.000Z",
+  "lastProcessedProposalId": null,
+  "currentOperatingContext": null,
+  "openProposalCount": 0,
+  "pendingActionList": [],
+  "mandateChecklistStatus": null,
   "lastGraphProposalIdSeen": 0,
   "lastPassedProposalIdIncorporated": null,
   "votingCount": 0,

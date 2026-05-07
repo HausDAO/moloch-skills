@@ -4,6 +4,8 @@ This directory contains Codex skills and a shared script for interacting with DA
 
 For scheduled agent task patterns, see [AGENT_TASKS.md](AGENT_TASKS.md).
 
+Maintained repo: `https://github.com/HausDAO/moloch-skills`
+
 ## Skills
 
 - `moloch-shared`: shared wallet, RPC, Graph, encoding, decoding, and transaction helpers.
@@ -40,6 +42,8 @@ Required for direct contract reads and sending transactions:
 export RPC_URL="https://mainnet.base.org"
 ```
 
+This public RPC is a fallback for small tests and can rate limit quickly. For agents, use a dedicated RPC provider.
+
 For a more reliable Base RPC, use Alchemy or another provider:
 
 ```bash
@@ -58,11 +62,17 @@ Required for DAOhaus indexed reads:
 export GRAPH_API_KEY="..."
 ```
 
+Get a key from The Graph Studio, then use the Base DAOhaus subgraph endpoint:
+
+```bash
+export GRAPH_URL="https://gateway.thegraph.com/api/YOUR_GRAPH_KEY/subgraphs/id/7yh4eHJ4qpHEiLPAk9BXhL5YgYrTrRE6gWy8x4oHyAqW"
+```
+
 Optional:
 
 ```bash
 export CHAIN_ID="8453"
-export GRAPH_URL="https://gateway-arbitrum.network.thegraph.com/api/<key>/subgraphs/id/7yh4eHJ4qpHEiLPAk9BXhL5YgYrTrRE6gWy8x4oHyAqW"
+export GRAPH_URL="https://gateway.thegraph.com/api/<key>/subgraphs/id/7yh4eHJ4qpHEiLPAk9BXhL5YgYrTrRE6gWy8x4oHyAqW"
 ```
 
 Notes:
@@ -74,6 +84,7 @@ Notes:
 - Do not commit `.env` files, private keys, mnemonics, or raw signer credentials.
 - For production use, prefer a pre-provisioned managed wallet or custody system. Local key generation is mainly for fresh operator or test wallets.
 - Public RPCs are acceptable for one-off tests, but agents should use Alchemy, Infura, or another dedicated RPC for repeated reads.
+- The Graph endpoint is documented by The Graph as `https://gateway.thegraph.com/api/<API_KEY>/subgraphs/id/<SUBGRAPH_ID>`.
 
 ## Base Constants
 
@@ -128,6 +139,11 @@ node moloch-shared/scripts/moloch.mjs graph-dao --dao 0xDAO
 node moloch-shared/scripts/moloch.mjs graph-proposal --dao 0xDAO --proposal 1
 node moloch-shared/scripts/moloch.mjs graph-proposals --dao 0xDAO --first 20
 node moloch-shared/scripts/moloch.mjs graph-dao-history --dao 0xDAO --first 100
+node moloch-shared/scripts/moloch.mjs graph-members --dao 0xDAO --first 100
+node moloch-shared/scripts/moloch.mjs graph-member --dao 0xDAO --member 0xMEMBER
+node moloch-shared/scripts/moloch.mjs graph-records --dao 0xDAO --table daoProfile
+node moloch-shared/scripts/moloch.mjs graph-records --dao 0xDAO --table charter
+node moloch-shared/scripts/moloch.mjs graph-records --dao 0xDAO --table joinRules
 node moloch-shared/scripts/moloch.mjs task-snapshot --dao 0xDAO --out-dir /data/custom/moloch-skills/artifacts/0xDAO
 node moloch-shared/scripts/moloch.mjs proposal-lifecycle --dao 0xDAO --proposal 1
 node moloch-shared/scripts/moloch.mjs process-queue --dao 0xDAO --first 100
@@ -212,14 +228,48 @@ The managed wallet must also have Base ETH for gas. If the action requires DAO p
 Graph config is separate and read-only:
 
 ```bash
-export GRAPH_URL="https://gateway-arbitrum.network.thegraph.com/api/YOUR_GRAPH_KEY/subgraphs/id/7yh4eHJ4qpHEiLPAk9BXhL5YgYrTrRE6gWy8x4oHyAqW"
+export GRAPH_URL="https://gateway.thegraph.com/api/YOUR_GRAPH_KEY/subgraphs/id/7yh4eHJ4qpHEiLPAk9BXhL5YgYrTrRE6gWy8x4oHyAqW"
 ```
+
+## DAO Metadata, Charter, And Join Rules
+
+Summon posts initial DAO profile metadata through Poster. The summon params may include optional metadata fields:
+
+```json
+{
+  "daoName": "Example DAO",
+  "description": "Short public description",
+  "goalsURI": "ipfs://...",
+  "charterURI": "ipfs://...",
+  "joinRulesURI": "ipfs://..."
+}
+```
+
+For richer or changing rules, use Poster/DAO records and proposal ratification:
+
+- `daoProfile`: current profile and links.
+- `charter`: current charter pointer/version/hash.
+- `joinRules`: how agents or humans request membership.
+
+Routine snapshots write `dao-records.json` and `operating-context.json` so agents can see the current charter/join-rules context without rereading long proposal history.
+
+## Membership Context
+
+Use member reads to understand who has shares/loot, delegation, and vote history:
+
+```bash
+node moloch-shared/scripts/moloch.mjs graph-members --dao 0xDAO --first 100
+node moloch-shared/scripts/moloch.mjs graph-member --dao 0xDAO --member 0xMEMBER
+```
+
+`task-snapshot` also writes `membership-summary.json`.
 
 ## Operational Concerns
 
 - Build first, send second. Every write command returns unsigned tx JSON unless `--send` is provided.
 - Read direct contract state immediately before sending. Graph data can lag.
 - Use Graph data for proposal metadata, votes, and the original indexed `proposalData`.
+- Use Graph member data for membership, shares, loot, delegation, and vote history context.
 - Use direct contract reads for permission, timing, and current threshold checks.
 - Governance `quorum` and `minRetention` are raw whole-number percentages from `0` to `100`, not 18-decimal fixed-point values.
 - Use `graph-dao-history` for broad proposal history instead of looping over direct RPC reads.
