@@ -66,7 +66,9 @@ Omit `--send` only for dry-run/review mode.
 - Sponsor requires delegated voting tokens at or above `sponsorThreshold`.
 - Vote requires current voting power and an active voting period.
 - Process requires `proposal-lifecycle` to show `processableNow: true` and needs the exact original Graph-indexed `proposalData`.
-- Do not treat indexed `passed` alone as ready to process. Check `graceEnds`, quorum, yes/no balance, processed flag, proposalData availability, and previous-proposal state.
+- Do not use indexed `passed` as a prerequisite for process candidates. Graph can lag or disagree with chain state.
+- For processability, use Graph only to find candidate proposal IDs, timing hints, metadata, and original `proposalData`; then verify direct chain `state(id) == Ready`, previous-proposal state, and `getProposalStatus` processed/cancelled/actionFailed flags.
+- Use `process-queue --first 100` or larger for watcher tasks so older ready proposals are not missed.
 - `process --send` runs lifecycle preflight by default when Graph/RPC are configured. Use `--skip-preflight` only for a deliberate expert override.
 
 ## Sponsor Then Vote Race

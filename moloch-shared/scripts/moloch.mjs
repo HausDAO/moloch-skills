@@ -397,26 +397,32 @@ function hasQuorum(proposal) {
 
 function deriveProposalLifecycle(proposal, now = Math.floor(Date.now() / 1000), chain = {}) {
   const sponsored = Boolean(proposal.sponsored);
-  const cancelled = Boolean(proposal.cancelled);
-  const processed = Boolean(proposal.processed);
-  const passed = Boolean(proposal.passed);
-  const actionFailed = Boolean(proposal.actionFailed);
+  const chainStatus = chain.namedStatus || {};
+  const hasChainStatus = Array.isArray(chainStatus.raw);
+  const cancelled = hasChainStatus ? Boolean(chainStatus.cancelled) : Boolean(proposal.cancelled);
+  const processed = hasChainStatus ? Boolean(chainStatus.processed) : Boolean(proposal.processed);
+  const passed = hasChainStatus ? Boolean(chainStatus.passed) : Boolean(proposal.passed);
+  const actionFailed = hasChainStatus ? Boolean(chainStatus.actionFailed) : Boolean(proposal.actionFailed);
   const votingStarts = Number(proposal.votingStarts || 0);
   const votingEnds = Number(proposal.votingEnds || 0);
   const graceEnds = Number(proposal.graceEnds || 0);
   const yes = BigInt(proposal.yesBalance || proposal.yesVotes || '0');
   const no = BigInt(proposal.noBalance || proposal.noVotes || '0');
   const quorum = hasQuorum(proposal);
+  const afterGrace = sponsored && !cancelled && !processed && now > graceEnds;
   const needsSponsor = !sponsored && !cancelled;
   const inVoting = sponsored && !cancelled && !processed && votingStarts < now && votingEnds > now;
   const inGrace = sponsored && !cancelled && !processed && votingEnds < now && graceEnds > now;
-  const graphReady = !processed && sponsored && !cancelled && now > graceEnds && yes > no && quorum;
-  const failedQuorum = sponsored && !cancelled && !processed && now > graceEnds && !quorum;
-  const failedVote = sponsored && !cancelled && !processed && now > graceEnds && yes <= no;
+  const graphReady = afterGrace && yes > no && quorum;
   const prevStateEligible = chain.prevState == null ? undefined : PREV_PROCESS_ELIGIBLE.has(Number(chain.prevState));
-  const chainStateName = chain.state == null ? undefined : STATE_NAMES[Number(chain.state)] || `unknown-${chain.state}`;
+  const chainState = chain.state == null ? undefined : Number(chain.state);
+  const chainStateName = chainState == null ? undefined : STATE_NAMES[chainState] || `unknown-${chain.state}`;
   const prevStateName = chain.prevState == null ? undefined : STATE_NAMES[Number(chain.prevState)] || `unknown-${chain.prevState}`;
-  const processableNow = graphReady && proposal.proposalData && prevStateEligible !== false;
+  const stateReady = chainState == null ? undefined : chainState === 5;
+  const stateDefeated = chainState == null ? undefined : chainState === 7;
+  const failedQuorum = afterGrace && chainState == null && !quorum;
+  const failedVote = afterGrace && (stateDefeated == null ? yes <= no : stateDefeated);
+  const processableNow = Boolean((stateReady == null ? graphReady : stateReady) && proposal.proposalData && prevStateEligible !== false);
 
   let status = 'unknown';
   if (needsSponsor) status = 'unsponsored';
@@ -426,8 +432,8 @@ function deriveProposalLifecycle(proposal, now = Math.floor(Date.now() / 1000), 
   else if (processed && !passed) status = 'processedFailed';
   else if (inVoting) status = 'voting';
   else if (inGrace) status = 'grace';
-  else if (graphReady) status = 'needsProcessing';
-  else if (failedQuorum || failedVote) status = 'failed';
+  else if (processableNow) status = 'needsProcessing';
+  else if (stateDefeated || failedQuorum || failedVote) status = 'failed';
 
   return {
     proposalId: String(proposal.proposalId ?? ''),
@@ -437,7 +443,8 @@ function deriveProposalLifecycle(proposal, now = Math.floor(Date.now() / 1000), 
     inVoting,
     inGrace,
     graphReady,
-    processableNow: Boolean(processableNow),
+    chainReady: stateReady,
+    processableNow,
     failedQuorum,
     failedVote,
     processed,
@@ -474,19 +481,51 @@ async function lifecycleForProposal(dao, proposalId) {
   return { proposal: { id: proposal.id, proposalId: proposal.proposalId, title: proposal.title, proposalType: proposal.proposalType }, lifecycle, chain };
 }
 
-function processQueueFromProposals(proposals) {
+function processingCandidatesFromProposals(proposals, now = Math.floor(Date.now() / 1000)) {
   return proposals
     .map((proposal) => ({ proposal, lifecycle: deriveProposalLifecycle(proposal) }))
-    .filter((item) => item.lifecycle.graphReady && item.proposal.proposalData)
+    .filter((item) => (
+      item.proposal.proposalId != null &&
+      Number(item.proposal.graceEnds || 0) < now &&
+      Boolean(item.proposal.proposalData)
+    ));
+}
+
+function queueItem(item) {
+  return {
+    proposalId: item.proposal.proposalId,
+    title: item.proposal.title,
+    proposalType: item.proposal.proposalType,
+    prevProposalId: item.proposal.prevProposalId,
+    status: item.lifecycle.status,
+    hasProposalData: item.lifecycle.hasProposalData,
+    chainReady: item.lifecycle.chainReady,
+    processableNow: item.lifecycle.processableNow,
+    indexedPassed: Boolean(item.proposal.passed),
+    indexedProcessed: Boolean(item.proposal.processed),
+    indexedCancelled: Boolean(item.proposal.cancelled),
+  };
+}
+
+async function processQueueFromProposals(dao, proposals) {
+  const candidates = processingCandidatesFromProposals(proposals);
+  if (!(process.env.RPC_URL || arg('rpc'))) {
+    return candidates
+      .sort((a, b) => Number(a.proposal.proposalId) - Number(b.proposal.proposalId))
+      .map((item) => ({ ...queueItem(item), status: 'needsChainPreflight', note: 'Set RPC_URL or pass --rpc to verify direct chain processability.' }));
+  }
+  const checked = await Promise.all(candidates.map(async (item) => {
+    try {
+      const chain = await chainProposalContext(dao, item.proposal);
+      return { proposal: item.proposal, lifecycle: deriveProposalLifecycle(item.proposal, Math.floor(Date.now() / 1000), chain), chain };
+    } catch (error) {
+      return { proposal: item.proposal, lifecycle: { ...item.lifecycle, status: 'chainPreflightError', processableNow: false, error: error.shortMessage || error.message } };
+    }
+  }));
+  return checked
+    .filter((item) => item.lifecycle.processableNow)
     .sort((a, b) => Number(a.proposal.proposalId) - Number(b.proposal.proposalId))
-    .map((item) => ({
-      proposalId: item.proposal.proposalId,
-      title: item.proposal.title,
-      proposalType: item.proposal.proposalType,
-      prevProposalId: item.proposal.prevProposalId,
-      status: item.lifecycle.status,
-      hasProposalData: item.lifecycle.hasProposalData,
-    }));
+    .map(queueItem);
 }
 
 function summarizeProposals(proposals) {
@@ -556,7 +595,7 @@ async function taskSnapshot(dao) {
   const members = membersResult.members || [];
   const summary = summarizeProposals(proposals);
   const membershipSummary = summarizeMembers(members);
-  const processQueue = processQueueFromProposals(proposals);
+  const processQueue = await processQueueFromProposals(dao, proposals);
   const checkpointFile = path.join(outDir, 'checkpoint.json');
   let previousCheckpoint = {};
   if (fs.existsSync(checkpointFile)) {
@@ -573,7 +612,7 @@ async function taskSnapshot(dao) {
     lastGraphProposalIdSeen: proposals.reduce((max, p) => Math.max(max, Number(p.proposalId || 0)), Number(previousCheckpoint.lastGraphProposalIdSeen || 0)),
     lastPassedProposalIdIncorporated: previousCheckpoint.lastPassedProposalIdIncorporated || null,
     votingCount: summary.votingCount,
-    needsProcessingCount: summary.needsProcessingCount,
+    needsProcessingCount: processQueue.length,
   };
   const files = {
     directState: path.join(outDir, 'direct-state.json'),
@@ -617,7 +656,7 @@ async function taskSnapshot(dao) {
       proposalCount: summary.count,
       votingCount: summary.votingCount,
       openProposalThrottleBlocked: summary.votingCount >= Number(arg('max-voting', 3)),
-      needsProcessingCount: summary.needsProcessingCount,
+      needsProcessingCount: processQueue.length,
       oldestProcessableProposalId: processQueue[0]?.proposalId || null,
     },
   };
@@ -856,8 +895,9 @@ Options:
   }
 
   if (command === 'process-queue') {
-    const { proposals } = await graphProposals(requireDao());
-    console.log(stringify({ queue: processQueueFromProposals(proposals || []) }));
+    const dao = requireDao();
+    const { proposals } = await graphProposals(dao);
+    console.log(stringify({ queue: await processQueueFromProposals(dao, proposals || []) }));
     return;
   }
 
@@ -871,11 +911,12 @@ Options:
     const dao = requireDao();
     const id = Number(arg('proposal'));
     const c = client();
-    const [raw, status] = await Promise.all([
+    const [raw, status, state] = await Promise.all([
       c.readContract({ address: dao, abi: BAAL_ABI, functionName: 'proposals', args: [BigInt(id)] }),
       c.readContract({ address: dao, abi: BAAL_ABI, functionName: 'getProposalStatus', args: [id] }),
+      c.readContract({ address: dao, abi: BAAL_ABI, functionName: 'state', args: [id] }),
     ]);
-    console.log(stringify({ dao, proposal: id, raw, status: namedProposalStatus(status) }));
+    console.log(stringify({ dao, proposal: id, raw, status: namedProposalStatus(status), state, stateName: STATE_NAMES[Number(state)] || `unknown-${state}` }));
     return;
   }
 

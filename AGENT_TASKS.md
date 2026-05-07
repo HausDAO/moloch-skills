@@ -42,6 +42,8 @@ The command writes:
 
 Agents should prefer these artifacts for routine review and use live commands only for final preflight.
 
+Processing candidates are chain-verified when `RPC_URL` is configured. Do not drop candidates because indexed `passed` is false; direct `state(id) == Ready` is the source of truth for whether a proposal can be processed.
+
 ## Open Proposal Throttle
 
 For the "no new proposals when 3 are open" rule, **open means proposals currently in voting**.
@@ -95,6 +97,7 @@ Steps:
 5. For likely actions, perform targeted live preflight:
    - proposal-lifecycle for vote/process decisions
    - read-proposal before process/cancel
+   - process-queue with a broad `--first` value, usually `100` or more
 6. For each actionable proposal, produce a short memo:
    - proposal id
    - current status
