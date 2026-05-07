@@ -81,6 +81,8 @@ For autonomous action skills, add `--send` after live preflight confirms the man
 
 When `RPC_URL` or `--rpc` is configured, proposal builders estimate `baalGas` through the DAO Safe/module path, add `150000` gas per inner action, then apply a default `1.2x` buffer. If estimation fails, the builder falls back to `0` and reports `baalGasEstimateError`; use `--baal-gas-buffer`, `--baal-gas`, or `--require-baal-gas-estimate` for explicit policy.
 
+For `process`, the CLI sets a transaction gas limit because wallet/RPC estimation can undercount inner proposal actions. Default is stored `baalGas + 400000`, or `800000` when stored `baalGas` is `0`. Override with `--gas-limit`.
+
 Lifecycle reference fixtures live in `fixtures/proposal-lifecycle.fixture.json`.
 
 Use `--vault-provider 1password --vault-item <item> --vault-field private_key` with `--send` to load a private key from 1Password CLI without exporting `PRIVATE_KEY`.

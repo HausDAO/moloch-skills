@@ -316,6 +316,7 @@ node moloch-shared/scripts/moloch.mjs graph-member --dao 0xDAO --member 0xMEMBER
 - Autonomous agents should send by default for authorized actions after preflight. Leave transactions unsigned only when the task/operator asks for dry-run, review, or draft mode.
 - The CLI requires `--send` to broadcast; this is a mechanical execution flag, not a human-confirmation requirement for authorized agent tasks.
 - Proposal builders estimate `baalGas` when `RPC_URL` or `--rpc` is configured. The estimator uses the DAO Safe/module path, adds `150000` gas per inner action, then applies a default `1.2x` buffer. If estimation fails, the builder falls back to `0` and reports `baalGasEstimateError`; use `--baal-gas-buffer`, `--baal-gas`, or `--require-baal-gas-estimate` for explicit policy.
+- `process` uses an explicit transaction gas limit because wallet estimation can miss inner proposal action gas. Default is stored `baalGas + 400000`, or `800000` if stored `baalGas` is `0`. Override with `--gas-limit`.
 - Read direct contract state immediately before sending. Graph data can lag.
 - Use Graph data for proposal metadata, votes, and the original indexed `proposalData`.
 - Use Graph member data for membership, shares, loot, delegation, and vote history context.

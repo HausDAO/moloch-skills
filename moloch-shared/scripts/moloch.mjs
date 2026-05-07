@@ -32,6 +32,8 @@ const POSTER_TAG_SUMMONER = 'daohaus.summoner.daoProfile';
 const POSTER_TAG_DAO_PROFILE_UPDATE = 'daohaus.shares.daoProfile';
 const POSTER_POST_SELECTOR = toFunctionSelector('post(string,string)');
 const ACTION_GAS_LIMIT_ADDITION = 150000n;
+const PROCESS_PROPOSAL_GAS_LIMIT_ADDITION = 400000n;
+const DEFAULT_PROCESS_GAS_LIMIT = 800000n;
 
 const BAAL_ABI = [
   { type: 'function', name: 'submitProposal', stateMutability: 'payable', inputs: [{ name: 'proposalData', type: 'bytes' }, { name: 'expiration', type: 'uint32' }, { name: 'baalGas', type: 'uint256' }, { name: 'details', type: 'string' }], outputs: [] },
@@ -110,12 +112,12 @@ function stringify(value) {
   return JSON.stringify(value, (_, v) => typeof v === 'bigint' ? v.toString() : v, 2);
 }
 
-function tx(to, data, value = 0n) {
-  return { chainId: Number(process.env.CHAIN_ID || BASE_CHAIN_ID), to, value: value.toString(), data };
+function tx(to, data, value = 0n, extra = {}) {
+  return { chainId: Number(process.env.CHAIN_ID || BASE_CHAIN_ID), to, value: value.toString(), data, ...extra };
 }
 
 function withSummary(unsigned, summary) {
-  return { summary: { chainId: unsigned.chainId, to: unsigned.to, value: unsigned.value, baalGas: unsigned.baalGas, estimatedBaalGas: unsigned.estimatedBaalGas, baalGasRawEstimate: unsigned.baalGasRawEstimate, baalGasBuffer: unsigned.baalGasBuffer, baalGasEstimateError: unsigned.baalGasEstimateError, ...summary }, ...unsigned };
+  return { summary: { chainId: unsigned.chainId, to: unsigned.to, value: unsigned.value, gas: unsigned.gas, baalGas: unsigned.baalGas, estimatedBaalGas: unsigned.estimatedBaalGas, baalGasRawEstimate: unsigned.baalGasRawEstimate, baalGasBuffer: unsigned.baalGasBuffer, baalGasEstimateError: unsigned.baalGasEstimateError, ...summary }, ...unsigned };
 }
 
 function compact(value) {
@@ -126,6 +128,7 @@ function compact(value) {
   if (clone.unsigned) {
     delete clone.unsigned.data;
     delete clone.unsigned.proposalData;
+    delete clone.unsigned.gas;
   }
   return clone;
 }
@@ -754,6 +757,19 @@ function applyGasBuffer(gas, bufferScale) {
   return (gas * bufferScale + 999n) / 1000n;
 }
 
+async function processGasLimit(dao, proposalId) {
+  if (arg('gas-limit') != null) return BigInt(arg('gas-limit'));
+  if (arg('process-gas-limit') != null) return BigInt(arg('process-gas-limit'));
+  try {
+    const c = client();
+    const raw = await c.readContract({ address: dao, abi: BAAL_ABI, functionName: 'proposals', args: [BigInt(proposalId)] });
+    const baalGas = BigInt(raw[6] || 0);
+    return baalGas > 0n ? baalGas + PROCESS_PROPOSAL_GAS_LIMIT_ADDITION : DEFAULT_PROCESS_GAS_LIMIT;
+  } catch {
+    return DEFAULT_PROCESS_GAS_LIMIT;
+  }
+}
+
 async function proposalTx({ dao, actions, title, description, link, proposalType, expiration = 0, baalGas, value = 0n }) {
   const proposalData = encodeMultiAction(actions);
   let resolvedBaalGas = baalGas == null ? 0n : BigInt(baalGas);
@@ -802,7 +818,7 @@ async function sendIfRequested(unsigned) {
   const account = privateKeyToAccount(privateKey);
   const c = client();
   const wallet = createWalletClient({ account, chain: base, transport: http(process.env.RPC_URL || arg('rpc')) });
-  const hash = await wallet.sendTransaction({ account, to: unsigned.to, value: BigInt(unsigned.value || 0), data: unsigned.data });
+  const hash = await wallet.sendTransaction({ account, to: unsigned.to, value: BigInt(unsigned.value || 0), data: unsigned.data, gas: unsigned.gas == null ? undefined : BigInt(unsigned.gas) });
   const result = { hash, from: account.address, summary: unsigned.summary, unsigned };
   if (has('wait')) {
     result.receipt = await c.waitForTransactionReceipt({ hash, timeout: Number(arg('wait-ms', 180000)) });
@@ -868,6 +884,7 @@ Options:
   --baal-gas-buffer <n>  Multiplier for estimated baalGas; default 1.2
   --require-baal-gas-estimate  Error if baalGas cannot be estimated
   --safe 0xSAFE        DAO Safe address for DAOhaus-style baalGas estimation
+  --gas-limit <n>      Explicit transaction gas limit for sends
   --send               Broadcast a write tx
   --wait               Wait for receipt after send
   --vault-provider 1password --vault-item <item> [--vault-field private_key]
@@ -1089,6 +1106,7 @@ Options:
     const id = Number(arg('proposal'));
     const functionName = command === 'sponsor' ? 'sponsorProposal' : command === 'vote' ? 'submitVote' : command === 'process' ? 'processProposal' : 'cancelProposal';
     const args = command === 'vote' ? [id, boolArg('approved')] : command === 'process' ? [id, arg('proposal-data')] : [id];
+    let gas;
     if (command === 'process' && (has('send') || has('preflight')) && !has('skip-preflight')) {
       const lifecycle = await lifecycleForProposal(dao, id);
       if (!lifecycle.lifecycle.processableNow) {
@@ -1102,7 +1120,8 @@ Options:
         throw new Error(`Proposal ${id} proposalData does not match indexed proposalData.`);
       }
     }
-    out = withSummary(tx(dao, encodeFunctionData({ abi: BAAL_ABI, functionName, args })), { action: functionName, proposalKind: 'LIFECYCLE_ACTION', submissionTarget: 'BAAL', dao, proposalId: id });
+    if (command === 'process') gas = (await processGasLimit(dao, id)).toString();
+    out = withSummary(tx(dao, encodeFunctionData({ abi: BAAL_ABI, functionName, args }), 0n, gas ? { gas } : {}), { action: functionName, proposalKind: 'LIFECYCLE_ACTION', submissionTarget: 'BAAL', dao, proposalId: id, note: command === 'process' ? 'processProposal uses an explicit gas limit because wallet estimation can undercount inner proposal actions.' : undefined });
   } else if (command === 'summon') {
     const p = jsonFile(arg('params'));
     const mint = encodeValues(['address[]', 'uint256[]', 'uint256[]'], [p.memberAddresses, p.memberShares.map(BigInt), p.memberLoot.map(BigInt)]);
