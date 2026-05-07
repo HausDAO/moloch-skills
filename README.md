@@ -2,6 +2,8 @@
 
 This directory contains Codex skills and a shared script for interacting with DAOhaus/Moloch V3/Baal DAOs on Base.
 
+For scheduled agent task patterns, see [AGENT_TASKS.md](AGENT_TASKS.md).
+
 ## Skills
 
 - `moloch-shared`: shared wallet, RPC, Graph, encoding, decoding, and transaction helpers.

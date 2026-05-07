@@ -2,6 +2,8 @@
 
 This repo contains Codex skills plus runtime assets for DAOhaus/Moloch V3/Baal DAO operations.
 
+For scheduled agent task patterns, use `AGENT_TASKS.md`.
+
 ## Prism Install Pattern
 
 For Prism instances, do not install these skills only into `CODEX_HOME` or `/data/codex/skills`.
