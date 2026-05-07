@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
+import path from 'node:path';
 import {
   createPublicClient,
   createWalletClient,
@@ -243,6 +244,17 @@ async function graphDaoHistory(dao) {
   }`, { daoid: dao.toLowerCase(), first: Number(arg('first', 100)), skip: Number(arg('skip', 0)) });
 }
 
+async function readDaoDirect(dao) {
+  const c = client();
+  const [proposalCount, proposalOffering, sponsorThreshold, latestSponsoredProposalId] = await Promise.all([
+    c.readContract({ address: dao, abi: BAAL_ABI, functionName: 'proposalCount' }),
+    c.readContract({ address: dao, abi: BAAL_ABI, functionName: 'proposalOffering' }),
+    c.readContract({ address: dao, abi: BAAL_ABI, functionName: 'sponsorThreshold' }),
+    c.readContract({ address: dao, abi: BAAL_ABI, functionName: 'latestSponsoredProposalId' }),
+  ]);
+  return { dao, proposalCount, proposalOffering, sponsorThreshold, latestSponsoredProposalId };
+}
+
 const STATE_NAMES = ['unborn', 'submitted', 'voting', 'cancelled', 'grace', 'ready', 'processed', 'defeated'];
 const PREV_PROCESS_ELIGIBLE = new Set([0, 3, 6, 7]);
 
@@ -359,6 +371,87 @@ function processQueueFromProposals(proposals) {
     }));
 }
 
+function summarizeProposals(proposals) {
+  const now = Math.floor(Date.now() / 1000);
+  const items = (proposals || []).map((proposal) => ({
+    proposalId: proposal.proposalId,
+    title: proposal.title,
+    proposalType: proposal.proposalType,
+    lifecycle: deriveProposalLifecycle(proposal, now),
+  }));
+  return {
+    count: items.length,
+    votingCount: items.filter((item) => item.lifecycle.inVoting).length,
+    unsponsoredCount: items.filter((item) => item.lifecycle.needsSponsor).length,
+    graceCount: items.filter((item) => item.lifecycle.inGrace).length,
+    needsProcessingCount: items.filter((item) => item.lifecycle.graphReady).length,
+    passedProcessedCount: items.filter((item) => item.lifecycle.status === 'processedPassed').length,
+    failedCount: items.filter((item) => item.lifecycle.status === 'failed' || item.lifecycle.status === 'processedFailed').length,
+    items,
+  };
+}
+
+function ensureDir(dir) {
+  fs.mkdirSync(dir, { recursive: true });
+}
+
+function writeJson(file, value) {
+  ensureDir(path.dirname(file));
+  fs.writeFileSync(file, `${stringify(value)}\n`);
+}
+
+async function taskSnapshot(dao) {
+  const outDir = arg('out-dir', path.join(process.cwd(), 'artifacts', dao.toLowerCase()));
+  const first = Number(arg('first', 100));
+  const timestamp = new Date().toISOString();
+  const [direct, history] = await Promise.all([
+    process.env.RPC_URL || arg('rpc') ? readDaoDirect(dao) : Promise.resolve(null),
+    graphDaoHistory(dao),
+  ]);
+  const proposals = history.proposals || [];
+  const summary = summarizeProposals(proposals);
+  const processQueue = processQueueFromProposals(proposals);
+  const checkpointFile = path.join(outDir, 'checkpoint.json');
+  let previousCheckpoint = {};
+  if (fs.existsSync(checkpointFile)) {
+    try { previousCheckpoint = JSON.parse(fs.readFileSync(checkpointFile, 'utf8')); } catch {}
+  }
+  const checkpoint = {
+    dao,
+    updatedAt: timestamp,
+    lastGraphProposalIdSeen: proposals.reduce((max, p) => Math.max(max, Number(p.proposalId || 0)), Number(previousCheckpoint.lastGraphProposalIdSeen || 0)),
+    lastPassedProposalIdIncorporated: previousCheckpoint.lastPassedProposalIdIncorporated || null,
+    votingCount: summary.votingCount,
+    needsProcessingCount: summary.needsProcessingCount,
+  };
+  const files = {
+    directState: path.join(outDir, 'direct-state.json'),
+    graphHistory: path.join(outDir, 'graph-history.json'),
+    proposalSummary: path.join(outDir, 'proposal-summary.json'),
+    processQueue: path.join(outDir, 'process-queue.json'),
+    checkpoint: checkpointFile,
+  };
+  if (direct) writeJson(files.directState, direct);
+  writeJson(files.graphHistory, { dao: history.dao, proposals });
+  writeJson(files.proposalSummary, summary);
+  writeJson(files.processQueue, { queue: processQueue });
+  writeJson(files.checkpoint, checkpoint);
+  return {
+    dao,
+    outDir,
+    first,
+    updatedAt: timestamp,
+    files,
+    summary: {
+      proposalCount: summary.count,
+      votingCount: summary.votingCount,
+      openProposalThrottleBlocked: summary.votingCount >= Number(arg('max-voting', 3)),
+      needsProcessingCount: summary.needsProcessingCount,
+      oldestProcessableProposalId: processQueue[0]?.proposalId || null,
+    },
+  };
+}
+
 function proposalTx({ dao, actions, title, description, link, proposalType, expiration = 0, baalGas = 0, value = 0n }) {
   const proposalData = encodeMultiAction(actions);
   const data = encodeFunctionData({
@@ -425,6 +518,7 @@ async function main() {
   if (!command || command === '--help') {
     console.log(`Moloch CLI commands:
   capabilities         Show supported proposal families and configured read/send capabilities
+  task-snapshot        Cron-friendly combined DAO/proposal/lifecycle artifact writer
   new-account          Generate a fresh local Ethereum account
   read-dao             Direct contract state for a DAO
   read-proposal        Direct contract proposal tuple plus named getProposalStatus
@@ -471,6 +565,11 @@ Options:
       },
       warning: 'If tribute/join-dao is missing from --help, the local skill bundle is outdated.',
     }));
+    return;
+  }
+
+  if (command === 'task-snapshot') {
+    console.log(stringify(await taskSnapshot(requireDao())));
     return;
   }
 
@@ -548,14 +647,7 @@ Options:
 
   if (command === 'read-dao') {
     const dao = requireDao();
-    const c = client();
-    const [proposalCount, proposalOffering, sponsorThreshold, latestSponsoredProposalId] = await Promise.all([
-      c.readContract({ address: dao, abi: BAAL_ABI, functionName: 'proposalCount' }),
-      c.readContract({ address: dao, abi: BAAL_ABI, functionName: 'proposalOffering' }),
-      c.readContract({ address: dao, abi: BAAL_ABI, functionName: 'sponsorThreshold' }),
-      c.readContract({ address: dao, abi: BAAL_ABI, functionName: 'latestSponsoredProposalId' }),
-    ]);
-    console.log(stringify({ dao, proposalCount, proposalOffering, sponsorThreshold, latestSponsoredProposalId }));
+    console.log(stringify(await readDaoDirect(dao)));
     return;
   }
 

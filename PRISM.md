@@ -3,6 +3,7 @@
 This repo contains Codex skills plus runtime assets for DAOhaus/Moloch V3/Baal DAO operations.
 
 For scheduled agent task patterns, use `AGENT_TASKS.md`.
+Prefer `task-snapshot` cron jobs for routine state gathering so agents can consume compact artifacts instead of repeating verbose Graph/RPC reads.
 
 ## Prism Install Pattern
 
@@ -130,6 +131,7 @@ Install Node dependencies in:
 Verify:
 - Skills appear in Prism Skills UI.
 - A read-only command works.
+- task-snapshot writes artifacts.
 - Transaction skills require explicit confirmation before broadcasting.
 ```
 

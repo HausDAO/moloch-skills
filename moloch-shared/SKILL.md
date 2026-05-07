@@ -50,6 +50,7 @@ node scripts/moloch.mjs graph-dao --dao 0xDAO
 node scripts/moloch.mjs graph-proposal --dao 0xDAO --proposal 1
 node scripts/moloch.mjs graph-proposals --dao 0xDAO --first 20
 node scripts/moloch.mjs graph-dao-history --dao 0xDAO --first 100
+node scripts/moloch.mjs task-snapshot --dao 0xDAO --out-dir /data/custom/moloch-skills/artifacts/0xDAO
 node scripts/moloch.mjs proposal-lifecycle --dao 0xDAO --proposal 1
 node scripts/moloch.mjs process-queue --dao 0xDAO --first 100
 node scripts/moloch.mjs details --title "..." --description "..." --proposal-type SIGNAL
