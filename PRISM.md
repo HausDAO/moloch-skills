@@ -76,6 +76,7 @@ Register read-only skills first:
 - `moloch-shared`
 - `moloch-dao-read`
 - `moloch-proposals`
+- `moloch-agent-conviction`
 
 Register action skills with stricter instructions:
 
@@ -102,6 +103,7 @@ Create managed SKILL.md definitions for:
 - moloch-shared
 - moloch-dao-read
 - moloch-proposals
+- moloch-agent-conviction
 - moloch-proposal-actions
 - moloch-summon
 - meta-clawtel-launch
@@ -121,4 +123,3 @@ Verify:
 ## Future Machine-Readable Pack
 
 If Prism needs stricter automation later, add a small `prism.skill-pack.json`. Start with this `PRISM.md` because agents will read it naturally when they encounter the repo.
-

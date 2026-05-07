@@ -9,6 +9,7 @@ This directory contains Codex skills and a shared script for interacting with DA
 - `moloch-proposals`: create signal, governance settings, token/admin settings, and custom proposals.
 - `moloch-proposal-actions`: sponsor, vote, process, and cancel proposals.
 - `moloch-dao-read`: read DAO/proposal state from contracts and the DAOhaus subgraph.
+- `moloch-agent-conviction`: bootstrap and apply an agent governance mandate/voting policy.
 - `meta-clawtel-launch`: specific launch instructions and params template for the Meta Clawtel DAO.
 
 ## Setup
