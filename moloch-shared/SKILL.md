@@ -78,6 +78,8 @@ node scripts/moloch.mjs summon --params summon.json
 
 For autonomous action skills, add `--send` after live preflight confirms the managed wallet has permission and funds. Omit `--send` only for dry-run/review/draft tasks or when policy blocks broadcast.
 
+When `RPC_URL` or `--rpc` is configured, proposal builders estimate `baalGas` by estimating each encoded action from the DAO address and adding `150000` gas per action, following DAOhaus Admin's action-gas estimate pattern. Use `--baal-gas` to override or `--no-estimate-baal-gas` to force `0`.
+
 Lifecycle reference fixtures live in `fixtures/proposal-lifecycle.fixture.json`.
 
 Use `--vault-provider 1password --vault-item <item> --vault-field private_key` with `--send` to load a private key from 1Password CLI without exporting `PRIVATE_KEY`.

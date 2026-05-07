@@ -30,6 +30,7 @@ const POSTER_TAG_DAO_DB = 'daohaus.proposal.database';
 const POSTER_TAG_SUMMONER = 'daohaus.summoner.daoProfile';
 const POSTER_TAG_DAO_PROFILE_UPDATE = 'daohaus.shares.daoProfile';
 const POSTER_POST_SELECTOR = toFunctionSelector('post(string,string)');
+const ACTION_GAS_LIMIT_ADDITION = 150000n;
 
 const BAAL_ABI = [
   { type: 'function', name: 'submitProposal', stateMutability: 'payable', inputs: [{ name: 'proposalData', type: 'bytes' }, { name: 'expiration', type: 'uint32' }, { name: 'baalGas', type: 'uint256' }, { name: 'details', type: 'string' }], outputs: [] },
@@ -95,7 +96,7 @@ function tx(to, data, value = 0n) {
 }
 
 function withSummary(unsigned, summary) {
-  return { summary: { chainId: unsigned.chainId, to: unsigned.to, value: unsigned.value, ...summary }, ...unsigned };
+  return { summary: { chainId: unsigned.chainId, to: unsigned.to, value: unsigned.value, baalGas: unsigned.baalGas, estimatedBaalGas: unsigned.estimatedBaalGas, ...summary }, ...unsigned };
 }
 
 function compact(value) {
@@ -686,14 +687,31 @@ function summonProfile(p) {
   }).filter(([, value]) => value !== undefined && value !== null && value !== ''));
 }
 
-function proposalTx({ dao, actions, title, description, link, proposalType, expiration = 0, baalGas = 0, value = 0n }) {
+async function estimateBaalGas(dao, actions) {
+  const c = client();
+  const estimates = await Promise.all(actions.map((action) => c.estimateGas({
+    account: dao,
+    to: action.to,
+    value: BigInt(action.value || 0),
+    data: action.data,
+  })));
+  return estimates.reduce((total, gas) => total + BigInt(gas || 0), 0n) + BigInt(actions.length) * ACTION_GAS_LIMIT_ADDITION;
+}
+
+async function proposalTx({ dao, actions, title, description, link, proposalType, expiration = 0, baalGas, value = 0n }) {
   const proposalData = encodeMultiAction(actions);
+  let resolvedBaalGas = baalGas == null ? 0n : BigInt(baalGas);
+  let estimatedBaalGas = false;
+  if (baalGas == null && (process.env.RPC_URL || arg('rpc')) && !has('no-estimate-baal-gas')) {
+    resolvedBaalGas = await estimateBaalGas(dao, actions);
+    estimatedBaalGas = true;
+  }
   const data = encodeFunctionData({
     abi: BAAL_ABI,
     functionName: 'submitProposal',
-    args: [proposalData, Number(expiration), BigInt(baalGas), details({ title, description, link, proposalType })],
+    args: [proposalData, Number(expiration), resolvedBaalGas, details({ title, description, link, proposalType })],
   });
-  return { ...tx(dao, data, value), proposalData };
+  return { ...tx(dao, data, value), proposalData, baalGas: resolvedBaalGas.toString(), estimatedBaalGas };
 }
 
 function requireDao() {
@@ -776,6 +794,7 @@ async function main() {
 
 Options:
   --compact            Hide large calldata/proposalData in output
+  --no-estimate-baal-gas  Keep Baal submitProposal baalGas at 0 unless --baal-gas is provided
   --send               Broadcast a write tx
   --wait               Wait for receipt after send
   --vault-provider 1password --vault-item <item> [--vault-field private_key]
@@ -930,7 +949,7 @@ Options:
     if (!title) throw new Error('Missing --title');
     ensureSignalIntent({ title, description });
     const postData = encodeFunctionData({ abi: POSTER_ABI, functionName: 'post', args: [JSON.stringify({ daoId: dao, table: 'signal', queryType: 'list', title, description, link }), POSTER_TAG_DAO_DB] });
-    out = withSummary(proposalTx({ dao, title, description, link, proposalType: 'SIGNAL', expiration: Number(arg('expiration', 0)), baalGas: BigInt(arg('baal-gas', 0)), value: BigInt(arg('value', 0)), actions: [{ to: POSTER, value: 0, data: postData, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'SIGNAL', submissionTarget: 'BAAL', dao });
+    out = withSummary(await proposalTx({ dao, title, description, link, proposalType: 'SIGNAL', expiration: Number(arg('expiration', 0)), baalGas: arg('baal-gas') == null ? undefined : BigInt(arg('baal-gas')), value: BigInt(arg('value', 0)), actions: [{ to: POSTER, value: 0, data: postData, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'SIGNAL', submissionTarget: 'BAAL', dao });
   } else if (command === 'dao-meta') {
     const dao = requireDao();
     const p = arg('params') ? jsonFile(arg('params')) : {};
@@ -938,7 +957,7 @@ Options:
     const description = arg('description', p.proposalDescription || p.description || '');
     const content = daoProfileContent(dao, { ...p, name: arg('name', p.name), description: arg('dao-description', p.description), charterURI: arg('charter-uri', p.charterURI), joinRulesURI: arg('join-rules-uri', p.joinRulesURI), goalsURI: arg('goals-uri', p.goalsURI), manifestoURI: arg('manifesto-uri', p.manifestoURI), web: arg('web', p.web) });
     const postData = encodeFunctionData({ abi: POSTER_ABI, functionName: 'post', args: [JSON.stringify(content), POSTER_TAG_DAO_PROFILE_UPDATE] });
-    out = withSummary(proposalTx({ dao, title, description, link: arg('link', p.link || ''), proposalType: 'UPDATE_METADATA_SETTINGS', expiration: Number(arg('expiration', p.expiration || 0)), baalGas: BigInt(arg('baal-gas', p.baalGas || 0)), value: BigInt(arg('value', p.value || 0)), actions: [{ to: POSTER, value: 0, data: postData, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'UPDATE_METADATA_SETTINGS', submissionTarget: 'BAAL', dao, recordTable: 'daoProfile' });
+    out = withSummary(await proposalTx({ dao, title, description, link: arg('link', p.link || ''), proposalType: 'UPDATE_METADATA_SETTINGS', expiration: Number(arg('expiration', p.expiration || 0)), baalGas: arg('baal-gas') == null && p.baalGas == null ? undefined : BigInt(arg('baal-gas', p.baalGas)), value: BigInt(arg('value', p.value || 0)), actions: [{ to: POSTER, value: 0, data: postData, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'UPDATE_METADATA_SETTINGS', submissionTarget: 'BAAL', dao, recordTable: 'daoProfile' });
   } else if (command === 'dao-record') {
     const dao = requireDao();
     const table = arg('table');
@@ -950,7 +969,7 @@ Options:
     const title = arg('title', p.title || `Update ${table} record`);
     const description = arg('description', p.proposalDescription || `Post latest ${table} record for DAO agents and members.`);
     const postData = encodeFunctionData({ abi: POSTER_ABI, functionName: 'post', args: [JSON.stringify(record), POSTER_TAG_DAO_PROFILE_UPDATE] });
-    out = withSummary(proposalTx({ dao, title, description, link: arg('link', p.link || content.uri || content.contentURI || ''), proposalType: 'UPDATE_METADATA_SETTINGS', expiration: Number(arg('expiration', p.expiration || 0)), baalGas: BigInt(arg('baal-gas', p.baalGas || 0)), value: BigInt(arg('value', p.value || 0)), actions: [{ to: POSTER, value: 0, data: postData, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'UPDATE_METADATA_SETTINGS', submissionTarget: 'BAAL', dao, recordTable: table });
+    out = withSummary(await proposalTx({ dao, title, description, link: arg('link', p.link || content.uri || content.contentURI || ''), proposalType: 'UPDATE_METADATA_SETTINGS', expiration: Number(arg('expiration', p.expiration || 0)), baalGas: arg('baal-gas') == null && p.baalGas == null ? undefined : BigInt(arg('baal-gas', p.baalGas)), value: BigInt(arg('value', p.value || 0)), actions: [{ to: POSTER, value: 0, data: postData, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'UPDATE_METADATA_SETTINGS', submissionTarget: 'BAAL', dao, recordTable: table });
   } else if (command === 'tribute' || command === 'join-dao') {
     const dao = requireDao();
     const title = arg('title', 'Tribute for DAO tokens');
@@ -972,13 +991,13 @@ Options:
     const p = jsonFile(arg('params'));
     const inner = encodeValues(['uint32', 'uint32', 'uint256', 'uint256', 'uint256', 'uint256'], [p.votingPeriodInSeconds, p.gracePeriodInSeconds, BigInt(p.newOffering), rawPercent('quorum', p.quorum), BigInt(p.sponsorThreshold), rawPercent('minRetention', p.minRetention)]);
     const action = encodeFunctionData({ abi: BAAL_ABI, functionName: 'setGovernanceConfig', args: [inner] });
-    out = withSummary(proposalTx({ dao, title: p.title, description: p.description || '', link: p.link || '', proposalType: 'UPDATE_GOV_SETTINGS', expiration: p.expiration || 0, baalGas: BigInt(p.baalGas || 0), value: BigInt(p.value || 0), actions: [{ to: dao, value: 0, data: action, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'UPDATE_GOV_SETTINGS', submissionTarget: 'BAAL', dao });
+    out = withSummary(await proposalTx({ dao, title: p.title, description: p.description || '', link: p.link || '', proposalType: 'UPDATE_GOV_SETTINGS', expiration: p.expiration || 0, baalGas: arg('baal-gas') == null && p.baalGas == null ? undefined : BigInt(arg('baal-gas', p.baalGas)), value: BigInt(p.value || 0), actions: [{ to: dao, value: 0, data: action, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'UPDATE_GOV_SETTINGS', submissionTarget: 'BAAL', dao });
   } else if (command === 'token-settings') {
     const dao = requireDao();
     const title = arg('title', 'Update token settings');
     const description = arg('description', '');
     const action = encodeFunctionData({ abi: BAAL_ABI, functionName: 'setAdminConfig', args: [boolArg('pause-shares'), boolArg('pause-loot')] });
-    out = withSummary(proposalTx({ dao, title, description, link: arg('link', ''), proposalType: 'TOKEN_SETTINGS', expiration: Number(arg('expiration', 0)), baalGas: BigInt(arg('baal-gas', 0)), value: BigInt(arg('value', 0)), actions: [{ to: dao, value: 0, data: action, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'TOKEN_SETTINGS', submissionTarget: 'BAAL', dao });
+    out = withSummary(await proposalTx({ dao, title, description, link: arg('link', ''), proposalType: 'TOKEN_SETTINGS', expiration: Number(arg('expiration', 0)), baalGas: arg('baal-gas') == null ? undefined : BigInt(arg('baal-gas')), value: BigInt(arg('value', 0)), actions: [{ to: dao, value: 0, data: action, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'TOKEN_SETTINGS', submissionTarget: 'BAAL', dao });
   } else if (['sponsor', 'vote', 'process', 'cancel'].includes(command)) {
     const dao = requireDao();
     const id = Number(arg('proposal'));

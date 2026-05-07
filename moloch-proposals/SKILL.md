@@ -52,6 +52,8 @@ Daohaus expects details JSON with `title`, `description`, optional `contentURI`,
 
 ## Signal Proposal
 
+When RPC is configured, proposal commands estimate and include `baalGas` automatically. Keep this on for autonomous agents. Use `--baal-gas` only for an explicit override, or `--no-estimate-baal-gas` for dry-run compatibility tests.
+
 ```bash
 node ../moloch-shared/scripts/moloch.mjs signal \
   --dao 0xDAO \
