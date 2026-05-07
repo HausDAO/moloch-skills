@@ -86,7 +86,6 @@ Register read-only skills first:
 - `moloch-dao-read`
 - `moloch-proposals`
 - `moloch-agent-conviction`
-- `moloch-story-agents`
 
 Register action skills with stricter instructions:
 
@@ -114,7 +113,6 @@ Create managed SKILL.md definitions for:
 - moloch-dao-read
 - moloch-proposals
 - moloch-agent-conviction
-- moloch-story-agents
 - moloch-proposal-actions
 - moloch-summon
 - meta-clawtel-launch
