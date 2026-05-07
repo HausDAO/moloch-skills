@@ -131,7 +131,9 @@ Process when:
 - `proposal-lifecycle` shows `processableNow: true`
 - exact indexed `proposalData` is available
 - direct chain state confirms the previous-proposal gate
-- no human-review rule applies
+- the agent's execution policy authorizes processing
+
+Processing a passed proposal is an execution action, not a fresh vote. Do not block processing only because the passed proposal mints shares, issues loot, pays funds, or changes settings unless the agent mandate explicitly adds that category as a processing escalation rule.
 
 ## Examples
 
@@ -181,4 +183,3 @@ Do not dump full calldata in vote memos. Report:
 - reason
 - tx hash if sent
 - post-action state after reread
-

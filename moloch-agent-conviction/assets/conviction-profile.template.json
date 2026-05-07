@@ -68,18 +68,19 @@
     ]
   },
   "executionPolicy": {
-    "mayProcess": false,
+    "mayProcess": true,
     "rules": [
       "Process only if direct chain state says the proposal is executable.",
       "Use the exact indexed proposalData from the proposal.",
-      "Escalate before processing high-value or irreversible actions."
+      "Process ratified proposals as an execution duty unless an explicit escalation rule applies.",
+      "Do not block processing only because the proposal mints shares, issues loot, pays funds, or changes settings if the proposal passed and the mandate authorizes processing."
     ]
   },
   "escalationPolicy": {
     "requiresHumanReview": [
-      "Treasury movement",
-      "Membership/share issuance or burning",
-      "Shaman or admin permission changes",
+      "Action data is missing, malformed, or does not match the passed proposal text",
+      "Processing would use reconstructed proposalData instead of the exact indexed proposalData",
+      "The proposal changes this agent's own authority, custody, signer policy, or mandate",
       "Charter or mandate amendments",
       "Ambiguous or conflicting proposal data"
     ]

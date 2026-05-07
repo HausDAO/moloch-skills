@@ -57,7 +57,7 @@ Use these defaults unless the conviction profile overrides them:
 - Vote `no` when it violates a hard-no rule, weakens DAO integrity, creates unbounded obligations, or conflicts with the charter.
 - Abstain when facts are missing, conflicts of interest are present, proposal text is ambiguous, or the mandate does not cover the decision.
 - Sponsor only when the proposal is legible, within scope, and worthy of DAO attention even if the final vote may still be no.
-- Process only when the proposal passed, action data matches the ratified proposal, and direct chain state says it is executable.
+- Process when the proposal passed, action data matches the ratified proposal, direct chain state says it is executable, and the mandate authorizes processing. Do not add a second human-review gate based only on proposal category unless the profile explicitly says so.
 
 ## Safety Rules
 
@@ -65,7 +65,7 @@ Use these defaults unless the conviction profile overrides them:
 - Conviction alone is not authorization to broadcast. Broadcasting requires mandate alignment plus harness/task auto-send authority and live preflight.
 - Re-read direct chain state before any sponsor/vote/process/cancel action.
 - Use Graph for proposal metadata and vote history, but direct contract reads for current permission/timing checks.
-- If the proposal changes agent authority, treasury custody, token permissions, or the mandate itself, escalate for human review.
+- If the proposal changes this agent's own authority, custody, signer policy, or mandate, escalate for human review unless the profile explicitly authorizes it.
 - Record the final memo, chosen action, tx hash if any, and post-action state.
 
 ## Charter Integration
