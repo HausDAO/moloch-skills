@@ -8,6 +8,7 @@ description: Define and apply an agent governance mandate for DAOhaus/Moloch DAO
 Use this skill to create or apply an agent's governance mandate. "Conviction" is the shorthand, but the operating artifact should be called a **governance mandate** or **voting policy** when communicating with humans.
 
 This skill does not replace transaction safety checks. Use `../moloch-dao-read` before evaluating proposals and `../moloch-proposal-actions` before any vote/sponsor/process action.
+For the general voting workflow, also use `../VOTE_DECISION_FLOW.md`.
 
 ## Bootstrap Workflow
 
@@ -85,4 +86,3 @@ For Prism, store the durable profile in harness-managed memory or runtime assets
 ```
 
 Do not store private keys in the conviction profile.
-

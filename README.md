@@ -3,6 +3,7 @@
 This directory contains Codex skills and a shared script for interacting with DAOhaus/Moloch V3/Baal DAOs on Base.
 
 For scheduled agent task patterns, see [AGENT_TASKS.md](AGENT_TASKS.md).
+For vote reasoning, see [VOTE_DECISION_FLOW.md](VOTE_DECISION_FLOW.md).
 
 Maintained repo: `https://github.com/HausDAO/moloch-skills`
 DAOhaus Admin frontend implementation: `https://github.com/HausDAO/daohaus-admin`

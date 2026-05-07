@@ -4,6 +4,7 @@ This repo contains Codex skills plus runtime assets for DAOhaus/Moloch V3/Baal D
 
 For scheduled agent task patterns, use `AGENT_TASKS.md`.
 Prefer `task-snapshot` cron jobs for routine state gathering so agents can consume compact artifacts instead of repeating verbose Graph/RPC reads.
+For vote reasoning, use `VOTE_DECISION_FLOW.md`.
 
 ## Prism Install Pattern
 
