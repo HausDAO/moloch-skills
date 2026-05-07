@@ -79,9 +79,9 @@ node scripts/moloch.mjs summon --params summon.json
 
 For autonomous action skills, add `--send` after live preflight confirms the managed wallet has permission and funds. Omit `--send` only for dry-run/review/draft tasks or when policy blocks broadcast.
 
-When `RPC_URL` or `--rpc` is configured, proposal builders estimate `baalGas` through the DAO Safe/module path, add `150000` gas per inner action, then apply a default `1.2x` buffer. If estimation fails, the builder falls back to `0` and reports `baalGasEstimateError`; use `--baal-gas-buffer`, `--baal-gas`, or `--require-baal-gas-estimate` for explicit policy.
+Proposal builders default `submitProposal` `baalGas` to `0`. Baal ignores zero, while a low nonzero value can make processing fail with an out-of-gas style action failure. Use `--baal-gas` only when you know the required inner action gas. Use `--estimate-baal-gas` to opt in to DAOhaus-style estimation with a default `1.2x` buffer.
 
-For `process`, the CLI sets a transaction gas limit because wallet/RPC estimation can undercount inner proposal actions. Default is stored `baalGas + 400000`, or `800000` when stored `baalGas` is `0`. Override with `--gas-limit`.
+For `process`, the CLI sets a transaction gas limit because wallet/RPC estimation can undercount inner proposal actions. Default is the larger of `800000` or stored `baalGas + 400000`. Override with `--gas-limit`.
 
 For Baal shares and loot, the CLI accepts human 18-decimal token units by default:
 

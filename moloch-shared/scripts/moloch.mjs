@@ -786,7 +786,8 @@ async function processGasLimit(dao, proposalId) {
     const c = client();
     const raw = await c.readContract({ address: dao, abi: BAAL_ABI, functionName: 'proposals', args: [BigInt(proposalId)] });
     const baalGas = BigInt(raw[6] || 0);
-    return baalGas > 0n ? baalGas + PROCESS_PROPOSAL_GAS_LIMIT_ADDITION : DEFAULT_PROCESS_GAS_LIMIT;
+    const limit = baalGas > 0n ? baalGas + PROCESS_PROPOSAL_GAS_LIMIT_ADDITION : DEFAULT_PROCESS_GAS_LIMIT;
+    return limit > DEFAULT_PROCESS_GAS_LIMIT ? limit : DEFAULT_PROCESS_GAS_LIMIT;
   } catch {
     return DEFAULT_PROCESS_GAS_LIMIT;
   }
@@ -799,7 +800,7 @@ async function proposalTx({ dao, actions, title, description, link, proposalType
   let baalGasRawEstimate;
   let baalGasBuffer;
   let baalGasEstimateError;
-  if (baalGas == null && (process.env.RPC_URL || arg('rpc')) && !has('no-estimate-baal-gas')) {
+  if (baalGas == null && has('estimate-baal-gas')) {
     try {
       const bufferScale = decimalArg('baal-gas-buffer', 1.2);
       const rawEstimate = await estimateBaalGas(dao, actions, proposalData);
@@ -902,8 +903,10 @@ async function main() {
 
 Options:
   --compact            Hide large calldata/proposalData in output
-  --no-estimate-baal-gas  Keep Baal submitProposal baalGas at 0 unless --baal-gas is provided
-  --baal-gas-buffer <n>  Multiplier for estimated baalGas; default 1.2
+  --estimate-baal-gas  Opt in to DAOhaus-style submitProposal baalGas estimation
+  --no-estimate-baal-gas  Legacy no-op; baalGas is 0 by default unless explicitly set
+  --baal-gas <n>       Explicit submitProposal baalGas; use carefully because low nonzero values can make processing fail
+  --baal-gas-buffer <n>  Multiplier for opt-in estimated baalGas; default 1.2
   --require-baal-gas-estimate  Error if baalGas cannot be estimated
   --safe 0xSAFE        DAO Safe address for DAOhaus-style baalGas estimation
   --gas-limit <n>      Explicit transaction gas limit for sends
@@ -1153,7 +1156,7 @@ Share and loot quantities default to human 18-decimal units:
       }
     }
     if (command === 'process') gas = (await processGasLimit(dao, id)).toString();
-    out = withSummary(tx(dao, encodeFunctionData({ abi: BAAL_ABI, functionName, args }), 0n, gas ? { gas } : {}), { action: functionName, proposalKind: 'LIFECYCLE_ACTION', submissionTarget: 'BAAL', dao, proposalId: id, note: command === 'process' ? 'processProposal uses an explicit gas limit because wallet estimation can undercount inner proposal actions.' : undefined });
+    out = withSummary(tx(dao, encodeFunctionData({ abi: BAAL_ABI, functionName, args }), 0n, gas ? { gas } : {}), { action: functionName, proposalKind: 'LIFECYCLE_ACTION', submissionTarget: 'BAAL', dao, proposalId: id, note: command === 'process' ? 'processProposal uses an explicit transaction gas limit. If the proposal stored a low nonzero baalGas, the inner action may still fail because that limit was set at submission time.' : undefined });
   } else if (command === 'summon') {
     const p = jsonFile(arg('params'));
     const mint = encodeValues(['address[]', 'uint256[]', 'uint256[]'], [p.memberAddresses, p.memberShares.map(BigInt), p.memberLoot.map(BigInt)]);
