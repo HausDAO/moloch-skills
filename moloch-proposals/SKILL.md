@@ -7,6 +7,8 @@ description: Build and submit Moloch V3/Baal proposals on Base. Use for DAOhaus 
 
 Use this skill to build or submit Baal proposals on Base.
 
+Default to high-level commands and concise summaries. Do not expose ABI fragments, raw calldata, or full JSON shapes unless the user asks for a technical review.
+
 ## Workflow
 
 1. Use `../moloch-shared` for RPC, wallet, and transaction script setup.
@@ -44,6 +46,35 @@ node ../moloch-shared/scripts/moloch.mjs signal \
 ```
 
 Signal proposals encode a Poster `post` action inside `submitProposal`.
+
+## Tribute / Join DAO Proposal
+
+Use this for tokens-for-shares or tokens-for-loot requests through the DAOhaus Tribute Minion.
+
+Native ETH tribute:
+
+```bash
+node ../moloch-shared/scripts/moloch.mjs tribute \
+  --dao 0xDAO \
+  --token ETH \
+  --amount 1000000000000000 \
+  --shares 0 \
+  --loot 1000000000000000000000 \
+  --title "Join the DAO"
+```
+
+ERC-20 tribute:
+
+```bash
+node ../moloch-shared/scripts/moloch.mjs tribute \
+  --dao 0xDAO \
+  --token 0xTOKEN \
+  --amount 1000000 \
+  --shares 1000000000000000000 \
+  --loot 0
+```
+
+For ERC-20 tribute, check and approve Tribute Minion allowance before broadcasting. For ETH tribute, tx `value` equals `amount`.
 
 ## Governance Settings Proposal
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import crypto from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import {
   createPublicClient,
   createWalletClient,
@@ -20,6 +21,7 @@ const ZERO = '0x0000000000000000000000000000000000000000';
 const BASE_CHAIN_ID = 8453;
 const SUMMONER = '0x97Aaa5be8B38795245f1c38A883B44cccdfB3E11';
 const POSTER = '0x000000000000cd17345801aa8147b8D3950260FF';
+const TRIBUTE_MINION = '0x00768B047f73D88b6e9c14bcA97221d6E179d468';
 const DAOHAUS_BASE_SUBGRAPH_ID = '7yh4eHJ4qpHEiLPAk9BXhL5YgYrTrRE6gWy8x4oHyAqW';
 const POSTER_TAG_DAO_DB = 'daohaus.proposal.database';
 const POSTER_TAG_SUMMONER = 'daohaus.summoner.daoProfile';
@@ -51,6 +53,10 @@ const SUMMONER_ABI = [
   { type: 'function', name: 'summonBaalFromReferrer', stateMutability: 'nonpayable', inputs: [{ name: '_safeAddr', type: 'address' }, { name: '_forwarderAddr', type: 'address' }, { name: '_saltNonce', type: 'uint256' }, { name: 'initializationMintParams', type: 'bytes' }, { name: 'initializationTokenParams', type: 'bytes' }, { name: 'postInitializationActions', type: 'bytes[]' }], outputs: [] },
 ];
 
+const TRIBUTE_MINION_ABI = [
+  { type: 'function', name: 'submitTributeProposal', stateMutability: 'payable', inputs: [{ name: 'baal', type: 'address' }, { name: 'token', type: 'address' }, { name: 'amount', type: 'uint256' }, { name: 'shares', type: 'uint256' }, { name: 'loot', type: 'uint256' }, { name: 'expiration', type: 'uint32' }, { name: 'baalgas', type: 'uint256' }, { name: 'details', type: 'string' }], outputs: [] },
+];
+
 const MULTISEND_ABI = [
   { type: 'function', name: 'multiSend', stateMutability: 'payable', inputs: [{ name: 'transactions', type: 'bytes' }], outputs: [] },
 ];
@@ -80,6 +86,11 @@ function stringify(value) {
 
 function tx(to, data, value = 0n) {
   return { chainId: Number(process.env.CHAIN_ID || BASE_CHAIN_ID), to, value: value.toString(), data };
+}
+
+function normalizeToken(value) {
+  if (!value || value.toUpperCase() === 'ETH' || value.toUpperCase() === 'NATIVE') return ZERO;
+  return value;
 }
 
 function encodeValues(types, values) {
@@ -195,6 +206,15 @@ async function graphProposals(dao) {
   }`, { daoid: dao.toLowerCase(), first: Number(arg('first', 20)), skip: Number(arg('skip', 0)) });
 }
 
+async function graphDaoHistory(dao) {
+  return request(graphUrl(), gql`query history($daoid: String!, $first: Int!, $skip: Int!) {
+    dao(id: $daoid) { ${DAO_FIELDS} }
+    proposals(first: $first, skip: $skip, orderBy: createdAt, orderDirection: desc, where: { dao: $daoid }) {
+      ${PROPOSAL_FIELDS}
+    }
+  }`, { daoid: dao.toLowerCase(), first: Number(arg('first', 100)), skip: Number(arg('skip', 0)) });
+}
+
 function proposalTx({ dao, actions, title, description, link, proposalType, expiration = 0, baalGas = 0, value = 0n }) {
   const proposalData = encodeMultiAction(actions);
   const data = encodeFunctionData({
@@ -219,17 +239,31 @@ function client() {
 
 async function sendIfRequested(unsigned) {
   if (!has('send')) return unsigned;
-  if (!process.env.PRIVATE_KEY) throw new Error('Set PRIVATE_KEY to send');
-  const account = privateKeyToAccount(process.env.PRIVATE_KEY);
+  const privateKey = process.env.PRIVATE_KEY || getPrivateKeyFromVault();
+  if (!privateKey) throw new Error('Set PRIVATE_KEY to send, or use --vault-provider 1password --vault-item <item> [--vault-field private_key]');
+  const account = privateKeyToAccount(privateKey);
   const wallet = createWalletClient({ account, chain: base, transport: http(process.env.RPC_URL || arg('rpc')) });
   const hash = await wallet.sendTransaction({ account, to: unsigned.to, value: BigInt(unsigned.value || 0), data: unsigned.data });
   return { hash, from: account.address, unsigned };
 }
 
+function getPrivateKeyFromVault() {
+  const provider = arg('vault-provider');
+  if (!provider) return undefined;
+  if (provider !== '1password') throw new Error(`Unsupported vault provider: ${provider}`);
+  const item = arg('vault-item');
+  const field = arg('vault-field', 'private_key');
+  const vault = arg('vault');
+  if (!item) throw new Error('Missing --vault-item for 1Password');
+  const args = ['item', 'get', item, '--field', field, '--reveal'];
+  if (vault) args.push('--vault', vault);
+  return execFileSync('op', args, { encoding: 'utf8' }).trim();
+}
+
 async function main() {
   const command = process.argv[2];
   if (!command || command === '--help') {
-    console.log('Commands: new-account, read-dao, read-proposal, graph-dao, graph-proposal, graph-proposals, details, decode-proposal-data, decode-submit-proposal, signal, gov-settings, token-settings, sponsor, vote, process, cancel, summon. Add --send to broadcast write txs.');
+    console.log('Commands: new-account, read-dao, read-proposal, graph-dao, graph-proposal, graph-proposals, graph-dao-history, details, decode-proposal-data, decode-submit-proposal, signal, tribute, join-dao, gov-settings, token-settings, sponsor, vote, process, cancel, summon. Add --send to broadcast write txs.');
     return;
   }
 
@@ -289,6 +323,11 @@ async function main() {
     return;
   }
 
+  if (command === 'graph-dao-history') {
+    console.log(stringify(await graphDaoHistory(requireDao())));
+    return;
+  }
+
   if (command === 'read-dao') {
     const dao = requireDao();
     const c = client();
@@ -323,6 +362,22 @@ async function main() {
     if (!title) throw new Error('Missing --title');
     const postData = encodeFunctionData({ abi: POSTER_ABI, functionName: 'post', args: [JSON.stringify({ daoId: dao, table: 'signal', queryType: 'list', title, description, link }), POSTER_TAG_DAO_DB] });
     out = proposalTx({ dao, title, description, link, proposalType: 'SIGNAL', expiration: Number(arg('expiration', 0)), baalGas: BigInt(arg('baal-gas', 0)), value: BigInt(arg('value', 0)), actions: [{ to: POSTER, value: 0, data: postData, operation: 0 }] });
+  } else if (command === 'tribute' || command === 'join-dao') {
+    const dao = requireDao();
+    const title = arg('title', 'Tribute for DAO tokens');
+    const description = arg('description', '');
+    const link = arg('link', '');
+    const token = normalizeToken(arg('token', 'ETH'));
+    const amount = BigInt(arg('amount', '0'));
+    const shares = BigInt(arg('shares', '0'));
+    const loot = BigInt(arg('loot', '0'));
+    const value = token === ZERO ? amount : 0n;
+    const data = encodeFunctionData({
+      abi: TRIBUTE_MINION_ABI,
+      functionName: 'submitTributeProposal',
+      args: [dao, token, amount, shares, loot, Number(arg('expiration', 0)), BigInt(arg('baal-gas', 0)), details({ title, description, link, proposalType: 'TOKENS_FOR_SHARES' })],
+    });
+    out = { ...tx(TRIBUTE_MINION, data, value), note: token === ZERO ? 'Native ETH tribute. Transaction value equals amount.' : 'ERC-20 tribute. Approve the Tribute Minion before submitting if allowance is insufficient.' };
   } else if (command === 'gov-settings') {
     const dao = requireDao();
     const p = jsonFile(arg('params'));

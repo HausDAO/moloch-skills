@@ -59,6 +59,14 @@ PRIVATE_KEY=0x...
 
 `PRIVATE_KEY` is only required for `--send` operations. Never request or use it for read-only commands.
 
+If 1Password CLI is available, Prism may use:
+
+```bash
+--vault-provider 1password --vault-item "<item>" --vault-field private_key
+```
+
+Use a dedicated RPC provider such as Alchemy or Infura for agent runs. Public Base RPC is acceptable for small tests but can rate limit chatty agents.
+
 ## Safety Rules
 
 - Read-only skills may run without extra confirmation.
@@ -68,6 +76,7 @@ PRIVATE_KEY=0x...
 - Before broadcasting, re-read current DAO/proposal state from chain.
 - Graph data can lag; use direct contract reads for permissions, timing, and threshold checks.
 - Record transaction hashes and re-read state after confirmation.
+- Keep operator output abstract by default. Do not paste ABI fragments, large calldata, or full Graph JSON unless requested.
 
 ## Recommended Prism Skill Split
 

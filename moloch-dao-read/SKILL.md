@@ -17,6 +17,7 @@ node ../moloch-shared/scripts/moloch.mjs read-proposal --dao 0xDAO --proposal 1
 node ../moloch-shared/scripts/moloch.mjs graph-dao --dao 0xDAO
 node ../moloch-shared/scripts/moloch.mjs graph-proposal --dao 0xDAO --proposal 1
 node ../moloch-shared/scripts/moloch.mjs graph-proposals --dao 0xDAO --first 20
+node ../moloch-shared/scripts/moloch.mjs graph-dao-history --dao 0xDAO --first 100
 ```
 
 Required env:
@@ -29,6 +30,8 @@ export GRAPH_API_KEY="..."
 For Graph, you can pass `--graph-url` instead of `GRAPH_API_KEY`. The default Base DAOhaus endpoint is The Graph Gateway subgraph id `7yh4eHJ4qpHEiLPAk9BXhL5YgYrTrRE6gWy8x4oHyAqW`.
 
 ## What To Check
+
+Prefer Graph batch reads for history and context. Avoid looping over many direct RPC calls unless the user needs fresh contract truth for each item.
 
 DAO-level:
 

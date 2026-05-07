@@ -63,6 +63,7 @@ Notes:
 - `GRAPH_URL` and `GRAPH_API_KEY` are read-only indexing inputs. They cannot submit transactions.
 - Do not commit `.env` files, private keys, mnemonics, or raw signer credentials.
 - For production use, prefer a pre-provisioned managed wallet or custody system. Local key generation is mainly for fresh operator or test wallets.
+- Public RPCs are acceptable for one-off tests, but agents should use Alchemy, Infura, or another dedicated RPC for repeated reads.
 
 ## Base Constants
 
@@ -116,6 +117,7 @@ Read indexed DAOhaus subgraph state:
 node moloch-shared/scripts/moloch.mjs graph-dao --dao 0xDAO
 node moloch-shared/scripts/moloch.mjs graph-proposal --dao 0xDAO --proposal 1
 node moloch-shared/scripts/moloch.mjs graph-proposals --dao 0xDAO --first 20
+node moloch-shared/scripts/moloch.mjs graph-dao-history --dao 0xDAO --first 100
 ```
 
 Build proposal details or decode proposal calldata:
@@ -130,6 +132,7 @@ Build unsigned transactions:
 
 ```bash
 node moloch-shared/scripts/moloch.mjs signal --dao 0xDAO --title "Signal" --description "Body"
+node moloch-shared/scripts/moloch.mjs tribute --dao 0xDAO --token ETH --amount 1000000000000000 --shares 0 --loot 1000000000000000000000
 node moloch-shared/scripts/moloch.mjs gov-settings --dao 0xDAO --params params.json
 node moloch-shared/scripts/moloch.mjs token-settings --dao 0xDAO --pause-shares false --pause-loot false
 node moloch-shared/scripts/moloch.mjs sponsor --dao 0xDAO --proposal 1
@@ -143,6 +146,37 @@ Broadcast only after review:
 ```bash
 node moloch-shared/scripts/moloch.mjs vote --dao 0xDAO --proposal 1 --approved true --send
 ```
+
+With 1Password CLI, avoid exporting the key into the shell:
+
+```bash
+node moloch-shared/scripts/moloch.mjs vote \
+  --dao 0xDAO \
+  --proposal 1 \
+  --approved true \
+  --send \
+  --vault-provider 1password \
+  --vault-item "Moloch Agent Wallet" \
+  --vault-field private_key
+```
+
+Do not print the revealed key. The CLI reads it in-process and uses it only for the signed transaction.
+
+## Operator Output Style
+
+Agents should default to concise, human-readable summaries. Do not paste full ABI fragments, large calldata blobs, or raw Graph JSON unless the operator asks for them.
+
+Good default output:
+
+- command run
+- relevant defaults used
+- whether the tx is unsigned or broadcast
+- target contract/address
+- value in ETH/wei
+- risk or confirmation needed
+- tx hash after broadcast
+
+Raw JSON/calldata should be saved to a file or shown only on request.
 
 ## Onchain Submission Requirements
 
@@ -170,6 +204,7 @@ export GRAPH_URL="https://gateway-arbitrum.network.thegraph.com/api/YOUR_GRAPH_K
 - Use Graph data for proposal metadata, votes, and the original indexed `proposalData`.
 - Use direct contract reads for permission, timing, and current threshold checks.
 - Governance `quorum` and `minRetention` are raw whole-number percentages from `0` to `100`, not 18-decimal fixed-point values.
+- Use `graph-dao-history` for broad proposal history instead of looping over direct RPC reads.
 - For `processProposal`, use the exact `proposalData` from the indexed proposal. Do not reconstruct it if Graph has the original payload.
 - Include the DAO's `proposalOffering` as transaction value when submitting proposals unless it is zero.
 - Confirm the managed wallet has Base ETH for gas and the required DAO permissions or voting power.

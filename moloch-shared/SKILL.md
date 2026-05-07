@@ -47,10 +47,12 @@ node scripts/moloch.mjs read-proposal --dao 0xDAO --proposal 1
 node scripts/moloch.mjs graph-dao --dao 0xDAO
 node scripts/moloch.mjs graph-proposal --dao 0xDAO --proposal 1
 node scripts/moloch.mjs graph-proposals --dao 0xDAO --first 20
+node scripts/moloch.mjs graph-dao-history --dao 0xDAO --first 100
 node scripts/moloch.mjs details --title "..." --description "..." --proposal-type SIGNAL
 node scripts/moloch.mjs decode-proposal-data --data 0x...
 node scripts/moloch.mjs decode-submit-proposal --data 0x...
 node scripts/moloch.mjs signal --dao 0xDAO --title "..." --description "..."
+node scripts/moloch.mjs tribute --dao 0xDAO --token ETH --amount 1000000000000000 --shares 0 --loot 1000000000000000000000
 node scripts/moloch.mjs gov-settings --dao 0xDAO --params params.json
 node scripts/moloch.mjs token-settings --dao 0xDAO --pause-shares false --pause-loot false
 node scripts/moloch.mjs sponsor --dao 0xDAO --proposal 1
@@ -60,6 +62,12 @@ node scripts/moloch.mjs summon --params summon.json
 ```
 
 Add `--send` only after reviewing the tx JSON and confirming the managed wallet has permission and funds.
+
+Use `--vault-provider 1password --vault-item <item> --vault-field private_key` with `--send` to load a private key from 1Password CLI without exporting `PRIVATE_KEY`.
+
+## Operator Output
+
+Default to abstract summaries for humans. Do not print ABI fragments, large calldata, or full Graph JSON unless the user asks. If raw data is needed for review, save it to a file and summarize the file path, target, value, and risk.
 
 ## Proposal Data
 
@@ -86,6 +94,7 @@ Use Graph reads for:
 - indexed `proposalData` needed for processing
 - vote history and member vote balances
 - Safe/vault/shaman lists and DAO profile data
+- broad proposal history with `graph-dao-history`
 
 Use direct contract reads for:
 
