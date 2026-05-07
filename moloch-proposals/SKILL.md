@@ -79,11 +79,13 @@ DAOhaus has at least two common executable membership paths:
 
 Use `mint-shares` for grants, steward admissions, retroactive rewards, or membership approvals where no ETH/ERC-20 contribution should be escrowed by Tribute Minion.
 
+Share and loot quantities use human 18-decimal units by default. Use `--amount 10000` for 10,000 shares, not `10000000000000000000000`. Use `--amount-raw`, `--shares-raw`, or `--loot-raw` only when you intentionally want exact base units.
+
 ```bash
 node ../moloch-shared/scripts/moloch.mjs mint-shares \
   --dao 0xDAO \
   --to 0xMEMBER \
-  --amount 1000000000000000000 \
+  --amount 1 \
   --title "Admit new voting member" \
   --description "Grant 1 voting share to the approved member." \
   --send
@@ -95,7 +97,7 @@ For multiple recipients, pass comma-separated values with matching lengths:
 node ../moloch-shared/scripts/moloch.mjs mint-shares \
   --dao 0xDAO \
   --to 0xA,0xB \
-  --amount 1000000000000000000,2500000000000000000 \
+  --amount 1,2.5 \
   --title "Mint contributor shares" \
   --send
 ```
@@ -113,7 +115,7 @@ node ../moloch-shared/scripts/moloch.mjs tribute \
   --token ETH \
   --amount 1000000000000000 \
   --shares 0 \
-  --loot 1000000000000000000000 \
+  --loot 1000 \
   --title "Join the DAO" \
   --send
 ```
@@ -125,12 +127,12 @@ node ../moloch-shared/scripts/moloch.mjs tribute \
   --dao 0xDAO \
   --token 0xTOKEN \
   --amount 1000000 \
-  --shares 1000000000000000000 \
+  --shares 1 \
   --loot 0 \
   --send
 ```
 
-For ERC-20 tribute, check and approve Tribute Minion allowance before broadcasting. For ETH tribute, tx `value` equals `amount`.
+For ERC-20 tribute, check and approve Tribute Minion allowance before broadcasting. For ETH tribute, tx `value` equals `amount`. Tribute token `--amount` remains raw token units because ERC-20 decimals vary; share/loot outputs use human 18-decimal units by default.
 
 ## DAO Metadata / Charter / Join Rules Proposal
 
@@ -173,7 +175,7 @@ node ../moloch-shared/scripts/moloch.mjs join-dao \
   --dao 0xDAO \
   --token ETH \
   --amount 0 \
-  --shares 10000000000000000000000 \
+  --shares 10000 \
   --loot 0 \
   --title "Admit Charter Steward" \
   --send

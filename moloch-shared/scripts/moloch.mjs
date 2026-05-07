@@ -12,6 +12,7 @@ import {
   encodeFunctionData,
   http,
   parseAbiParameters,
+  parseUnits,
   toFunctionSelector,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
@@ -34,6 +35,7 @@ const POSTER_POST_SELECTOR = toFunctionSelector('post(string,string)');
 const ACTION_GAS_LIMIT_ADDITION = 150000n;
 const PROCESS_PROPOSAL_GAS_LIMIT_ADDITION = 400000n;
 const DEFAULT_PROCESS_GAS_LIMIT = 800000n;
+const BAAL_TOKEN_DECIMALS = 18;
 
 const BAAL_ABI = [
   { type: 'function', name: 'submitProposal', stateMutability: 'payable', inputs: [{ name: 'proposalData', type: 'bytes' }, { name: 'expiration', type: 'uint32' }, { name: 'baalGas', type: 'uint256' }, { name: 'details', type: 'string' }], outputs: [] },
@@ -141,6 +143,26 @@ function normalizeToken(value) {
 function listArg(name, fallback = '') {
   const value = arg(name, fallback);
   return String(value).split(',').map((item) => item.trim()).filter(Boolean);
+}
+
+function parseBaalTokenUnits(name, value) {
+  const normalized = String(value).trim();
+  if (!/^\d+(\.\d+)?$/.test(normalized)) throw new Error(`${name} must be a positive decimal number.`);
+  return parseUnits(normalized, BAAL_TOKEN_DECIMALS);
+}
+
+function baalTokenArg(name, fallback = '0') {
+  const raw = arg(`${name}-raw`);
+  if (raw != null) return { value: BigInt(raw), input: raw, mode: 'raw' };
+  const input = arg(name, fallback);
+  return { value: parseBaalTokenUnits(name, input), input, mode: 'human-18-decimal' };
+}
+
+function baalTokenListArg(name) {
+  const rawValues = listArg(`${name}-raw`);
+  if (rawValues.length) return { values: rawValues.map((value) => BigInt(value)), inputs: rawValues, mode: 'raw' };
+  const inputs = listArg(name);
+  return { values: inputs.map((value) => parseBaalTokenUnits(name, value)), inputs, mode: 'human-18-decimal' };
 }
 
 function encodeValues(types, values) {
@@ -885,9 +907,16 @@ Options:
   --require-baal-gas-estimate  Error if baalGas cannot be estimated
   --safe 0xSAFE        DAO Safe address for DAOhaus-style baalGas estimation
   --gas-limit <n>      Explicit transaction gas limit for sends
+  --amount-raw <n>     Raw 18-decimal base units for mint-shares amount
+  --shares-raw <n>     Raw 18-decimal base units for Tribute Minion shares
+  --loot-raw <n>       Raw 18-decimal base units for Tribute Minion loot
   --send               Broadcast a write tx
   --wait               Wait for receipt after send
   --vault-provider 1password --vault-item <item> [--vault-field private_key]
+
+Share and loot quantities default to human 18-decimal units:
+  --amount 10000 on mint-shares encodes 10000000000000000000000
+  --shares 1 on tribute encodes 1000000000000000000
 `);
     return;
   }
@@ -1068,27 +1097,30 @@ Options:
     const link = arg('link', '');
     const token = normalizeToken(arg('token', 'ETH'));
     const amount = BigInt(arg('amount', '0'));
-    const shares = BigInt(arg('shares', '0'));
-    const loot = BigInt(arg('loot', '0'));
+    const sharesParsed = baalTokenArg('shares', '0');
+    const lootParsed = baalTokenArg('loot', '0');
+    const shares = sharesParsed.value;
+    const loot = lootParsed.value;
     const value = token === ZERO ? amount : 0n;
     const data = encodeFunctionData({
       abi: TRIBUTE_MINION_ABI,
       functionName: 'submitTributeProposal',
       args: [dao, token, amount, shares, loot, Number(arg('expiration', 0)), BigInt(arg('baal-gas', 0)), details({ title, description, link, proposalType: 'TOKENS_FOR_SHARES' })],
     });
-    out = withSummary(tx(TRIBUTE_MINION, data, value), { action: 'submitTributeProposal', proposalKind: 'TOKENS_FOR_SHARES', submissionTarget: 'TRIBUTE_MINION', dao, token, amount: amount.toString(), shares: shares.toString(), loot: loot.toString(), note: token === ZERO ? 'Native ETH tribute. Transaction value equals amount.' : 'ERC-20 tribute. Approve the Tribute Minion before submitting if allowance is insufficient.' });
+    out = withSummary(tx(TRIBUTE_MINION, data, value), { action: 'submitTributeProposal', proposalKind: 'TOKENS_FOR_SHARES', submissionTarget: 'TRIBUTE_MINION', dao, token, amount: amount.toString(), shares: shares.toString(), loot: loot.toString(), sharesInput: sharesParsed.input, lootInput: lootParsed.input, shareLootUnitMode: sharesParsed.mode === lootParsed.mode ? sharesParsed.mode : 'mixed', note: token === ZERO ? 'Native ETH tribute. Transaction value equals amount. Shares/loot are human 18-decimal units unless --shares-raw/--loot-raw is used.' : 'ERC-20 tribute. Approve the Tribute Minion before submitting if allowance is insufficient. Shares/loot are human 18-decimal units unless --shares-raw/--loot-raw is used.' });
   } else if (command === 'mint-shares') {
     const dao = requireDao();
     const title = arg('title', 'Mint voting shares');
     const description = arg('description', '');
     const link = arg('link', '');
     const recipients = listArg('to');
-    const amounts = listArg('amount').map((amount) => BigInt(amount));
+    const parsedAmounts = baalTokenListArg('amount');
+    const amounts = parsedAmounts.values;
     if (!recipients.length) throw new Error('Missing --to 0xMEMBER[,0xMEMBER...]');
-    if (!amounts.length) throw new Error('Missing --amount 1000000000000000000[,...]');
+    if (!amounts.length) throw new Error('Missing --amount 1[,...] for human share units, or --amount-raw 1000000000000000000[,...] for raw base units');
     if (amounts.length !== recipients.length) throw new Error('--to and --amount must have the same number of comma-separated values');
     const action = encodeFunctionData({ abi: BAAL_ABI, functionName: 'mintShares', args: [recipients, amounts] });
-    out = withSummary(await proposalTx({ dao, title, description, link, proposalType: 'MINT_SHARES', expiration: Number(arg('expiration', 0)), baalGas: arg('baal-gas') == null ? undefined : BigInt(arg('baal-gas')), value: BigInt(arg('value', 0)), actions: [{ to: dao, value: 0, data: action, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'MINT_SHARES', submissionTarget: 'BAAL', dao, recipients, amounts: amounts.map(String), note: 'Direct Baal mintShares proposal. Use when the DAO intends to grant voting shares without Tribute Minion token tribute.' });
+    out = withSummary(await proposalTx({ dao, title, description, link, proposalType: 'MINT_SHARES', expiration: Number(arg('expiration', 0)), baalGas: arg('baal-gas') == null ? undefined : BigInt(arg('baal-gas')), value: BigInt(arg('value', 0)), actions: [{ to: dao, value: 0, data: action, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'MINT_SHARES', submissionTarget: 'BAAL', dao, recipients, amounts: amounts.map(String), amountInputs: parsedAmounts.inputs, amountUnitMode: parsedAmounts.mode, note: 'Direct Baal mintShares proposal. --amount uses human 18-decimal share units; use --amount-raw only for exact base units.' });
   } else if (command === 'gov-settings') {
     const dao = requireDao();
     const p = jsonFile(arg('params'));
