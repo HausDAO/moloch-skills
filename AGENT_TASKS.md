@@ -110,7 +110,7 @@ Steps:
 
 Priority order:
 1. Vote on proposals in voting before their voting period ends.
-2. Process passed proposals that are ready for execution.
+2. Process the first item from `process-queue`; then re-run the queue before processing another proposal.
 3. Sponsor good unsponsored proposals when appropriate.
 4. Flag conflicting or unclear proposals for revision.
 5. Do not draft new proposals in this task.

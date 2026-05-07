@@ -501,6 +501,7 @@ function queueItem(item) {
     hasProposalData: item.lifecycle.hasProposalData,
     chainReady: item.lifecycle.chainReady,
     processableNow: item.lifecycle.processableNow,
+    previousProposalProcessed: item.lifecycle.prevStateEligible,
     indexedPassed: Boolean(item.proposal.passed),
     indexedProcessed: Boolean(item.proposal.processed),
     indexedCancelled: Boolean(item.proposal.cancelled),
@@ -512,7 +513,7 @@ async function processQueueFromProposals(dao, proposals) {
   if (!(process.env.RPC_URL || arg('rpc'))) {
     return candidates
       .sort((a, b) => Number(a.proposal.proposalId) - Number(b.proposal.proposalId))
-      .map((item) => ({ ...queueItem(item), status: 'needsChainPreflight', note: 'Set RPC_URL or pass --rpc to verify direct chain processability.' }));
+      .map((item, index) => ({ ...queueItem(item), queueIndex: index, processFirst: index === 0, status: 'needsChainPreflight', note: 'Set RPC_URL or pass --rpc to verify direct chain processability.' }));
   }
   const checked = await Promise.all(candidates.map(async (item) => {
     try {
@@ -525,7 +526,7 @@ async function processQueueFromProposals(dao, proposals) {
   return checked
     .filter((item) => item.lifecycle.processableNow)
     .sort((a, b) => Number(a.proposal.proposalId) - Number(b.proposal.proposalId))
-    .map(queueItem);
+    .map((item, index) => ({ ...queueItem(item), queueIndex: index, processFirst: index === 0 }));
 }
 
 function summarizeProposals(proposals) {
