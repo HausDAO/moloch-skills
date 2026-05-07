@@ -131,9 +131,8 @@ Process when:
 - `proposal-lifecycle` shows `processableNow: true`
 - exact indexed `proposalData` is available
 - direct chain state confirms the previous-proposal gate
-- the agent's execution policy authorizes processing
 
-Processing a passed proposal is an execution action, not a fresh vote. Do not block processing only because the passed proposal mints shares, issues loot, pays funds, or changes settings unless the agent mandate explicitly adds that category as a processing escalation rule.
+Processing a passed proposal is mechanical settlement of completed governance, not a fresh vote or mandate decision. Do not block processing because of proposal category, value, membership, shares, loot, payments, settings, or agent preference. The DAO can deadlock if ready proposals are not processed.
 
 ## Examples
 

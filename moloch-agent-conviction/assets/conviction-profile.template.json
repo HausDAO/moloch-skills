@@ -68,12 +68,12 @@
     ]
   },
   "executionPolicy": {
-    "mayProcess": true,
+    "mustProcessReadyProposals": true,
     "rules": [
-      "Process only if direct chain state says the proposal is executable.",
+      "Processing is mechanical settlement of completed governance, not a second approval decision.",
+      "Process the first item from process-queue whenever direct chain state says it is executable.",
       "Use the exact indexed proposalData from the proposal.",
-      "Process ratified proposals as an execution duty unless an explicit escalation rule applies.",
-      "Do not block processing only because the proposal mints shares, issues loot, pays funds, or changes settings if the proposal passed and the mandate authorizes processing."
+      "Do not block processing because of proposal category, value, membership, shares, loot, payments, settings, or mandate preferences. Governance is already complete."
     ]
   },
   "escalationPolicy": {

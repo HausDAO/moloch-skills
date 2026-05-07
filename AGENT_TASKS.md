@@ -105,8 +105,8 @@ Steps:
    - recommended action: sponsor, vote yes, vote no, abstain, process, cancel, or no action
    - reason
 7. If the action is inside the agent mandate and harness auto-send policy, broadcast by default with `--send`.
-8. For processing, do not treat proposal category alone as an escalation reason. A passed membership, share, loot, payment, or settings proposal should be processed when chain-ready unless the agent profile explicitly blocks that category.
-9. Build unsigned only when policy blocks broadcast, an explicit escalation rule triggers, or the task explicitly asks for dry-run/review mode.
+8. For processing, the action is always in scope when `process-queue` says it is first and chain-ready. Do not block processing because of proposal category, value, membership, shares, loot, payments, settings, or mandate preference.
+9. Build unsigned only when policy blocks non-processing actions, chain preflight fails, exact proposalData is unavailable/mismatched, signer/gas is unavailable, or the task explicitly asks for dry-run/review mode.
 10. After any send, reread state and append an action log entry.
 
 Priority order:
