@@ -24,6 +24,7 @@ const BASE_CHAIN_ID = 8453;
 const SUMMONER = '0x97Aaa5be8B38795245f1c38A883B44cccdfB3E11';
 const POSTER = '0x000000000000cd17345801aa8147b8D3950260FF';
 const TRIBUTE_MINION = '0x00768B047f73D88b6e9c14bcA97221d6E179d468';
+const GNOSIS_MULTISEND = '0x998739BFdAAdde7C933B942a68053933098f9EDa';
 const DAOHAUS_BASE_SUBGRAPH_ID = '7yh4eHJ4qpHEiLPAk9BXhL5YgYrTrRE6gWy8x4oHyAqW';
 const THE_GRAPH_GATEWAY = 'https://gateway.thegraph.com/api';
 const POSTER_TAG_DAO_DB = 'daohaus.proposal.database';
@@ -48,6 +49,8 @@ const BAAL_ABI = [
   { type: 'function', name: 'latestSponsoredProposalId', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint32' }] },
   { type: 'function', name: 'getProposalStatus', stateMutability: 'view', inputs: [{ name: 'id', type: 'uint32' }], outputs: [{ type: 'bool[4]' }] },
   { type: 'function', name: 'state', stateMutability: 'view', inputs: [{ name: 'id', type: 'uint32' }], outputs: [{ type: 'uint8' }] },
+  { type: 'function', name: 'avatar', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
+  { type: 'function', name: 'target', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
   { type: 'function', name: 'memberVoted', stateMutability: 'view', inputs: [{ type: 'address' }, { type: 'uint32' }], outputs: [{ type: 'bool' }] },
   { type: 'function', name: 'proposals', stateMutability: 'view', inputs: [{ type: 'uint256' }], outputs: [{ name: 'id', type: 'uint32' }, { name: 'prevProposalId', type: 'uint32' }, { name: 'votingStarts', type: 'uint32' }, { name: 'votingEnds', type: 'uint32' }, { name: 'graceEnds', type: 'uint32' }, { name: 'expiration', type: 'uint32' }, { name: 'baalGas', type: 'uint256' }, { name: 'yesVotes', type: 'uint256' }, { name: 'noVotes', type: 'uint256' }, { name: 'maxTotalSharesAndLootAtVote', type: 'uint256' }, { name: 'maxTotalSharesAtSponsor', type: 'uint256' }, { name: 'sponsor', type: 'address' }, { name: 'proposalDataHash', type: 'bytes32' }] },
 ];
@@ -66,6 +69,10 @@ const TRIBUTE_MINION_ABI = [
 
 const MULTISEND_ABI = [
   { type: 'function', name: 'multiSend', stateMutability: 'payable', inputs: [{ name: 'transactions', type: 'bytes' }], outputs: [] },
+];
+
+const GNOSIS_MODULE_ABI = [
+  { type: 'function', name: 'execTransactionFromModule', stateMutability: 'nonpayable', inputs: [{ name: 'to', type: 'address' }, { name: 'value', type: 'uint256' }, { name: 'data', type: 'bytes' }, { name: 'operation', type: 'uint8' }], outputs: [{ type: 'bool' }] },
 ];
 
 function arg(name, fallback) {
@@ -96,7 +103,7 @@ function tx(to, data, value = 0n) {
 }
 
 function withSummary(unsigned, summary) {
-  return { summary: { chainId: unsigned.chainId, to: unsigned.to, value: unsigned.value, baalGas: unsigned.baalGas, estimatedBaalGas: unsigned.estimatedBaalGas, ...summary }, ...unsigned };
+  return { summary: { chainId: unsigned.chainId, to: unsigned.to, value: unsigned.value, baalGas: unsigned.baalGas, estimatedBaalGas: unsigned.estimatedBaalGas, baalGasEstimateError: unsigned.baalGasEstimateError, ...summary }, ...unsigned };
 }
 
 function compact(value) {
@@ -687,31 +694,62 @@ function summonProfile(p) {
   }).filter(([, value]) => value !== undefined && value !== null && value !== ''));
 }
 
-async function estimateBaalGas(dao, actions) {
+async function safeAddressForDao(dao) {
+  const explicit = arg('safe') || arg('safe-address') || process.env.SAFE_ADDRESS;
+  if (explicit) return explicit;
+  if (process.env.RPC_URL || arg('rpc')) {
+    try {
+      return await client().readContract({ address: dao, abi: BAAL_ABI, functionName: 'avatar' });
+    } catch {}
+  }
+  if (!(process.env.GRAPH_URL || process.env.GRAPH_API_KEY || arg('graph-url') || arg('graph-key'))) return null;
+  try {
+    const { dao: indexedDao } = await graphDao(dao);
+    return indexedDao?.safeAddress || null;
+  } catch {
+    return null;
+  }
+}
+
+async function estimateBaalGas(dao, actions, proposalData) {
+  const safeAddress = await safeAddressForDao(dao);
+  if (!safeAddress) throw new Error('Missing DAO Safe address for DAOhaus-style baalGas estimation. Pass --safe 0xSAFE or configure Graph.');
   const c = client();
-  const estimates = await Promise.all(actions.map((action) => c.estimateGas({
+  const moduleData = encodeFunctionData({
+    abi: GNOSIS_MODULE_ABI,
+    functionName: 'execTransactionFromModule',
+    args: [GNOSIS_MULTISEND, 0n, proposalData, 1],
+  });
+  const estimate = await c.estimateGas({
     account: dao,
-    to: action.to,
-    value: BigInt(action.value || 0),
-    data: action.data,
-  })));
-  return estimates.reduce((total, gas) => total + BigInt(gas || 0), 0n) + BigInt(actions.length) * ACTION_GAS_LIMIT_ADDITION;
+    to: safeAddress,
+    value: 0n,
+    data: moduleData,
+  });
+  return BigInt(estimate || 0) + BigInt(actions.length) * ACTION_GAS_LIMIT_ADDITION;
 }
 
 async function proposalTx({ dao, actions, title, description, link, proposalType, expiration = 0, baalGas, value = 0n }) {
   const proposalData = encodeMultiAction(actions);
   let resolvedBaalGas = baalGas == null ? 0n : BigInt(baalGas);
   let estimatedBaalGas = false;
+  let baalGasEstimateError;
   if (baalGas == null && (process.env.RPC_URL || arg('rpc')) && !has('no-estimate-baal-gas')) {
-    resolvedBaalGas = await estimateBaalGas(dao, actions);
-    estimatedBaalGas = true;
+    try {
+      resolvedBaalGas = await estimateBaalGas(dao, actions, proposalData);
+      estimatedBaalGas = true;
+    } catch (error) {
+      baalGasEstimateError = error.shortMessage || error.message;
+      if (has('require-baal-gas-estimate')) throw error;
+      resolvedBaalGas = 0n;
+    }
   }
   const data = encodeFunctionData({
     abi: BAAL_ABI,
     functionName: 'submitProposal',
     args: [proposalData, Number(expiration), resolvedBaalGas, details({ title, description, link, proposalType })],
   });
-  return { ...tx(dao, data, value), proposalData, baalGas: resolvedBaalGas.toString(), estimatedBaalGas };
+  return { ...tx(dao, data, value), proposalData, baalGas: resolvedBaalGas.toString(), estimatedBaalGas, baalGasEstimateError };
 }
 
 function requireDao() {
@@ -795,6 +833,8 @@ async function main() {
 Options:
   --compact            Hide large calldata/proposalData in output
   --no-estimate-baal-gas  Keep Baal submitProposal baalGas at 0 unless --baal-gas is provided
+  --require-baal-gas-estimate  Error if baalGas cannot be estimated
+  --safe 0xSAFE        DAO Safe address for DAOhaus-style baalGas estimation
   --send               Broadcast a write tx
   --wait               Wait for receipt after send
   --vault-provider 1password --vault-item <item> [--vault-field private_key]
