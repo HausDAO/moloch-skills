@@ -64,6 +64,8 @@ node ../moloch-shared/scripts/moloch.mjs signal \
 Signal proposals encode a Poster `post` action inside `submitProposal`.
 They do not issue shares, issue loot, transfer funds, or admit members.
 
+If DAOhaus Admin shows a Poster decoding error such as `Encoded function signature "0x..." not found on ABI`, treat it as a malformed action until proven otherwise. A valid Poster signal action uses `post(string,string)` with selector `0x0ae1b13d`. Run `decode-submit-proposal` or `decode-proposal-data`; the decoder annotates Poster actions and flags unknown selectors.
+
 ## Tribute / Join DAO Proposal
 
 Use this for tokens-for-shares or tokens-for-loot requests through the DAOhaus Tribute Minion.

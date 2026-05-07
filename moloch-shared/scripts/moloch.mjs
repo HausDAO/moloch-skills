@@ -12,6 +12,7 @@ import {
   encodeFunctionData,
   http,
   parseAbiParameters,
+  toFunctionSelector,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { generatePrivateKey } from 'viem/accounts';
@@ -28,6 +29,7 @@ const THE_GRAPH_GATEWAY = 'https://gateway.thegraph.com/api';
 const POSTER_TAG_DAO_DB = 'daohaus.proposal.database';
 const POSTER_TAG_SUMMONER = 'daohaus.summoner.daoProfile';
 const POSTER_TAG_DAO_PROFILE_UPDATE = 'daohaus.shares.daoProfile';
+const POSTER_POST_SELECTOR = toFunctionSelector('post(string,string)');
 
 const BAAL_ABI = [
   { type: 'function', name: 'submitProposal', stateMutability: 'payable', inputs: [{ name: 'proposalData', type: 'bytes' }, { name: 'expiration', type: 'uint32' }, { name: 'baalGas', type: 'uint256' }, { name: 'details', type: 'string' }], outputs: [] },
@@ -159,6 +161,22 @@ function decodeMultiSendBytes(bytes) {
     txs.push({ operation, to, value: value.toString(), data });
   }
   return txs;
+}
+
+function decodeAction(action) {
+  const selector = (action.data || '0x').slice(0, 10);
+  if ((action.to || '').toLowerCase() === POSTER.toLowerCase()) {
+    try {
+      const decoded = decodeFunctionData({ abi: POSTER_ABI, data: action.data });
+      const [content, tag] = decoded.args;
+      let parsedContent = content;
+      try { parsedContent = JSON.parse(content); } catch {}
+      return { ...action, decoded: { contract: 'Poster', functionName: decoded.functionName, selector, expectedSelector: POSTER_POST_SELECTOR, tag, content: parsedContent } };
+    } catch (error) {
+      return { ...action, decoded: { contract: 'Poster', selector, expectedSelector: POSTER_POST_SELECTOR, error: `Could not decode as Poster post(string,string): ${error.shortMessage || error.message}` } };
+    }
+  }
+  return { ...action, decoded: { selector } };
 }
 
 function encodeMultiAction(actions) {
@@ -777,7 +795,7 @@ Options:
     const data = arg('data') || arg('proposal-data');
     if (!data) throw new Error('Missing --data 0x...');
     const decoded = decodeFunctionData({ abi: MULTISEND_ABI, data });
-    console.log(stringify({ functionName: decoded.functionName, actions: decodeMultiSendBytes(decoded.args[0]) }));
+    console.log(stringify({ functionName: decoded.functionName, actions: decodeMultiSendBytes(decoded.args[0]).map(decodeAction) }));
     return;
   }
 
@@ -791,7 +809,7 @@ Options:
     let actions = [];
     try {
       const multi = decodeFunctionData({ abi: MULTISEND_ABI, data: proposalData });
-      actions = decodeMultiSendBytes(multi.args[0]);
+      actions = decodeMultiSendBytes(multi.args[0]).map(decodeAction);
     } catch {}
     console.log(stringify({ functionName: decoded.functionName, proposalData, expiration, baalGas, details: parsedDetails, actions }));
     return;
