@@ -142,7 +142,7 @@ Steps:
 6. Check your mandate checklist.
 7. If fewer than 3 proposals are currently in voting, choose at most one:
    - draft a signal proposal
-   - draft a tribute/join/reward proposal
+   - draft a tribute/join/mint-shares/reward proposal
    - draft a DAO settings proposal
    - no action
 8. New proposals must:

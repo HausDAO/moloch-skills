@@ -68,6 +68,7 @@ node scripts/moloch.mjs signal --dao 0xDAO --title "..." --description "..."
 node scripts/moloch.mjs dao-meta --dao 0xDAO --name "DAO Name" --charter-uri ipfs://... --join-rules-uri ipfs://...
 node scripts/moloch.mjs dao-record --dao 0xDAO --table charter --content-file charter-record.json
 node scripts/moloch.mjs tribute --dao 0xDAO --token ETH --amount 1000000000000000 --shares 0 --loot 1000000000000000000000
+node scripts/moloch.mjs mint-shares --dao 0xDAO --to 0xMEMBER --amount 1000000000000000000
 node scripts/moloch.mjs gov-settings --dao 0xDAO --params params.json
 node scripts/moloch.mjs token-settings --dao 0xDAO --pause-shares false --pause-loot false
 node scripts/moloch.mjs sponsor --dao 0xDAO --proposal 1
@@ -100,6 +101,7 @@ Moloch V3 proposals call `submitProposal(bytes proposalData, uint32 expiration, 
 
 - `proposalData` is usually a Gnosis MultiSend `multiSend(bytes)` call encoded against the MultiSend ABI.
 - Signal proposals post metadata through Poster.
+- Direct membership grants encode `mintShares(address[],uint256[])` against the Baal DAO.
 - Governance settings encode `setGovernanceConfig(bytes)` where the inner bytes are:
   `uint32 votingPeriodInSeconds, uint32 gracePeriodInSeconds, uint256 newOffering, uint256 quorum, uint256 sponsorThreshold, uint256 minRetention`.
 - `quorum` and `minRetention` are raw whole-number percentages from `0` to `100`, not 18-decimal fixed-point values. Use `30` for 30%, `50` for 50%, and `67` for an approximate 66.6% retention guard.

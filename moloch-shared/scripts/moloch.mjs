@@ -41,6 +41,7 @@ const BAAL_ABI = [
   { type: 'function', name: 'cancelProposal', stateMutability: 'nonpayable', inputs: [{ name: 'id', type: 'uint32' }], outputs: [] },
   { type: 'function', name: 'setGovernanceConfig', stateMutability: 'nonpayable', inputs: [{ name: '_governanceConfig', type: 'bytes' }], outputs: [] },
   { type: 'function', name: 'setAdminConfig', stateMutability: 'nonpayable', inputs: [{ name: 'pauseShares', type: 'bool' }, { name: 'pauseLoot', type: 'bool' }], outputs: [] },
+  { type: 'function', name: 'mintShares', stateMutability: 'nonpayable', inputs: [{ name: 'to', type: 'address[]' }, { name: 'amount', type: 'uint256[]' }], outputs: [] },
   { type: 'function', name: 'setShamans', stateMutability: 'nonpayable', inputs: [{ name: '_shamans', type: 'address[]' }, { name: '_permissions', type: 'uint256[]' }], outputs: [] },
   { type: 'function', name: 'executeAsBaal', stateMutability: 'nonpayable', inputs: [{ name: '_to', type: 'address' }, { name: '_value', type: 'uint256' }, { name: '_data', type: 'bytes' }], outputs: [] },
   { type: 'function', name: 'proposalCount', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint32' }] },
@@ -134,6 +135,11 @@ function normalizeToken(value) {
   return value;
 }
 
+function listArg(name, fallback = '') {
+  const value = arg(name, fallback);
+  return String(value).split(',').map((item) => item.trim()).filter(Boolean);
+}
+
 function encodeValues(types, values) {
   return encodeAbiParameters(parseAbiParameters(types.join(',')), values);
 }
@@ -195,6 +201,10 @@ function decodeAction(action) {
       return { ...action, decoded: { contract: 'Poster', selector, expectedSelector: POSTER_POST_SELECTOR, error: `Could not decode as Poster post(string,string): ${error.shortMessage || error.message}` } };
     }
   }
+  try {
+    const decoded = decodeFunctionData({ abi: BAAL_ABI, data: action.data });
+    return { ...action, decoded: { contract: 'Baal', functionName: decoded.functionName, selector, args: decoded.args } };
+  } catch {}
   return { ...action, decoded: { selector } };
 }
 
@@ -846,6 +856,7 @@ async function main() {
   dao-meta             Proposal to update daoProfile metadata/links through Poster
   dao-record           Proposal to post a charter/joinRules/manifesto record through Poster
   tribute, join-dao    Real tokens-for-shares or tokens-for-loot proposal via Tribute Minion
+  mint-shares          Direct Baal proposal to mint voting shares to member address(es)
   gov-settings         Governance config proposal
   token-settings       Share/loot pause config proposal
   sponsor, vote, process, cancel  Proposal lifecycle actions
@@ -872,6 +883,7 @@ Options:
         signal: true,
         tribute: true,
         joinDao: true,
+        mintShares: true,
         governanceSettings: true,
         tokenSettings: true,
         customMulticall: 'manual helper only',
@@ -885,7 +897,7 @@ Options:
       },
       maintainedAt: 'https://github.com/HausDAO/moloch-skills',
       graphEndpoint: `${THE_GRAPH_GATEWAY}/<api-key>/subgraphs/id/${DAOHAUS_BASE_SUBGRAPH_ID}`,
-      warning: 'If tribute/join-dao is missing from --help, the local skill bundle is outdated.',
+      warning: 'If tribute/join-dao or mint-shares is missing from --help, the local skill bundle is outdated.',
     }));
     return;
   }
@@ -1048,6 +1060,18 @@ Options:
       args: [dao, token, amount, shares, loot, Number(arg('expiration', 0)), BigInt(arg('baal-gas', 0)), details({ title, description, link, proposalType: 'TOKENS_FOR_SHARES' })],
     });
     out = withSummary(tx(TRIBUTE_MINION, data, value), { action: 'submitTributeProposal', proposalKind: 'TOKENS_FOR_SHARES', submissionTarget: 'TRIBUTE_MINION', dao, token, amount: amount.toString(), shares: shares.toString(), loot: loot.toString(), note: token === ZERO ? 'Native ETH tribute. Transaction value equals amount.' : 'ERC-20 tribute. Approve the Tribute Minion before submitting if allowance is insufficient.' });
+  } else if (command === 'mint-shares') {
+    const dao = requireDao();
+    const title = arg('title', 'Mint voting shares');
+    const description = arg('description', '');
+    const link = arg('link', '');
+    const recipients = listArg('to');
+    const amounts = listArg('amount').map((amount) => BigInt(amount));
+    if (!recipients.length) throw new Error('Missing --to 0xMEMBER[,0xMEMBER...]');
+    if (!amounts.length) throw new Error('Missing --amount 1000000000000000000[,...]');
+    if (amounts.length !== recipients.length) throw new Error('--to and --amount must have the same number of comma-separated values');
+    const action = encodeFunctionData({ abi: BAAL_ABI, functionName: 'mintShares', args: [recipients, amounts] });
+    out = withSummary(await proposalTx({ dao, title, description, link, proposalType: 'MINT_SHARES', expiration: Number(arg('expiration', 0)), baalGas: arg('baal-gas') == null ? undefined : BigInt(arg('baal-gas')), value: BigInt(arg('value', 0)), actions: [{ to: dao, value: 0, data: action, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'MINT_SHARES', submissionTarget: 'BAAL', dao, recipients, amounts: amounts.map(String), note: 'Direct Baal mintShares proposal. Use when the DAO intends to grant voting shares without Tribute Minion token tribute.' });
   } else if (command === 'gov-settings') {
     const dao = requireDao();
     const p = jsonFile(arg('params'));

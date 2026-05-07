@@ -28,13 +28,14 @@ Choose the proposal path by operator intent:
 | Operator asks for | Use |
 | --- | --- |
 | signal, temperature check, text-only governance intent | `signal` |
-| join DAO, membership, admission, shares, loot, tribute | `tribute` / `join-dao` |
+| join DAO with tribute, tokens-for-shares, tokens-for-loot | `tribute` / `join-dao` |
+| grant or mint voting shares directly, no tribute involved | `mint-shares` |
 | update DAO profile, charter URI, join rules URI, manifesto/docs links | `dao-meta` / `dao-record` |
 | change voting period, grace period, offering, quorum, retention | `gov-settings` |
 | change share/loot pause or transferability setting | `token-settings` |
 | arbitrary contract execution | custom proposal path |
 
-If the operator asks for shares, loot, membership, admission, or a join request, do not use `signal`. A signal can express support for admission, but it does not create a real tokens-for-shares proposal. The CLI will warn and stop if `signal` appears to be used for this by mistake; add `--force-signal` only when text-only signaling is intentional.
+If the operator asks for shares, loot, membership, admission, or a join request, do not use `signal`. A signal can express support for admission, but it does not create an executable membership proposal. Use `tribute` / `join-dao` when the member contributes ETH or ERC-20 tribute. Use `mint-shares` when the DAO directly grants voting shares with no tribute transfer.
 
 ## Details JSON
 
@@ -69,10 +70,40 @@ They do not issue shares, issue loot, transfer funds, or admit members.
 
 If DAOhaus Admin shows a Poster decoding error such as `Encoded function signature "0x..." not found on ABI`, treat it as a malformed action until proven otherwise. A valid Poster signal action uses `post(string,string)` with selector `0x0ae1b13d`. Run `decode-submit-proposal` or `decode-proposal-data`; the decoder annotates Poster actions and flags unknown selectors.
 
+## Membership Proposal Types
+
+DAOhaus has at least two common executable membership paths:
+
+- `tribute` / `join-dao`: submits through Tribute Minion for tokens-for-shares or tokens-for-loot.
+- `mint-shares`: submits a Baal proposal that calls `mintShares(address[],uint256[])` on the DAO itself.
+
+Use `mint-shares` for grants, steward admissions, retroactive rewards, or membership approvals where no ETH/ERC-20 contribution should be escrowed by Tribute Minion.
+
+```bash
+node ../moloch-shared/scripts/moloch.mjs mint-shares \
+  --dao 0xDAO \
+  --to 0xMEMBER \
+  --amount 1000000000000000000 \
+  --title "Admit new voting member" \
+  --description "Grant 1 voting share to the approved member." \
+  --send
+```
+
+For multiple recipients, pass comma-separated values with matching lengths:
+
+```bash
+node ../moloch-shared/scripts/moloch.mjs mint-shares \
+  --dao 0xDAO \
+  --to 0xA,0xB \
+  --amount 1000000000000000000,2500000000000000000 \
+  --title "Mint contributor shares" \
+  --send
+```
+
 ## Tribute / Join DAO Proposal
 
 Use this for tokens-for-shares or tokens-for-loot requests through the DAOhaus Tribute Minion.
-This is the first-class membership/admission path.
+This is the first-class membership/admission path when the member contributes ETH or ERC-20 tribute.
 
 Native ETH tribute:
 
