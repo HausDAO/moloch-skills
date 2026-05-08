@@ -1,6 +1,6 @@
-# Bootstrap Flow
+# Agent Bootstrap
 
-Use this document when starting a new autonomous DAO experiment. It is intentionally generic: agents should not invent final mandates before bootstrap. Bootstrap creates the first shared context, then each agent fills in its own mandate from that context.
+Use this document when an agent is setting itself up for a DAO for the first time. This is not an experiment script and does not define the agent's mandate. The bootstrap step gathers the operator's intent, creates the first operating files, verifies dependencies, and starts the correct tasks.
 
 ## Terms
 
@@ -9,65 +9,72 @@ Use this document when starting a new autonomous DAO experiment. It is intention
 - **Shared memory**: DAO-level public context using DAO database records plus IPFS-pinned artifacts.
 - **Workspace**: an IPFS-pinned snapshot for the DAO or a proposal. Workspaces are linked from DAO metadata or proposal `contentURI`.
 
-The `moloch-agent-conviction` skill manages the mandate. Keep using that skill name, but treat the generated file as the agent mandate.
+The `moloch-agent-conviction` skill manages the mandate file, but the agent should not invent the mandate during generic bootstrap. Ask the operator for the mandate or load it from the harness.
 
-## Bootstrap Goals
+## Bootstrap Goal
 
-The first run should establish enough context for agents to operate without private assumptions:
+The first run should answer these questions:
 
-1. Summon or identify the DAO.
-2. Create the DAO shared memory root.
-3. Publish initial DAO metadata pointers.
-4. Create one versioned `community-state.md`.
-5. Create one mandate file per agent.
-6. Start scheduled tasks.
-7. Let agents coordinate through proposals, DAO database records, and proposal workspaces.
+1. Which DAO is this agent operating in, or should it summon a new DAO?
+2. Which wallet/account is the agent using?
+3. What is the operator-provided mandate?
+4. Where is shared DAO memory?
+5. Can the agent read chain state, Graph data, and DAO database records?
+6. Can the agent pin IPFS artifacts when needed?
+7. Which scheduled tasks should run?
 
-## One Agent Summons
+## Operator Inputs
 
-One agent should act as the bootstrap summoner.
+Ask the operator or harness for these values. Do not guess them.
 
-Inputs:
+- Agent name.
+- Agent wallet address.
+- DAO address, or explicit instruction to summon a new DAO.
+- If summoning: DAO name, token symbols, initial members, governance settings, and initial metadata.
+- Mandate or mandate source path.
+- Whether the mandate should be public, private, or ratified by DAO proposal.
+- Shared memory root, if one already exists.
+- Pinning provider preference, if IPFS publishing is expected.
+- Scheduled task cadence.
 
-- DAO name and token symbols
-- initial member addresses
-- voting/grace periods
-- quorum, sponsor threshold, min retention, proposal offering
-- initial shared memory root, if available
-- signer, RPC, Graph, and optional Pinata credentials
+If a required value is missing, create a local draft and record the missing field. Do not treat a draft mandate as ratified DAO truth.
 
-Flow:
+## Dependency Check
 
-1. Create a local shared memory starter directory from `templates/community-memory`.
-2. Fill `versions/0001/community-state.md` with minimal current state:
-   - purpose
-   - initial members
-   - current goals
-   - rules of engagement
-   - join rules
-   - current operating focus
-3. Pin the directory if Pinata or another pinning provider is available.
-4. Include `communityMemoryURI`, `proposalWorkspaceURI`, and `sharedStateURI` in summon metadata when possible.
-5. Summon the DAO.
-6. Run `task-snapshot`.
-7. Post a `communityMemory` thread-root announcing bootstrap context.
+Verify the runtime before autonomous work starts:
 
-If CIDs are not available before summon, summon without them and immediately use `dao-meta` or a metadata proposal to publish the pointers.
+```bash
+node moloch-shared/scripts/moloch.mjs capabilities
+node moloch-shared/scripts/moloch.mjs task-snapshot --dao 0xDAO --first 100 --out-dir /data/custom/moloch-skills/artifacts/0xDAO
+```
 
-## Agent Mandate Bootstrap
+Required for autonomous write actions:
 
-Each agent should create its mandate after the initial DAO context exists.
+- `RPC_URL`
+- managed signer or `PRIVATE_KEY`
+- funded wallet
 
-Start from:
+Required for indexed discovery:
+
+- `GRAPH_URL` or `GRAPH_API_KEY`
+
+Required for publishing larger/versioned artifacts:
+
+- Pinata or another pinning provider credential, if configured by the harness.
+
+## Mandate Setup
+
+Use the template only after the operator provides the mandate content or source:
 
 ```text
 moloch-agent-conviction/assets/conviction-profile.template.json
 ```
 
-Fill:
+Fill the mandate with:
 
-- agent identity and wallet address
+- identity
 - DAO address
+- wallet address
 - conviction values
 - voting policy
 - sponsorship policy
@@ -75,83 +82,77 @@ Fill:
 - autonomous execution policy
 - audit/posting behavior
 
-The mandate should stay small. It should not contain private keys, large history, or raw proposal data.
-
 Recommended storage:
 
 ```text
 /data/custom/moloch-skills/profiles/<dao>-<agent>-mandate.json
 ```
 
+The mandate should stay small. It should not contain private keys, raw proposal data, large histories, or transient local cache.
+
 If the mandate should be public, pin it or post a pointer through DAO database memory. If the DAO should ratify it, submit a signal proposal that links the mandate URI.
 
-## First Three Tasks
+## DAO Setup
 
-After bootstrap, schedule these loops:
+If the DAO already exists:
+
+1. Read `daoProfile`.
+2. Read `communityMemory`, `signal`, and relevant DAO database records.
+3. Find `communityMemoryURI`, `proposalWorkspaceURI`, and `sharedStateURI`.
+4. Fetch the current `community-state.md` if available.
+5. Run `task-snapshot`.
+
+If the agent is explicitly asked to summon:
+
+1. Create or locate the shared memory starter directory.
+2. Create the first `community-state.md` from operator-provided DAO intent.
+3. Pin the shared memory root if a pinning provider is available.
+4. Include shared memory pointers in summon metadata when available.
+5. Summon the DAO.
+6. Run `task-snapshot`.
+7. Post a `communityMemory` thread-root announcing the bootstrap state when the agent is a DAO member.
+
+If CIDs are not ready before summon, summon without them and immediately prepare a `dao-meta` proposal to publish the pointers.
+
+## Shared Memory Rule
+
+Local files are scratch. Shared knowledge should be published.
+
+- Short public coordination: DAO database records with `memory-post`.
+- Larger/versioned artifacts: IPFS, then link the CID from DAO database records or proposal `contentURI`.
+- Governance execution truth: direct chain reads.
+- Indexed discovery: The Graph.
+
+Use the `community-memory/v1` envelope for DAO database records. Prefer `threadId` as the grouping key.
+
+## First Scheduled Tasks
+
+After bootstrap, configure these tasks as appropriate:
 
 1. **Proposal Action Watcher**
-   - Handles sponsor, vote, process, cancel, and post-action records.
-   - Uses direct chain reads for execution truth.
-   - Processes ready proposals as mechanical settlement.
+   - sponsor, vote, process, cancel, and post-action records
+   - direct chain preflight before writes
+   - process ready proposals as mechanical settlement
 
 2. **Initiative Steward**
-   - Maintains the agent's longer-term initiative backlog.
-   - Updates the mandate operating context after passed, failed, or rejected proposals.
-   - Prepares draft workspaces when an initiative becomes ready.
+   - maintain the mandate initiative backlog
+   - update operating context after passed, failed, rejected, or processed proposals
+   - prepare draft workspaces when an initiative becomes ready
 
 3. **Proposal Generation**
-   - Creates at most one proposal when the proposal throttle allows it.
-   - Links proposal workspaces through `contentURI`.
-   - Posts proposal notes to DAO database memory.
+   - create at most one proposal when the mandate and proposal throttle allow it
+   - link proposal workspaces through `contentURI`
+   - post proposal notes to DAO database memory
 
-## Proposal Workspace Rule
+## Bootstrap Output
 
-Before submitting a proposal, create or reuse a proposal workspace.
+At the end of bootstrap, produce a compact operator-facing summary:
 
-The workspace can be local while drafting, but shared state must be published:
-
-1. Pin the workspace to IPFS when it is ready to share.
-2. Put the workspace URI in proposal `contentURI` when submitting.
-3. Post a `communityMemory` record with:
-   - `schema: community-memory/v1`
-   - `type: draft-announcement` or `workspace-version`
-   - `threadId`
-   - `proposalId` or `draftId`
-   - `workspaceURI`
-
-DAO database records are the thread/event layer. IPFS workspaces are versioned snapshots.
-
-## Three-Agent Test Story
-
-For a small autonomous test:
-
-- Agent A summons the DAO with Agent A and Agent B as initial members.
-- Agent B starts as a genesis member with a different mandate.
-- Agent C starts outside the DAO and joins later through a real membership proposal.
-
-Suggested first arc:
-
-1. Agent A summons the DAO and publishes shared memory pointers.
-2. Agent A proposes to ratify the initial operating state.
-3. Agent B votes and posts a vote reason.
-4. Agent B proposes simple join rules.
-5. Agent C reads DAO memory and submits a real join, tribute, or mint-shares proposal.
-6. Agent A and Agent B vote according to their mandates.
-7. Any member agent processes the passed proposal when it is ready.
-8. Agents publish a short retro and update community state if needed.
-
-This tests the full loop: summon, shared memory, proposal workspace, discussion, disagreement, joining, voting, processing, and state update.
-
-## Bootstrap Checklist
-
-- `RPC_URL` configured with a reliable Base RPC.
-- `GRAPH_URL` or `GRAPH_API_KEY` configured.
-- managed signer available and funded.
-- optional Pinata credentials available for IPFS publishing.
-- DAO shared memory root created or planned.
-- initial `community-state.md` created.
-- summon metadata includes shared memory pointers, or follow-up metadata proposal is planned.
-- one mandate file created per agent.
-- scheduled task snapshot is running.
-- action watcher, initiative steward, and proposal generation tasks are configured.
+- DAO address or summon tx hash.
+- Agent wallet address.
+- Mandate path or mandate URI.
+- Shared memory pointers found or created.
+- Dependency status: RPC, Graph, signer, pinning.
+- Scheduled tasks configured.
+- Missing fields or blocked capabilities.
 

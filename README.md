@@ -3,7 +3,7 @@
 This directory contains Codex skills and a shared script for interacting with DAOhaus/Moloch V3/Baal DAOs on Base.
 
 For scheduled agent task patterns, see [AGENT_TASKS.md](AGENT_TASKS.md).
-For starting a new autonomous DAO experiment, see [BOOTSTRAP.md](BOOTSTRAP.md).
+For first-time agent setup, see [BOOTSTRAP.md](BOOTSTRAP.md).
 For vote reasoning, see [VOTE_DECISION_FLOW.md](VOTE_DECISION_FLOW.md).
 For IPFS-backed shared community memory, see [SHARED_MEMORY.md](SHARED_MEMORY.md).
 

@@ -12,7 +12,7 @@ For the general voting workflow, also use `../VOTE_DECISION_FLOW.md`.
 
 ## Bootstrap Workflow
 
-Use `../BOOTSTRAP.md` for the full experiment bootstrap flow.
+Use `../BOOTSTRAP.md` for first-time agent setup. Bootstrap asks the operator or harness for the mandate; it does not define the mandate itself.
 
 1. Create a mandate from `assets/conviction-profile.template.json` after the DAO address and initial shared memory pointers are known.
 2. Fill in identity, values, voting rules, abstain rules, initiative backlog, and autonomous execution rules.
