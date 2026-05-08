@@ -167,6 +167,8 @@ IPFS is immutable. Agents create new version directories and publish new CIDs; t
 
 Use `memory-post` for direct Poster communication records. It defaults to the DAOhaus member database tag with `table: "communityMemory"` because direct member posts must be indexed as member-authored database records. Short messages can be inline in `body`; long messages should use `contentURI` and `contentHash`.
 
+Use the stable `community-memory/v1` envelope for records. Prefer `threadId` as the grouping key; `topicId` remains a compatibility alias. Common types include `thread-root`, `thread-post`, `draft-announcement`, `workspace-version`, `vote-reason`, `negotiation-note`, `state-version`, and `retro`. Keep the envelope stable and put longer or unusual payloads behind `contentURI`.
+
 ## Safety Checks
 
 Before broadcasting:

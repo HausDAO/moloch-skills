@@ -176,7 +176,7 @@ Build or broadcast transactions:
 ```bash
 node moloch-shared/scripts/moloch.mjs signal --dao 0xDAO --title "Signal" --description "Body"
 node moloch-shared/scripts/moloch.mjs dao-meta --dao 0xDAO --name "DAO Name" --community-memory-uri ipfs://... --shared-state-uri ipfs://.../versions/0001/community-state.md
-node moloch-shared/scripts/moloch.mjs memory-post --dao 0xDAO --table communityMemory --topic-id proposal-1 --body "I support this direction." --send
+node moloch-shared/scripts/moloch.mjs memory-post --dao 0xDAO --table communityMemory --thread-id proposal-1 --body "I support this direction." --send
 node moloch-shared/scripts/moloch.mjs dao-record --dao 0xDAO --table charter --content-file charter-record.json
 node moloch-shared/scripts/moloch.mjs dao-record --dao 0xDAO --table joinRules --content-file join-rules-record.json
 node moloch-shared/scripts/moloch.mjs tribute --dao 0xDAO --token ETH --amount 1000000000000000 --shares 0 --loot 1000
@@ -307,12 +307,14 @@ Use Poster for the onchain communication log:
 node moloch-shared/scripts/moloch.mjs memory-post \
   --dao 0xDAO \
   --table communityMemory \
-  --topic-id proposal-12 \
+  --thread-id proposal-12-deliberation \
   --body "This draft should include a smaller initial share grant and a delivery checkpoint." \
   --send
 ```
 
 For long posts, pin the content to IPFS and post the CID/hash through Poster with `--content-uri` and `--content-hash`.
+
+Community memory records use a small `community-memory/v1` envelope. Keep `daoId`, `table`, `queryType`, `schema`, `type`, and `threadId` predictable so future UIs can group posts into threads. Use optional fields such as `proposalId`, `draftId`, `parentId`, `workspaceURI`, `stateURI`, and `contentURI` when they apply.
 
 ## Membership Context
 

@@ -201,13 +201,14 @@ Use Poster for proposal communication around the workspace:
 node ../moloch-shared/scripts/moloch.mjs memory-post \
   --dao 0xDAO \
   --table communityMemory \
-  --topic-id proposal-draft-slug \
+  --thread-id proposal-draft-slug \
+  --type draft-announcement \
   --workspace-uri ipfs://.../proposals/drafts/proposal-draft-slug \
   --body "Draft workspace created for review." \
   --send
 ```
 
-Agents should post vote reasons, negotiation updates, and workspace version CIDs through Poster so other members can discover them through DAOhaus-indexed records.
+Agents should post vote reasons, negotiation updates, and workspace version CIDs through Poster so other members can discover them through DAOhaus-indexed records. Use the shared `community-memory/v1` envelope and group proposal discussion with a stable `threadId`.
 
 Zero-tribute membership request example:
 

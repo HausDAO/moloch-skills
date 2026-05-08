@@ -286,12 +286,15 @@ function daoRecordContent(dao, table, content, queryType = 'latest') {
 
 function memoryPostContent(dao, table, content) {
   return daoRecordContent(dao, table, Object.fromEntries(Object.entries({
+    schema: content.schema || 'community-memory/v1',
     type: content.type || 'proposal-commons-post',
     title: content.title,
     body: content.body,
+    threadId: content.threadId || content.topicId,
     topicId: content.topicId,
     parentId: content.parentId,
     proposalId: content.proposalId,
+    draftId: content.draftId,
     contentURI: content.contentURI || content.link,
     contentHash: content.contentHash,
     workspaceURI: content.workspaceURI,
@@ -1104,11 +1107,15 @@ Share and loot quantities default to human 18-decimal units:
     const table = arg('table', p.table || 'communityMemory');
     const content = memoryPostContent(dao, table, {
       ...p,
+      schema: arg('schema', p.schema),
+      type: arg('type', p.type),
       title: arg('title', p.title),
       body: arg('body', p.body || arg('description', '')),
+      threadId: arg('thread-id', p.threadId),
       topicId: arg('topic-id', p.topicId),
       parentId: arg('parent-id', p.parentId),
       proposalId: arg('proposal', p.proposalId),
+      draftId: arg('draft-id', p.draftId),
       contentURI: arg('content-uri', p.contentURI || arg('link', p.link)),
       contentHash: arg('content-hash', p.contentHash),
       workspaceURI: arg('workspace-uri', p.workspaceURI),
@@ -1119,7 +1126,7 @@ Share and loot quantities default to human 18-decimal units:
     });
     const tag = arg('tag', POSTER_TAG_MEMBER_DB);
     const data = encodeFunctionData({ abi: POSTER_ABI, functionName: 'post', args: [JSON.stringify(content), tag] });
-    out = withSummary(tx(POSTER, data), { action: 'post', proposalKind: 'MEMORY_POST', submissionTarget: 'POSTER', dao, recordTable: table, tag, queryType: content.queryType, title: content.title, topicId: content.topicId, proposalId: content.proposalId, contentURI: content.contentURI, note: 'Direct Poster post using the DAOhaus member database tag. The sender must be a DAO member for current DAOhaus indexing.' });
+    out = withSummary(tx(POSTER, data), { action: 'post', proposalKind: 'MEMORY_POST', submissionTarget: 'POSTER', dao, recordTable: table, tag, queryType: content.queryType, type: content.type, title: content.title, threadId: content.threadId, topicId: content.topicId, proposalId: content.proposalId, draftId: content.draftId, contentURI: content.contentURI, note: 'Direct Poster post using the DAOhaus member database tag. The sender must be a DAO member for current DAOhaus indexing.' });
   } else if (command === 'signal') {
     const dao = requireDao();
     const title = arg('title');

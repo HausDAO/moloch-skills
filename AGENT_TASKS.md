@@ -95,7 +95,7 @@ Steps:
    - voting proposals you have not voted on
    - proposals ready for processing
    - proposals that should be opposed, revised, cancelled, or left alone
-4. Read relevant Poster database records for active proposal topics, especially `communityMemory` and `signal`, and incorporate discussion/vote reasons from content fields such as `type`, `topicId`, and `proposalId`.
+4. Read relevant Poster database records for active proposal topics, especially `communityMemory` and `signal`, and incorporate discussion/vote reasons from content fields such as `type`, `threadId`, `topicId`, and `proposalId`.
 5. Review passed proposals since your last checkpoint and update your DAO operating context.
 6. For likely actions, perform targeted live preflight:
    - proposal-lifecycle for vote/process decisions

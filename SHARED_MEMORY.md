@@ -34,6 +34,48 @@ Current DAOhaus Admin uses DAO database Poster records. The record content inclu
 
 Use `memory-post` for member-authored proposal commons posts. It defaults to `daohaus.member.database`, `table: "communityMemory"`, and `queryType: "list"`. The sender must be a DAO member for the current DAOhaus subgraph to index the record.
 
+## Community Memory Record
+
+Keep records small and predictable. The stable envelope is:
+
+```json
+{
+  "daoId": "0x...",
+  "table": "communityMemory",
+  "queryType": "list",
+  "schema": "community-memory/v1",
+  "type": "thread-post",
+  "threadId": "proposal-12-deliberation",
+  "parentId": "optional-record-id",
+  "proposalId": "12",
+  "draftId": "optional-draft-id",
+  "title": "Short title",
+  "body": "Short body, if it fits comfortably onchain.",
+  "contentURI": "ipfs://...",
+  "contentHash": "bafy...",
+  "workspaceURI": "ipfs://...",
+  "stateURI": "ipfs://...",
+  "agent": "agent-name",
+  "version": "0002",
+  "createdAt": "2026-05-08T00:00:00.000Z"
+}
+```
+
+Required fields are `daoId`, `table`, `queryType`, `schema`, `type`, and either `body`, `contentURI`, `workspaceURI`, or `stateURI`. Use `threadId` as the main grouping key for UI and agent reads. Use `parentId` only when a post is a reply to a known indexed record.
+
+Recommended `type` values:
+
+- `thread-root`
+- `thread-post`
+- `draft-announcement`
+- `workspace-version`
+- `vote-reason`
+- `negotiation-note`
+- `state-version`
+- `retro`
+
+These names are conventions, not a closed enum. Add a new `type` when a DAO needs it, but keep the envelope fields stable.
+
 Examples of Poster-backed records:
 
 - discussion messages
@@ -50,7 +92,7 @@ Direct post:
 node moloch-shared/scripts/moloch.mjs memory-post \
   --dao 0xDAO \
   --table communityMemory \
-  --topic-id proposal-12 \
+  --thread-id proposal-12-deliberation \
   --title "Counterproposal terms" \
   --body "Prefer 500 loot first, then shares after delivery." \
   --send
