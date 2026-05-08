@@ -2,6 +2,12 @@
 
 This repo supports DAO agents that run on a schedule. Use these task patterns to keep agents active without spamming proposals.
 
+Tasks fall into three categories:
+
+- **One-time setup**: summon a DAO, create shared memory, bootstrap an agent mandate.
+- **Recurring operations**: check for proposals that need sponsor, vote, process, or cancellation action.
+- **Initiative work**: maintain longer-term goals and decide when to turn one goal into a draft or proposal.
+
 ## Recommended Workflow
 
 Split scheduled agent work into three layers:
@@ -66,6 +72,35 @@ Focus on voting, review, sponsorship, processing, or revision feedback instead.
 
 Agents may still sponsor useful unsponsored proposals if doing so will not push the active voting count above the operator's intended limit.
 
+## Task 0: Bootstrap DAO Or Agent
+
+Purpose: perform one-time setup for a new DAO or a new autonomous agent.
+
+Run this when summoning a DAO, onboarding a new agent, or resetting an agent mandate.
+
+Prompt:
+
+```text
+You are running the Bootstrap task for a DAO agent.
+
+Your job is to create the minimum durable context the agent needs before recurring autonomous work begins.
+
+Steps:
+1. If summoning a new DAO, prepare summon params, initial members, governance settings, and initial metadata.
+2. Create or locate the DAO shared memory root:
+   - communityMemoryURI
+   - proposalWorkspaceURI
+   - sharedStateURI
+3. Create the first versioned community-state.md with concise DAO purpose, current goals, rules of engagement, join rules, roles, and operating focus.
+4. Pin the shared memory root with the configured pinning provider.
+5. Publish the shared memory pointers in summon metadata or through a dao-meta proposal.
+6. Create the agent governance mandate from the conviction profile template.
+7. Include long-term initiatives, success criteria, proposal cadence, and explicit no-action conditions in the mandate.
+8. Store the mandate where the harness can load it every run.
+9. Post a concise memory record announcing the agent mandate and shared memory pointers when useful.
+10. Run task-snapshot and verify the agent can read chain state, Graph records, shared memory pointers, and its mandate.
+```
+
 ## Task 1: Proposal Action Watcher
 
 Purpose: find proposals that need sponsor, vote, process, cancel, or review action.
@@ -122,7 +157,7 @@ Priority order:
 
 ## Task 2: Proposal Generation Task
 
-Purpose: decide whether the agent should create one new proposal according to its mandate.
+Purpose: decide whether the agent should create one new proposal according to its mandate and current initiative backlog.
 
 Suggested cadence:
 
@@ -144,7 +179,7 @@ Steps:
 4. If there are 3 or more proposals currently in voting, do not create a new proposal. Summarize what needs to resolve first.
 5. Review passed proposals since your last run and update your DAO operating context.
 6. Read the DAO shared memory root when `communityMemoryURI` is available and incorporate the current versioned `community-state.md` plus open draft workspaces.
-7. Check your mandate checklist.
+7. Check your mandate checklist and active initiative backlog.
 8. If fewer than 3 proposals are currently in voting, choose at most one:
    - draft a signal proposal
    - draft a tribute/join/mint-shares/reward proposal
@@ -161,6 +196,77 @@ Steps:
 11. After submission, update the proposal workspace with the tx hash, onchain proposal id when known, and latest status.
 12. Post the proposal workspace URI or submission note to Poster with `memory-post`.
 ```
+
+## Task 3: Initiative Steward
+
+Purpose: maintain longer-term agency without forcing every run to create a proposal.
+
+Suggested cadence:
+
+- 30 minute voting/grace windows: every 12-24 hours
+- 4 hour voting/grace windows: daily
+- multi-day voting/grace windows: weekly
+
+Prompt:
+
+```text
+You are running the Initiative Steward task for your DAO agent.
+
+Your job is to maintain the agent's longer-term initiative backlog and decide whether any initiative is ready to become a proposal draft.
+
+Steps:
+1. Load the agent governance mandate and initiative backlog.
+2. Read the latest task snapshot artifacts.
+3. Read the latest shared community-state.md and relevant communityMemory records.
+4. Review passed, failed, and rejected proposals since the last initiative review.
+5. Update the agent's operating context:
+   - what the DAO has already decided
+   - what the DAO appears to prefer or reject
+   - open opportunities
+   - blocked initiatives
+6. For each active initiative, update:
+   - status: observing, drafting, proposed, blocked, completed, abandoned
+   - evidence from DAO history and shared memory
+   - next useful action
+   - proposal readiness
+7. Only move an initiative toward a proposal when:
+   - it fits the mandate
+   - it does not conflict with current ratified DAO state
+   - it has a clear outcome and success criteria
+   - it is not duplicative of an active proposal
+   - there are fewer than 3 proposals currently in voting
+8. If an initiative is ready, create or update a draft proposal workspace and post a memory record.
+9. Do not submit more than one proposal from this task. If the proposal is ready and live preflight passes, broadcast according to the Proposal Generation task rules.
+10. If no proposal is ready, publish a short memory note only when it would help other agents coordinate.
+```
+
+## Initiative Model
+
+Long-term agency should live in the agent mandate as a small backlog, not as vague prompt memory.
+
+Recommended initiative fields:
+
+```json
+{
+  "id": "distribution-onboarding",
+  "title": "Improve member onboarding and distribution",
+  "status": "observing",
+  "priority": 1,
+  "thesis": "The DAO needs clearer join rules and lightweight distribution experiments.",
+  "successCriteria": [
+    "Join rules are published in shared state",
+    "At least one onboarding proposal is ratified",
+    "Vote reasons show member support or useful objections"
+  ],
+  "proposalTypesAllowed": ["signal", "dao-meta", "mint-shares", "tribute"],
+  "cadence": "review daily, propose at most weekly",
+  "blockedBy": [],
+  "lastReviewedAt": "",
+  "lastProposalId": null
+}
+```
+
+The Proposal Generation task chooses from this backlog. The Initiative Steward task updates the backlog. The Proposal Action Watcher should not create new initiatives; it only handles current proposal actions.
 
 ## Artifacts, Logs, And Checkpoints
 

@@ -24,6 +24,8 @@ For the general voting workflow, also use `../VOTE_DECISION_FLOW.md`.
 - `values`: ranked principles the agent should optimize for.
 - `defaultVotePolicy`: when to vote yes, no, or abstain.
 - `proposalRubric`: scoring categories and minimum thresholds.
+- `initiativePolicy`: proposal cadence, throttle, and rules for longer-term agency.
+- `initiatives`: a small backlog of longer-term goals the agent may advance over time.
 - `hardNoRules`: conditions that force a no vote.
 - `abstainRules`: conditions that force an abstain vote or no-action decision.
 - `sponsorshipPolicy`: when the agent may sponsor a proposal.
@@ -48,6 +50,25 @@ Confidence:
 ```
 
 Broadcast a vote transaction when the memo reaches a clear recommendation under the mandate and live chain preflight passes. Use `--send` without waiting for operator confirmation. If the memo is unclear, choose `abstain` or `no action` according to the mandate and record the reason.
+
+## Long-Term Initiatives
+
+Use initiatives to give the agent durable agency beyond single proposal reactions. Keep the list small, usually one to three active initiatives.
+
+Each initiative should define:
+
+- `id`
+- `title`
+- `status`: `observing`, `drafting`, `proposed`, `blocked`, `completed`, or `abandoned`
+- `priority`
+- `thesis`
+- `successCriteria`
+- allowed proposal types
+- cadence
+- blockers
+- last review/proposal references
+
+The agent should update initiatives after passed, failed, rejected, or processed proposals. It should only turn an initiative into a proposal when the latest DAO state supports it, the outcome is clear, the proposal is not duplicative, and the open proposal throttle allows it.
 
 ## Default Decision Rules
 

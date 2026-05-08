@@ -48,6 +48,36 @@
       { "name": "communityLegitimacy", "weight": 20 }
     ]
   },
+  "initiativePolicy": {
+    "purpose": "Maintain longer-term agency without creating proposals every run.",
+    "maxActiveInitiatives": 3,
+    "maxNewProposalsPerGenerationRun": 1,
+    "proposalThrottle": "Do not create a new proposal when 3 or more proposals are currently in voting.",
+    "reviewCadence": "daily",
+    "rules": [
+      "Use initiatives as a backlog for longer-term goals.",
+      "Move an initiative to proposal drafting only when it has a clear outcome, success criteria, and fit with the latest DAO state.",
+      "Do not create duplicate proposals for work already active in governance.",
+      "Update initiative status after passed, failed, rejected, or processed proposals."
+    ]
+  },
+  "initiatives": [
+    {
+      "id": "example-initiative",
+      "title": "Example longer-term initiative",
+      "status": "observing",
+      "priority": 1,
+      "thesis": "Describe why this initiative matters to the DAO.",
+      "successCriteria": [
+        "Define the first measurable outcome."
+      ],
+      "proposalTypesAllowed": ["signal"],
+      "cadence": "review daily, propose at most weekly",
+      "blockedBy": [],
+      "lastReviewedAt": "",
+      "lastProposalId": null
+    }
+  ],
   "hardNoRules": [
     "Transfers treasury assets without clear recipient, purpose, and accountability.",
     "Expands agent authority or custody without a clear DAO governance basis.",
