@@ -4,6 +4,7 @@ This directory contains Codex skills and a shared script for interacting with DA
 
 For scheduled agent task patterns, see [AGENT_TASKS.md](AGENT_TASKS.md).
 For vote reasoning, see [VOTE_DECISION_FLOW.md](VOTE_DECISION_FLOW.md).
+For IPFS-backed shared community memory, see [SHARED_MEMORY.md](SHARED_MEMORY.md).
 
 Maintained repo: `https://github.com/HausDAO/moloch-skills`
 DAOhaus Admin frontend implementation: `https://github.com/HausDAO/daohaus-admin`
@@ -174,7 +175,7 @@ Build or broadcast transactions:
 
 ```bash
 node moloch-shared/scripts/moloch.mjs signal --dao 0xDAO --title "Signal" --description "Body"
-node moloch-shared/scripts/moloch.mjs dao-meta --dao 0xDAO --name "DAO Name" --charter-uri ipfs://... --join-rules-uri ipfs://...
+node moloch-shared/scripts/moloch.mjs dao-meta --dao 0xDAO --name "DAO Name" --charter-uri ipfs://... --join-rules-uri ipfs://... --community-memory-uri ipfs://...
 node moloch-shared/scripts/moloch.mjs dao-record --dao 0xDAO --table charter --content-file charter-record.json
 node moloch-shared/scripts/moloch.mjs dao-record --dao 0xDAO --table joinRules --content-file join-rules-record.json
 node moloch-shared/scripts/moloch.mjs tribute --dao 0xDAO --token ETH --amount 1000000000000000 --shares 0 --loot 1000
@@ -255,7 +256,7 @@ export GRAPH_URL="https://gateway.thegraph.com/api/YOUR_GRAPH_KEY/subgraphs/id/7
 
 ## DAO Metadata, Charter, And Join Rules
 
-Summon posts initial DAO profile metadata through Poster. The summon params may include optional metadata fields:
+Summon posts initial DAO profile metadata through Poster. Create and pin a shared community memory root before summon whenever possible, then include it in the initial metadata. The summon params may include optional metadata fields:
 
 ```json
 {
@@ -263,7 +264,11 @@ Summon posts initial DAO profile metadata through Poster. The summon params may 
   "description": "Short public description",
   "goalsURI": "ipfs://...",
   "charterURI": "ipfs://...",
-  "joinRulesURI": "ipfs://..."
+  "joinRulesURI": "ipfs://...",
+  "manifestoURI": "ipfs://...",
+  "communityMemoryURI": "ipfs://...",
+  "proposalWorkspaceURI": "ipfs://.../proposals",
+  "sharedStateURI": "ipfs://.../state/current"
 }
 ```
 
@@ -272,8 +277,27 @@ For richer or changing rules, use Poster/DAO records and proposal ratification:
 - `daoProfile`: current profile and links.
 - `charter`: current charter pointer/version/hash.
 - `joinRules`: how agents or humans request membership.
+- `communityMemory`: the shared IPFS root where agents and members coordinate.
 
-Routine snapshots write `dao-records.json` and `operating-context.json` so agents can see the current charter/join-rules context without rereading long proposal history.
+Routine snapshots write local `dao-records.json` and `operating-context.json`, but those are per-agent working artifacts. Durable community memory should live under the shared IPFS root described in `SHARED_MEMORY.md`.
+
+Create a starter memory root from:
+
+```bash
+cp -R templates/community-memory ./community-memory
+```
+
+Fill in `community-memory/manifest.json`, `community-memory/state/current/*`, pin the directory, then publish the root CID in summon metadata or with `dao-meta`:
+
+```bash
+node moloch-shared/scripts/moloch.mjs dao-meta \
+  --dao 0xDAO \
+  --name "DAO Name" \
+  --community-memory-uri ipfs://... \
+  --proposal-workspace-uri ipfs://.../proposals \
+  --shared-state-uri ipfs://.../state/current \
+  --send
+```
 
 Example charter record:
 
@@ -300,6 +324,8 @@ Example join-rules record:
   "expectations": ["align with charter", "contribute to onboarding or distribution", "participate in votes"]
 }
 ```
+
+Proposal workspaces should be created under the shared memory root before submission. Reuse an existing draft folder if one already exists. Each workspace should include proposal details, discussions, negotiations, action items, vote reasons, sources, status, and tx hashes after submission.
 
 ## Membership Context
 

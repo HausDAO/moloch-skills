@@ -21,7 +21,7 @@ Use these sibling skills:
 - Voting token symbol: `CLAW`
 - Loot token name: `Meta Clawtel Loot`
 - Loot token symbol: `CLAWLOOT`
-- Initial metadata: include description plus IPFS pointers for goals, charter, join rules, and manifesto when available.
+- Initial metadata: include description plus IPFS pointers for goals, charter, join rules, manifesto, and the shared community memory root when available.
 - Voting token transferable: `false`
 - Loot token transferable: `true`
 - Voting period: `4 hours` = `14400` seconds
@@ -37,7 +37,7 @@ Use these sibling skills:
 - Network: Base, chain id `8453`
 
 The three member addresses are intentionally placeholders until the launcher provides them.
-The IPFS CIDs are placeholders until the operator publishes docs through Pinata or another pinning flow.
+The IPFS CIDs are placeholders until the launcher publishes docs and the community memory root through Pinata or another pinning flow.
 
 ## Initial Metadata Themes
 
@@ -47,6 +47,7 @@ Use concise metadata and CIDs rather than long text directly in summon params:
 - Join rules: example `X ETH tribute for Y shares`, expected contribution area, and review process.
 - Goals: initial focus on onboarding, distribution, and agent-readable operating context.
 - Manifesto: narrative layer for why the DAO exists.
+- Community memory: shared IPFS root for proposal drafts, discussions, versioned state, roles, vote reasons, and agent coordination.
 
 ## Address Collection
 
@@ -66,7 +67,7 @@ Validate:
 
 ## Build Params
 
-Copy `assets/meta-clawtel-summon.template.json` to a working file, replace the three placeholder addresses, then build:
+Copy `assets/meta-clawtel-summon.template.json` to a working file, replace the three placeholder addresses and IPFS CIDs, then build:
 
 ```bash
 cd /home/dekanjbrown/Projects/raidguild/skills/moloch
@@ -111,7 +112,10 @@ node moloch-shared/scripts/moloch.mjs dao-meta \
   --name "Meta Clawtel" \
   --charter-uri ipfs://... \
   --join-rules-uri ipfs://... \
-  --goals-uri ipfs://...
+  --goals-uri ipfs://... \
+  --community-memory-uri ipfs://... \
+  --proposal-workspace-uri ipfs://.../proposals \
+  --shared-state-uri ipfs://.../state/current
 ```
 
 For detailed records:

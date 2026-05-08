@@ -1,0 +1,17 @@
+{
+  "type": "dao-operating-context",
+  "version": "0.1.0",
+  "daoName": "",
+  "daoAddress": "",
+  "manifestoURI": "",
+  "charterURI": "",
+  "goalsURI": "",
+  "intentURI": "",
+  "rolesURI": "",
+  "joinRulesURI": "",
+  "currentFocus": [],
+  "activeRoles": [],
+  "joinRulesSummary": "",
+  "proposalWorkspaceRoot": "../../proposals",
+  "lastUpdatedAt": ""
+}

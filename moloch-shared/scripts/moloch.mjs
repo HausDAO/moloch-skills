@@ -260,6 +260,9 @@ function compactLinks(p) {
     ['goalsURI', 'Goals'],
     ['manifestoURI', 'Manifesto'],
     ['docsURI', 'Docs'],
+    ['communityMemoryURI', 'Community Memory'],
+    ['proposalWorkspaceURI', 'Proposal Workspace'],
+    ['sharedStateURI', 'Shared State'],
   ];
   const links = labels
     .filter(([key]) => p[key])
@@ -291,6 +294,9 @@ function daoProfileContent(dao, p) {
     joinRulesURI: p.joinRulesURI,
     goalsURI: p.goalsURI,
     manifestoURI: p.manifestoURI,
+    communityMemoryURI: p.communityMemoryURI,
+    proposalWorkspaceURI: p.proposalWorkspaceURI,
+    sharedStateURI: p.sharedStateURI,
   }).filter(([, value]) => value !== undefined && value !== null && value !== '')));
 }
 
@@ -737,6 +743,10 @@ function summonProfile(p) {
     charterURI: p.charterURI,
     joinRulesURI: p.joinRulesURI,
     rulesURI: p.rulesURI,
+    manifestoURI: p.manifestoURI,
+    communityMemoryURI: p.communityMemoryURI,
+    proposalWorkspaceURI: p.proposalWorkspaceURI,
+    sharedStateURI: p.sharedStateURI,
   }).filter(([, value]) => value !== undefined && value !== null && value !== ''));
 }
 
@@ -913,6 +923,9 @@ Options:
   --amount-raw <n>     Raw 18-decimal base units for mint-shares amount
   --shares-raw <n>     Raw 18-decimal base units for Tribute Minion shares
   --loot-raw <n>       Raw 18-decimal base units for Tribute Minion loot
+  --community-memory-uri ipfs://...  DAO profile pointer to shared memory root
+  --proposal-workspace-uri ipfs://... DAO profile pointer to proposal workspaces
+  --shared-state-uri ipfs://... DAO profile pointer to current shared state
   --send               Broadcast a write tx
   --wait               Wait for receipt after send
   --vault-provider 1password --vault-item <item> [--vault-field private_key]
@@ -1078,7 +1091,7 @@ Share and loot quantities default to human 18-decimal units:
     const p = arg('params') ? jsonFile(arg('params')) : {};
     const title = arg('title', p.title || 'Update DAO metadata');
     const description = arg('description', p.proposalDescription || p.description || '');
-    const content = daoProfileContent(dao, { ...p, name: arg('name', p.name), description: arg('dao-description', p.description), charterURI: arg('charter-uri', p.charterURI), joinRulesURI: arg('join-rules-uri', p.joinRulesURI), goalsURI: arg('goals-uri', p.goalsURI), manifestoURI: arg('manifesto-uri', p.manifestoURI), web: arg('web', p.web) });
+    const content = daoProfileContent(dao, { ...p, name: arg('name', p.name), description: arg('dao-description', p.description), charterURI: arg('charter-uri', p.charterURI), joinRulesURI: arg('join-rules-uri', p.joinRulesURI), goalsURI: arg('goals-uri', p.goalsURI), manifestoURI: arg('manifesto-uri', p.manifestoURI), communityMemoryURI: arg('community-memory-uri', p.communityMemoryURI), proposalWorkspaceURI: arg('proposal-workspace-uri', p.proposalWorkspaceURI), sharedStateURI: arg('shared-state-uri', p.sharedStateURI), web: arg('web', p.web) });
     const postData = encodeFunctionData({ abi: POSTER_ABI, functionName: 'post', args: [JSON.stringify(content), POSTER_TAG_DAO_PROFILE_UPDATE] });
     out = withSummary(await proposalTx({ dao, title, description, link: arg('link', p.link || ''), proposalType: 'UPDATE_METADATA_SETTINGS', expiration: Number(arg('expiration', p.expiration || 0)), baalGas: arg('baal-gas') == null && p.baalGas == null ? undefined : BigInt(arg('baal-gas', p.baalGas)), value: BigInt(arg('value', p.value || 0)), actions: [{ to: POSTER, value: 0, data: postData, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'UPDATE_METADATA_SETTINGS', submissionTarget: 'BAAL', dao, recordTable: 'daoProfile' });
   } else if (command === 'dao-record') {

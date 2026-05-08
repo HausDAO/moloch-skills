@@ -12,6 +12,8 @@ Split scheduled agent work into three layers:
 
 This reduces tokens because scheduled prompts do not need to repeat every chain/Graph query. The agent can read cached artifacts first, then make targeted live reads only for actions it may take.
 
+Local task artifacts are not the DAO's durable memory. Use the shared IPFS community memory root from `SHARED_MEMORY.md` for cross-agent communication, proposal collaboration, and versioned community state.
+
 ## Cron Snapshot
 
 Use `task-snapshot` as the default scheduled data refresh.
@@ -140,18 +142,22 @@ Steps:
 3. Count proposals currently in voting from proposal-summary.json.
 4. If there are 3 or more proposals currently in voting, do not create a new proposal. Summarize what needs to resolve first.
 5. Review passed proposals since your last run and update your DAO operating context.
-6. Check your mandate checklist.
-7. If fewer than 3 proposals are currently in voting, choose at most one:
+6. Read the DAO shared memory root when `communityMemoryURI` is available and incorporate current manifesto, charter, goals, intent, roles, join rules, and open draft workspaces.
+7. Check your mandate checklist.
+8. If fewer than 3 proposals are currently in voting, choose at most one:
    - draft a signal proposal
    - draft a tribute/join/mint-shares/reward proposal
    - draft a DAO settings proposal
    - no action
-8. New proposals must:
+9. New proposals must:
    - reference relevant passed proposals
+   - create or reuse a proposal workspace under shared memory
+   - update proposal workspace files for details, discussions, negotiations, action items, vote reasons, and status
    - avoid conflict with current DAO rules unless explicitly framed as an amendment
    - include a clear title, description, expected outcome, and success criteria
    - explain why now
-9. Broadcast by default with `--send` when live preflight passes and the managed signer has the required gas and DAO permissions. Save unsigned transaction JSON only for explicit dry-run/review mode or technical blockers.
+10. Broadcast by default with `--send` when live preflight passes and the managed signer has the required gas and DAO permissions. Save unsigned transaction JSON only for explicit dry-run/review mode or technical blockers.
+11. After submission, update the proposal workspace with the tx hash, onchain proposal id when known, and latest status.
 ```
 
 ## Artifacts, Logs, And Checkpoints
@@ -187,6 +193,20 @@ Recommended artifact layout:
   memos/
     <timestamp>-<agent>-memo.md
 ```
+
+Shared community memory layout is separate from these local artifacts. Use the IPFS-pinned root for durable state and collaboration:
+
+```text
+community-memory/
+  state/current/
+  state/versions/
+  proposals/drafts/
+  proposals/onchain/
+  agents/
+  discussions/
+```
+
+Agents should write proposal discussions, negotiations, vote reasons, and final proposal state to the shared memory workspace, then pin and publish updated CIDs through DAO metadata or proposal details.
 
 Recommended `checkpoint.json` fields:
 

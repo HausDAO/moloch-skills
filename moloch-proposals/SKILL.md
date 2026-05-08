@@ -16,10 +16,12 @@ Default to high-level commands and concise summaries. Do not expose ABI fragment
 3. Read DAO state first:
    `node ../moloch-shared/scripts/moloch.mjs read-dao --dao 0xDAO`
 4. Optionally read indexed DAO/proposal context with `graph-dao` or `graph-proposals`.
-5. Include `proposalOffering` as tx value for `submitProposal` unless the DAO uses zero offering.
-6. Build the proposal tx and review the compact summary.
-7. Decode the full calldata with `decode-submit-proposal` only when reviewing complex proposals or when asked.
-8. For autonomous proposal tasks, broadcast with `--send` when live preflight passes and the managed signer has the required gas and DAO permissions. Omit `--send` only for explicit dry-run, review, draft mode, or technical blockers.
+5. Find the DAO shared memory root from `daoProfile.communityMemoryURI` when available.
+6. Create or reuse a proposal workspace folder under shared memory before submitting.
+7. Include `proposalOffering` as tx value for `submitProposal` unless the DAO uses zero offering.
+8. Build the proposal tx and review the compact summary.
+9. Decode the full calldata with `decode-submit-proposal` only when reviewing complex proposals or when asked.
+10. For autonomous proposal tasks, broadcast with `--send` when live preflight passes and the managed signer has the required gas and DAO permissions. Omit `--send` only for explicit dry-run, review, draft mode, or technical blockers.
 
 ## Proposal Intent Preflight
 
@@ -136,7 +138,7 @@ For ERC-20 tribute, check and approve Tribute Minion allowance before broadcasti
 
 ## DAO Metadata / Charter / Join Rules Proposal
 
-Use this for DAOhaus-readable metadata and agent-readable rules.
+Use this for DAOhaus-readable metadata, agent-readable rules, and shared community memory pointers.
 
 Profile links:
 
@@ -147,6 +149,9 @@ node ../moloch-shared/scripts/moloch.mjs dao-meta \
   --charter-uri ipfs://... \
   --join-rules-uri ipfs://... \
   --goals-uri ipfs://... \
+  --community-memory-uri ipfs://... \
+  --proposal-workspace-uri ipfs://.../proposals \
+  --shared-state-uri ipfs://.../state/current \
   --send
 ```
 
@@ -166,7 +171,28 @@ node ../moloch-shared/scripts/moloch.mjs dao-record \
   --send
 ```
 
-These build a proposal that posts a Poster record if passed. Use IPFS/Pinata CIDs for larger charter, manifesto, join rules, or hosted docs content.
+These build a proposal that posts a Poster record if passed. Use IPFS/Pinata CIDs for larger charter, manifesto, join rules, hosted docs content, and shared memory roots.
+
+## Proposal Workspace
+
+Before submitting any proposal, create or reuse a shared memory workspace under:
+
+```text
+community-memory/proposals/drafts/<proposal-slug>/
+```
+
+Use `templates/community-memory/proposals/drafts/_template` as the starting shape. At minimum, keep:
+
+- `proposal.md`
+- `details.json`
+- `actions.json`
+- `discussions.md`
+- `negotiations.md`
+- `action-items.md`
+- `vote-reasons.md`
+- `status.json`
+
+Pin the updated memory root or proposal workspace. Put the workspace URI in `details.contentURI` or in the proposal body when it helps members and agents inspect the work. After submission, copy the workspace to `proposals/onchain/proposal-<id>/` and add submission, vote, processing, and final state records.
 
 Zero-tribute membership request example:
 

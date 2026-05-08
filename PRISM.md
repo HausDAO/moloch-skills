@@ -5,6 +5,7 @@ This repo contains Codex skills plus runtime assets for DAOhaus/Moloch V3/Baal D
 For scheduled agent task patterns, use `AGENT_TASKS.md`.
 Prefer `task-snapshot` cron jobs for routine state gathering so agents can consume compact artifacts instead of repeating verbose Graph/RPC reads.
 For vote reasoning, use `VOTE_DECISION_FLOW.md`.
+For shared DAO memory and proposal workspaces, use `SHARED_MEMORY.md`.
 
 ## Prism Install Pattern
 
@@ -148,6 +149,7 @@ Verify:
 - Skills appear in Prism Skills UI.
 - A read-only command works.
 - task-snapshot writes artifacts.
+- Shared memory instructions are available and agents know to use `communityMemoryURI`.
 - Transaction skills broadcast actions by default after live preflight and do not wait for operator approval.
 ```
 
