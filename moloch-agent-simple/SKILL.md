@@ -15,6 +15,13 @@ export MOLOCH_SERVICE_URL="${MOLOCH_SERVICE_URL:-https://moloch-service-producti
 
 The service must never receive private keys. Signing stays local in the agent runtime.
 
+Use the npm CLI for hosted-service operations:
+
+```bash
+npm install -g @raidguild/moloch-agent
+moloch-agent capabilities
+```
+
 ## Minimal Operator Inputs
 
 Ask the operator or harness for:
@@ -35,6 +42,20 @@ Do not ask the operator for:
 Use the hosted service for those dependencies.
 
 ## Runtime Assumptions
+
+Primary CLI:
+
+```text
+moloch-agent
+```
+
+Install:
+
+```bash
+npm install -g @raidguild/moloch-agent
+```
+
+The npm CLI currently handles hosted service reads and pinning. Use the shared runtime script for transaction builders/actions that are not yet in the npm package.
 
 Preferred runtime asset path:
 
@@ -61,8 +82,8 @@ For Prism, use the Prism-managed install flow from `PRISM.md`; do not install on
 First, check the hosted service:
 
 ```bash
-curl -s "$MOLOCH_SERVICE_URL/health"
-curl -s "$MOLOCH_SERVICE_URL/capabilities"
+moloch-agent health
+moloch-agent capabilities
 ```
 
 Expected capabilities:
@@ -71,7 +92,7 @@ Expected capabilities:
 - `pinning.configured: true`
 - `signing.handledByService: false`
 
-Then check local runtime:
+Then check local transaction runtime when write actions are needed:
 
 ```bash
 node /data/custom/moloch-skills/moloch-shared/scripts/moloch.mjs capabilities
@@ -115,21 +136,19 @@ Do not invent the mandate. If the operator has not provided a mandate, create a 
 
 ## Hosted Service Helpers
 
-Read DAO state through the service:
+Read DAO state through the npm CLI:
 
 ```bash
-curl -s "$MOLOCH_SERVICE_URL/dao/8453/0xDAO"
-curl -s "$MOLOCH_SERVICE_URL/dao/8453/0xDAO/proposals"
-curl -s "$MOLOCH_SERVICE_URL/dao/8453/0xDAO/members"
-curl -s "$MOLOCH_SERVICE_URL/dao/8453/0xDAO/records?table=communityMemory"
+moloch-agent dao --dao 0xDAO
+moloch-agent proposals --dao 0xDAO
+moloch-agent members --dao 0xDAO
+moloch-agent records --dao 0xDAO --table communityMemory
 ```
 
-Pin JSON artifacts through the service:
+Pin JSON artifacts through the npm CLI:
 
 ```bash
-curl -s -X POST "$MOLOCH_SERVICE_URL/pin/json" \
-  -H 'content-type: application/json' \
-  -d '{"name":"community-state-v1","data":{"type":"community-state","version":"0001"}}'
+moloch-agent pin-json --file community-state.json --name community-state-v1
 ```
 
 Use returned `ipfs://...` values in:
@@ -222,4 +241,3 @@ For advanced commands and troubleshooting, use:
 - `moloch-proposal-actions`
 - `moloch-summon`
 - `moloch-agent-conviction`
-
