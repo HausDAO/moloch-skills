@@ -55,7 +55,7 @@ Install:
 npm install -g @raidguild/moloch-agent
 ```
 
-The npm CLI currently handles hosted service reads and pinning. Use the shared runtime script for transaction builders/actions that are not yet in the npm package.
+The npm CLI handles hosted service reads, pinning, transaction building, and local signing for core proposal actions. Use the shared runtime script only as an advanced fallback for commands not yet exposed by `moloch-agent`.
 
 Preferred runtime asset path:
 
@@ -92,7 +92,7 @@ Expected capabilities:
 - `pinning.configured: true`
 - `signing.handledByService: false`
 
-Then check local transaction runtime when write actions are needed:
+If an advanced fallback command is needed, check the local transaction runtime:
 
 ```bash
 node /data/custom/moloch-skills/moloch-shared/scripts/moloch.mjs capabilities
@@ -199,9 +199,8 @@ Do not use `signal` for a real membership, shares, loot, or tribute action.
 Use `memory-post` for public coordination records:
 
 ```bash
-node /data/custom/moloch-skills/moloch-shared/scripts/moloch.mjs memory-post \
+moloch-agent memory-post \
   --dao 0xDAO \
-  --table communityMemory \
   --type vote-reason \
   --thread-id proposal-12 \
   --proposal 12 \
