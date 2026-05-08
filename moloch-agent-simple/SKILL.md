@@ -18,7 +18,7 @@ The service must never receive private keys. Signing stays local in the agent ru
 Use the npm CLI for hosted-service operations:
 
 ```bash
-npm install -g @raidguild/moloch-agent
+npm install -g @raidguild/meta-clawtel
 moloch-agent capabilities
 ```
 
@@ -52,10 +52,10 @@ moloch-agent
 Install:
 
 ```bash
-npm install -g @raidguild/moloch-agent
+npm install -g @raidguild/meta-clawtel
 ```
 
-The npm CLI handles hosted service reads, pinning, transaction building, and local signing for core proposal actions. Use the shared runtime script only as an advanced fallback for commands not yet exposed by `moloch-agent`.
+The npm CLI handles hosted service reads, pinning, proposal lifecycle checks, summon transaction building, proposal transaction building, and local signing for core actions. Use the shared runtime script only as an advanced fallback for commands not yet exposed by `moloch-agent`.
 
 Preferred runtime asset path:
 
@@ -134,13 +134,28 @@ Bootstrap should:
 
 Do not invent the mandate. If the operator has not provided a mandate, create a local draft and ask for the missing mandate fields.
 
+## Summon
+
+For a new DAO, create a small params file and summon through the npm CLI:
+
+```bash
+moloch-agent summon --params summon.json
+```
+
+The summon params should include initial members, raw initial share/loot base-unit balances, token names, voting/grace periods, quorum, sponsor threshold, min retention, and DAO metadata pointers such as `communityMemoryURI`, `proposalWorkspaceURI`, or `sharedStateURI`.
+
+Use whole-number percentages for `quorum` and `minRetention`. Use 18-decimal base units for shares, loot, offering, and sponsor threshold when the value represents Baal token units.
+
 ## Hosted Service Helpers
 
 Read DAO state through the npm CLI:
 
 ```bash
 moloch-agent dao --dao 0xDAO
+moloch-agent read-dao --dao 0xDAO
 moloch-agent proposals --dao 0xDAO
+moloch-agent proposal-lifecycle --dao 0xDAO --proposal 12
+moloch-agent process-queue --dao 0xDAO
 moloch-agent members --dao 0xDAO
 moloch-agent records --dao 0xDAO --table communityMemory
 ```
@@ -158,6 +173,18 @@ Use returned `ipfs://...` values in:
 - `stateURI`
 - DAO metadata pointers
 
+Update DAO metadata pointers through a governance proposal:
+
+```bash
+moloch-agent dao-meta \
+  --dao 0xDAO \
+  --title "Update DAO memory pointers" \
+  --community-memory-uri ipfs://... \
+  --proposal-workspace-uri ipfs://...
+```
+
+This writes DAOhaus-compatible metadata through Poster so indexed clients can discover shared memory pointers.
+
 ## Autonomous Task Loop
 
 Run these task types from `AGENT_TASKS.md`:
@@ -168,7 +195,9 @@ Run these task types from `AGENT_TASKS.md`:
 
 Default behavior:
 
-- Broadcast with `--send` when mandate and live preflight point to action.
+- Broadcast when mandate and live preflight point to action.
+- Transaction commands broadcast by default.
+- Use `--build-only` only when a task explicitly needs an unsigned transaction artifact.
 - Do not wait for operator approval.
 - Process ready proposals as mechanical settlement.
 - Post concise DAO database memory records after meaningful actions.
@@ -194,6 +223,17 @@ When creating proposals:
 
 Do not use `signal` for a real membership, shares, loot, or tribute action.
 
+Common proposal commands:
+
+```bash
+moloch-agent signal --dao 0xDAO --title "..." --description "..." --link ipfs://...
+moloch-agent join-dao --dao 0xDAO --amount 10000000000000000 --shares 10000
+moloch-agent tribute --dao 0xDAO --token ETH --amount 10000000000000000 --shares 10000
+moloch-agent mint-shares --dao 0xDAO --to 0xMEMBER --amount 1
+```
+
+For `mint-shares`, `--amount 1` means 1 full share token and encodes as `1000000000000000000`. Use `--amount-raw` only when the exact base-unit value is intended.
+
 ## DAO Database Memory
 
 Use `memory-post` for public coordination records:
@@ -204,8 +244,7 @@ moloch-agent memory-post \
   --type vote-reason \
   --thread-id proposal-12 \
   --proposal 12 \
-  --body "Reason for vote." \
-  --send
+  --body "Reason for vote."
 ```
 
 Use the `community-memory/v1` envelope. Prefer `threadId` for grouping.
@@ -221,6 +260,14 @@ When `process-queue` identifies the oldest ready proposal and live chain preflig
 - do not block because of proposal category, value, shares, loot, membership, payments, or settings
 - reread state after processing
 - post a concise result record
+
+Preferred command:
+
+```bash
+moloch-agent process-ready --dao 0xDAO
+```
+
+`process-ready` uses the queue helper, selects the oldest ready proposal, and includes a gas limit derived from proposal `baalGas` when available. If a proposal was submitted with `baalGas` too low, the process transaction can still need a larger outer transaction gas limit.
 
 ## References
 
