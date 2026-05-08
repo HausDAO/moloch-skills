@@ -175,7 +175,7 @@ Build or broadcast transactions:
 
 ```bash
 node moloch-shared/scripts/moloch.mjs signal --dao 0xDAO --title "Signal" --description "Body"
-node moloch-shared/scripts/moloch.mjs dao-meta --dao 0xDAO --name "DAO Name" --charter-uri ipfs://... --join-rules-uri ipfs://... --community-memory-uri ipfs://...
+node moloch-shared/scripts/moloch.mjs dao-meta --dao 0xDAO --name "DAO Name" --community-memory-uri ipfs://... --shared-state-uri ipfs://.../versions/0001/community-state.md
 node moloch-shared/scripts/moloch.mjs dao-record --dao 0xDAO --table charter --content-file charter-record.json
 node moloch-shared/scripts/moloch.mjs dao-record --dao 0xDAO --table joinRules --content-file join-rules-record.json
 node moloch-shared/scripts/moloch.mjs tribute --dao 0xDAO --token ETH --amount 1000000000000000 --shares 0 --loot 1000
@@ -233,7 +233,7 @@ Raw JSON/calldata should be saved to a file or shown only on request.
 
 Use `signal` only for text-only governance intent. If the operator asks to join, request shares, request loot, create a membership proposal, or make a tribute proposal, use an executable membership path. Use `tribute` / `join-dao` for token tribute. Use `mint-shares` for direct voting-share grants with no tribute transfer. A signal about shares does not issue shares.
 
-Use `dao-meta` or `dao-record` for DAO profile, charter, manifesto, hosted docs, and join-rule pointers.
+Use `dao-meta` or `dao-record` for DAO profile, shared memory, hosted docs, and join-rule pointers.
 
 ## Onchain Submission Requirements
 
@@ -256,27 +256,21 @@ export GRAPH_URL="https://gateway.thegraph.com/api/YOUR_GRAPH_KEY/subgraphs/id/7
 
 ## DAO Metadata, Charter, And Join Rules
 
-Summon posts initial DAO profile metadata through Poster. Create and pin a shared community memory root before summon whenever possible, then include it in the initial metadata. The summon params may include optional metadata fields:
+Summon posts initial DAO profile metadata through Poster. Create and pin a shared community memory root before summon whenever possible, then include it in the initial metadata. Keep shared state simple: one versioned `community-state.md` file, not separate manifesto/charter/intent files.
 
 ```json
 {
   "daoName": "Example DAO",
   "description": "Short public description",
-  "goalsURI": "ipfs://...",
-  "charterURI": "ipfs://...",
-  "joinRulesURI": "ipfs://...",
-  "manifestoURI": "ipfs://...",
   "communityMemoryURI": "ipfs://...",
   "proposalWorkspaceURI": "ipfs://.../proposals",
-  "sharedStateURI": "ipfs://.../state/current"
+  "sharedStateURI": "ipfs://.../versions/0001/community-state.md"
 }
 ```
 
-For richer or changing rules, use Poster/DAO records and proposal ratification:
+For richer or changing rules, create a new IPFS version and use Poster/DAO records or `dao-meta` proposal ratification to point at the new CID:
 
 - `daoProfile`: current profile and links.
-- `charter`: current charter pointer/version/hash.
-- `joinRules`: how agents or humans request membership.
 - `communityMemory`: the shared IPFS root where agents and members coordinate.
 
 Routine snapshots write local `dao-records.json` and `operating-context.json`, but those are per-agent working artifacts. Durable community memory should live under the shared IPFS root described in `SHARED_MEMORY.md`.
@@ -287,7 +281,7 @@ Create a starter memory root from:
 cp -R templates/community-memory ./community-memory
 ```
 
-Fill in `community-memory/manifest.json`, `community-memory/state/current/*`, pin the directory, then publish the root CID in summon metadata or with `dao-meta`:
+Fill in `community-memory/manifest.json` and `community-memory/versions/0001/community-state.md`, pin the directory, then publish the root CID in summon metadata or with `dao-meta`:
 
 ```bash
 node moloch-shared/scripts/moloch.mjs dao-meta \
@@ -295,35 +289,11 @@ node moloch-shared/scripts/moloch.mjs dao-meta \
   --name "DAO Name" \
   --community-memory-uri ipfs://... \
   --proposal-workspace-uri ipfs://.../proposals \
-  --shared-state-uri ipfs://.../state/current \
+  --shared-state-uri ipfs://.../versions/0001/community-state.md \
   --send
 ```
 
-Example charter record:
-
-```json
-{
-  "title": "Meta Clawtel Charter",
-  "version": "0.1.0",
-  "uri": "ipfs://...",
-  "contentHash": "bafy...",
-  "summary": "Alignment, onboarding, distribution, and rules of engagement."
-}
-```
-
-Example join-rules record:
-
-```json
-{
-  "title": "Meta Clawtel Join Rules",
-  "version": "0.1.0",
-  "token": "ETH",
-  "tributeAmount": "1000000000000000",
-  "sharesRequested": "1000",
-  "shareUnitMode": "human-18-decimal",
-  "expectations": ["align with charter", "contribute to onboarding or distribution", "participate in votes"]
-}
-```
+IPFS is immutable. Do not edit an already-pinned shared state or proposal workspace in place. Create a new version directory, pin it, and publish the new CID.
 
 Proposal workspaces should be created under the shared memory root before submission. Reuse an existing draft folder if one already exists. Each workspace should include proposal details, discussions, negotiations, action items, vote reasons, sources, status, and tx hashes after submission.
 

@@ -32,7 +32,7 @@ Choose the proposal path by operator intent:
 | signal, temperature check, text-only governance intent | `signal` |
 | join DAO with tribute, tokens-for-shares, tokens-for-loot | `tribute` / `join-dao` |
 | grant or mint voting shares directly, no tribute involved | `mint-shares` |
-| update DAO profile, charter URI, join rules URI, manifesto/docs links | `dao-meta` / `dao-record` |
+| update DAO profile, shared memory URI, community state URI, hosted docs links | `dao-meta` / `dao-record` |
 | change voting period, grace period, offering, quorum, retention | `gov-settings` |
 | change share/loot pause or transferability setting | `token-settings` |
 | arbitrary contract execution | custom proposal path |
@@ -136,7 +136,7 @@ node ../moloch-shared/scripts/moloch.mjs tribute \
 
 For ERC-20 tribute, check and approve Tribute Minion allowance before broadcasting. For ETH tribute, tx `value` equals `amount`. Tribute token `--amount` remains raw token units because ERC-20 decimals vary; share/loot outputs use human 18-decimal units by default.
 
-## DAO Metadata / Charter / Join Rules Proposal
+## DAO Metadata / Shared Memory Proposal
 
 Use this for DAOhaus-readable metadata, agent-readable rules, and shared community memory pointers.
 
@@ -146,16 +146,13 @@ Profile links:
 node ../moloch-shared/scripts/moloch.mjs dao-meta \
   --dao 0xDAO \
   --name "DAO Name" \
-  --charter-uri ipfs://... \
-  --join-rules-uri ipfs://... \
-  --goals-uri ipfs://... \
   --community-memory-uri ipfs://... \
   --proposal-workspace-uri ipfs://.../proposals \
-  --shared-state-uri ipfs://.../state/current \
+  --shared-state-uri ipfs://.../versions/0001/community-state.md \
   --send
 ```
 
-Custom records:
+Custom records remain available for DAOs that already use Poster tables:
 
 ```bash
 node ../moloch-shared/scripts/moloch.mjs dao-record \
@@ -171,7 +168,7 @@ node ../moloch-shared/scripts/moloch.mjs dao-record \
   --send
 ```
 
-These build a proposal that posts a Poster record if passed. Use IPFS/Pinata CIDs for larger charter, manifesto, join rules, hosted docs content, and shared memory roots.
+These build a proposal that posts a Poster record if passed. Use IPFS/Pinata CIDs for shared memory roots and versioned community state files.
 
 ## Proposal Workspace
 
@@ -192,7 +189,9 @@ Use `templates/community-memory/proposals/drafts/_template` as the starting shap
 - `vote-reasons.md`
 - `status.json`
 
-Pin the updated memory root or proposal workspace. Put the workspace URI in `details.contentURI` or in the proposal body when it helps members and agents inspect the work. After submission, copy the workspace to `proposals/onchain/proposal-<id>/` and add submission, vote, processing, and final state records.
+Pin the new memory root or proposal workspace version. Put the workspace URI in `details.contentURI` or in the proposal body when it helps members and agents inspect the work. After submission, copy the workspace to `proposals/onchain/proposal-<id>/` and add submission, vote, processing, and final state records.
+
+IPFS is immutable. Do not describe this as editing a folder or updating a table in place. Create a new versioned directory and publish the new CID.
 
 Zero-tribute membership request example:
 

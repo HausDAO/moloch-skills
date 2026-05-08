@@ -1,5 +1,8 @@
 # Vote Reasons
 
-| Voter | Vote | Reason | Tx |
-| --- | --- | --- | --- |
+## Votes
 
+- Voter:
+  Vote:
+  Reason:
+  Tx:

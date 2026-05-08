@@ -1,5 +1,12 @@
 # Action Items
 
-| Task | Owner | Status | Notes |
-| --- | --- | --- | --- |
+## Open
 
+- Task:
+  Owner:
+  Status:
+  Notes:
+
+## Done
+
+-

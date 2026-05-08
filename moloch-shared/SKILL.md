@@ -65,7 +65,7 @@ node scripts/moloch.mjs details --title "..." --description "..." --proposal-typ
 node scripts/moloch.mjs decode-proposal-data --data 0x...
 node scripts/moloch.mjs decode-submit-proposal --data 0x...
 node scripts/moloch.mjs signal --dao 0xDAO --title "..." --description "..."
-node scripts/moloch.mjs dao-meta --dao 0xDAO --name "DAO Name" --charter-uri ipfs://... --join-rules-uri ipfs://... --community-memory-uri ipfs://...
+node scripts/moloch.mjs dao-meta --dao 0xDAO --name "DAO Name" --community-memory-uri ipfs://... --shared-state-uri ipfs://.../versions/0001/community-state.md
 node scripts/moloch.mjs dao-record --dao 0xDAO --table charter --content-file charter-record.json
 node scripts/moloch.mjs tribute --dao 0xDAO --token ETH --amount 1000000000000000 --shares 0 --loot 1000
 node scripts/moloch.mjs mint-shares --dao 0xDAO --to 0xMEMBER --amount 10000
@@ -151,7 +151,7 @@ Use direct contract reads for:
 
 ## Shared Memory
 
-Use `../SHARED_MEMORY.md` for the IPFS-backed shared community memory framework. Shared memory is the DAO-level collaboration space for current charter/goals/intent/roles, proposal drafts, discussions, negotiations, vote reasons, and final proposal state.
+Use `../SHARED_MEMORY.md` for the IPFS-backed shared community memory framework. Shared memory is the DAO-level collaboration space for one versioned community-state file, proposal drafts, discussions, negotiations, vote reasons, and final proposal state.
 
 The shared script passes these DAO profile metadata pointers through summon and `dao-meta`:
 
@@ -160,6 +160,8 @@ The shared script passes these DAO profile metadata pointers through summon and 
 - `sharedStateURI`
 
 Agents should use shared memory for durable community context, while direct contract reads remain the source of truth for permissions, timing, votes, and execution.
+
+IPFS is immutable. Agents create new version directories and publish new CIDs; they do not edit pinned state in place.
 
 ## Safety Checks
 

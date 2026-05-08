@@ -2,19 +2,25 @@
 
 This repo supports always-on DAO agents, but the DAO's durable memory should not live only inside one agent workspace. Use an IPFS-first shared memory root for community state, proposal collaboration, and agent-to-agent coordination.
 
+## IPFS Versioning Rule
+
+IPFS objects are immutable. Do not model shared memory as an editable table, mutable database, or in-place folder update.
+
+Every change creates a new versioned directory and a new CID. The latest DAO metadata pointer tells agents which version is current.
+
 ## Model
 
-Create a shared memory directory before or during summon, pin it to IPFS, and include the root CID in DAO summon metadata:
+Create a shared memory directory before or during summon, pin it to IPFS, and include the root CID plus current state CID in DAO summon metadata:
 
 ```json
 {
   "communityMemoryURI": "ipfs://...",
   "proposalWorkspaceURI": "ipfs://.../proposals",
-  "sharedStateURI": "ipfs://.../state/current"
+  "sharedStateURI": "ipfs://.../versions/0001/community-state.md"
 }
 ```
 
-The root can be a mutable folder in Pinata or another pinning workflow, with versioned snapshots pinned as immutable CIDs. Agents should treat the latest DAO metadata pointer as the canonical entrypoint, then write new versioned folders and propose pointer updates when shared state changes.
+Agents should treat the latest metadata pointer as the canonical entrypoint. To change community memory, create `versions/0002`, pin it, then submit a metadata proposal that points to the new CID.
 
 ## Directory Layout
 
@@ -24,24 +30,9 @@ Recommended root layout:
 community-memory/
   README.md
   manifest.json
-  state/
-    current/
-      manifesto.md
-      charter.md
-      goals.md
-      intent.md
-      roles.md
-      join-rules.md
-      operating-context.json
-    versions/
-      0001/
-        manifest.json
-        manifesto.md
-        charter.md
-        goals.md
-        intent.md
-        roles.md
-        join-rules.md
+  versions/
+    0001/
+      community-state.md
   proposals/
     drafts/
       proposal-<local-id-or-title>/
@@ -89,14 +80,34 @@ Use `manifest.json` to make the memory root machine-readable:
   "daoAddress": "",
   "chainId": 8453,
   "createdAt": "",
-  "currentStatePath": "state/current",
+  "latestVersion": "0001",
+  "latestStatePath": "versions/0001/community-state.md",
   "proposalDraftsPath": "proposals/drafts",
   "onchainProposalsPath": "proposals/onchain",
   "agentsPath": "agents",
-  "discussionsPath": "discussions",
-  "latestStateVersion": "0001"
+  "discussionsPath": "discussions"
 }
 ```
+
+## Community State File
+
+Use one file for rolling community state:
+
+```text
+versions/0001/community-state.md
+```
+
+Keep it concise and structured with headings. Include only what agents need to understand the DAO:
+
+- purpose
+- current goals
+- rules of engagement
+- join rules
+- roles and responsibilities
+- current operating focus
+- links to detailed docs or proposal workspaces
+
+When the state changes, copy the full file to a new version directory, update it there, pin the new directory, and publish the new `sharedStateURI`.
 
 ## Proposal Workspace Rule
 
@@ -104,8 +115,8 @@ Before creating an onchain proposal, an agent should create or reuse a proposal 
 
 Minimum files:
 
-- `proposal.md`: human-readable title, summary, motivation, expected outcome, and success criteria.
-- `details.json`: DAOhaus proposal details JSON or the planned fields used to build it.
+- `proposal.md`: title, summary, motivation, expected outcome, and success criteria.
+- `details.json`: DAOhaus proposal details JSON or planned fields.
 - `actions.json`: concise action summary, target contracts, value, encoded action kind, and whether it is signal/executable.
 - `discussions.md`: arguments, questions, objections, and links.
 - `negotiations.md`: concessions, counterproposals, and changed terms.
@@ -113,38 +124,22 @@ Minimum files:
 - `vote-reasons.md`: each agent/member's vote reason when known.
 - `status.json`: draft, submitted, sponsored, voting, grace, processed, failed, superseded.
 
-After submission, copy or move the folder to `proposals/onchain/proposal-<id>/` and add:
+After submission, create a new immutable proposal workspace version under `proposals/onchain/proposal-<id>/` and add:
 
 - `txs.json`: submission, sponsorship, vote, and processing tx hashes.
 - `final-state.json`: final lifecycle status after processing.
 
-## Rolling Community State
-
-The `state/current/` folder should contain the current community context that agents use before proposing or voting:
-
-- `manifesto.md`: why the DAO exists.
-- `charter.md`: rules of engagement and governance norms.
-- `goals.md`: current strategic goals.
-- `intent.md`: current operating intent and near-term focus.
-- `roles.md`: members, agents, stewards, and operational roles.
-- `join-rules.md`: membership, tribute, shares, loot, and onboarding rules.
-- `operating-context.json`: compact machine-readable summary.
-
-When these files change, create a new `state/versions/<n>/` snapshot and propose a DAO metadata or `dao-record` update that points at the new CID.
+Do not edit an already-pinned proposal workspace in place. Create a new pinned version and reference the new CID.
 
 ## Summon Metadata
 
-At summon time, include `communityMemoryURI` whenever possible. Also include direct pointers for core records when available:
+At summon time, include `communityMemoryURI` whenever possible:
 
 ```json
 {
-  "goalsURI": "ipfs://...",
-  "charterURI": "ipfs://...",
-  "joinRulesURI": "ipfs://...",
-  "manifestoURI": "ipfs://...",
   "communityMemoryURI": "ipfs://...",
   "proposalWorkspaceURI": "ipfs://.../proposals",
-  "sharedStateURI": "ipfs://.../state/current"
+  "sharedStateURI": "ipfs://.../versions/0001/community-state.md"
 }
 ```
 
@@ -154,10 +149,10 @@ If CIDs are not ready at summon, launch with placeholders omitted, then use `dao
 
 Agents should use shared memory for community context and collaboration, not as a replacement for chain truth.
 
-- Read DAO metadata to find `communityMemoryURI`.
-- Read `state/current/operating-context.json` before creating or voting on proposals.
-- Create or update proposal workspace folders for every draft.
+- Read DAO metadata to find `communityMemoryURI` and `sharedStateURI`.
+- Read the single `community-state.md` before creating or voting on proposals.
+- Create proposal workspace folders for every draft.
 - Link onchain proposals back to their workspace URI in proposal details when useful.
 - Continue to use direct contract reads for permissions, lifecycle, timing, and processing.
-- Record tx hashes and final lifecycle state back into the proposal workspace.
+- Record tx hashes and final lifecycle state into a new proposal workspace version.
 

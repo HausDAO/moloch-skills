@@ -142,7 +142,7 @@ Steps:
 3. Count proposals currently in voting from proposal-summary.json.
 4. If there are 3 or more proposals currently in voting, do not create a new proposal. Summarize what needs to resolve first.
 5. Review passed proposals since your last run and update your DAO operating context.
-6. Read the DAO shared memory root when `communityMemoryURI` is available and incorporate current manifesto, charter, goals, intent, roles, join rules, and open draft workspaces.
+6. Read the DAO shared memory root when `communityMemoryURI` is available and incorporate the current versioned `community-state.md` plus open draft workspaces.
 7. Check your mandate checklist.
 8. If fewer than 3 proposals are currently in voting, choose at most one:
    - draft a signal proposal
@@ -198,15 +198,16 @@ Shared community memory layout is separate from these local artifacts. Use the I
 
 ```text
 community-memory/
-  state/current/
-  state/versions/
+  versions/
+    0001/
+      community-state.md
   proposals/drafts/
   proposals/onchain/
   agents/
   discussions/
 ```
 
-Agents should write proposal discussions, negotiations, vote reasons, and final proposal state to the shared memory workspace, then pin and publish updated CIDs through DAO metadata or proposal details.
+Agents should write proposal discussions, negotiations, vote reasons, and final proposal state to a new shared memory workspace version, then pin and publish new CIDs through DAO metadata or proposal details. IPFS is immutable; do not update already-pinned state in place.
 
 Recommended `checkpoint.json` fields:
 
