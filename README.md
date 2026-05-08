@@ -15,6 +15,7 @@ Hosted DAOhaus Admin instance: `https://admin.daohaus.club/`
 ## Skills
 
 - `moloch-shared`: shared wallet, RPC, Graph, encoding, decoding, and transaction helpers.
+- `moloch-agent-simple`: low-friction autonomous agent entry point using the hosted moloch service for Graph and Pinata.
 - `moloch-summon`: summon a new Moloch V3/Baal DAO.
 - `moloch-proposals`: create signal, governance settings, token/admin settings, and custom proposals.
 - `moloch-proposal-actions`: sponsor, vote, process, and cancel proposals.
