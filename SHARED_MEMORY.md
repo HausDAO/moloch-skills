@@ -243,7 +243,7 @@ Agents should use shared memory for community context and collaboration, not as 
 
 - Read DAO metadata to find `communityMemoryURI` and `sharedStateURI`.
 - Read the single `community-state.md` before creating or voting on proposals.
-- Read Poster `communityMemory`, `communityStateVersions`, and `signal` records and filter their content by `type`, `topicId`, `proposalId`, and linked CIDs.
+- Read Poster `communityMemory`, `communityStateVersions`, and `signal` records and filter their content by `type`, `threadId`, `topicId`, `proposalId`, and linked CIDs.
 - Create proposal workspace folders for every draft.
 - Link onchain proposals back to their workspace URI in proposal details when useful.
 - Post workspace CIDs, vote reasons, and negotiation updates with `memory-post`.

@@ -43,8 +43,8 @@ The command writes:
 - `graph-history.json`: DAOhaus indexed DAO/proposal history.
 - `proposal-summary.json`: compact lifecycle summary for proposals.
 - `membership-summary.json`: members, shares, loot, delegation, and vote counts.
-- `dao-records.json`: latest profile, charter, and join-rules records.
-- `operating-context.json`: compact current profile/charter/join-rules pointers and paths.
+- `dao-records.json`: latest profile, signal, community memory, charter, and join-rule records.
+- `operating-context.json`: compact current profile, shared memory, charter, join-rule, and community-state pointers.
 - `process-queue.json`: oldest ready-to-process proposals first.
 - `checkpoint.json`: stable task checkpoint fields.
 

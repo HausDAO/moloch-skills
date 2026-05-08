@@ -66,7 +66,7 @@ node scripts/moloch.mjs decode-proposal-data --data 0x...
 node scripts/moloch.mjs decode-submit-proposal --data 0x...
 node scripts/moloch.mjs signal --dao 0xDAO --title "..." --description "..."
 node scripts/moloch.mjs dao-meta --dao 0xDAO --name "DAO Name" --community-memory-uri ipfs://... --shared-state-uri ipfs://.../versions/0001/community-state.md
-node scripts/moloch.mjs memory-post --dao 0xDAO --table communityMemory --topic-id proposal-1 --body "..." --send
+node scripts/moloch.mjs memory-post --dao 0xDAO --table communityMemory --thread-id proposal-1 --body "..." --send
 node scripts/moloch.mjs dao-record --dao 0xDAO --table charter --content-file charter-record.json
 node scripts/moloch.mjs tribute --dao 0xDAO --token ETH --amount 1000000000000000 --shares 0 --loot 1000
 node scripts/moloch.mjs mint-shares --dao 0xDAO --to 0xMEMBER --amount 10000
@@ -142,7 +142,7 @@ Use Graph reads for:
 - membership, delegation, shares, loot, and member vote history with `graph-members`
 - charter/join-rules/profile records with `graph-records`
 - shared community memory pointers such as `communityMemoryURI`, `proposalWorkspaceURI`, and `sharedStateURI`
-- Poster-backed discussion records such as `communityMemory`, `communityStateVersions`, and `signal`, filtered by content fields such as `type`, `topicId`, and `proposalId`
+- Poster-backed discussion records such as `communityMemory`, `communityStateVersions`, and `signal`, filtered by content fields such as `type`, `threadId`, `topicId`, and `proposalId`
 
 Use direct contract reads for:
 
