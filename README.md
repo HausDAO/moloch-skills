@@ -120,14 +120,13 @@ For Meta Clawtel summon, the critical address is `V3_FACTORY_ADV_TOKEN`. After s
 
 ## Autonomy Model
 
-This pack is intended for always-on DAO agents. In that mode, the agent should broadcast by default when all of these are true:
+This pack is intended for always-on DAO agents with managed wallets. In that mode, the agent is expected to act autonomously and broadcast transactions without waiting for operator approval when these are true:
 
 - the agent has a configured managed signer, `RPC_URL`, and gas funds
-- the action is inside the agent's mandate, scheduled task, or harness policy
+- the action follows the agent's mandate, scheduled task, or harness configuration
 - direct chain preflight confirms the action is currently valid
-- the action does not trigger an escalation rule in the agent mandate
 
-The CLI still uses `--send` as the explicit execution bit. Agent skills should add `--send` for authorized actions unless the operator, task, or harness says to build only, dry-run, or draft. Read-only tasks never need a private key.
+The CLI still uses `--send` as the explicit execution bit. Autonomous skills should add `--send` for write actions after live preflight passes. Build-only, dry-run, and draft modes are explicit exceptions, not the default. Read-only tasks never need a private key.
 
 ## Common Commands
 
@@ -188,7 +187,7 @@ node moloch-shared/scripts/moloch.mjs process --dao 0xDAO --proposal 1 --proposa
 node moloch-shared/scripts/moloch.mjs summon --params summon.json
 ```
 
-Append `--send` for authorized autonomous broadcasts. Omit it for dry-run/review/draft mode.
+Append `--send` for autonomous broadcasts. Omit it only for explicit dry-run/review/draft mode or technical blockers.
 
 For Baal shares and loot, CLI quantities are human 18-decimal token units by default. `mint-shares --amount 10000` encodes `10000000000000000000000`. `tribute --shares 1 --loot 1000` encodes one share and one thousand loot. Use `--amount-raw`, `--shares-raw`, or `--loot-raw` only when intentionally passing exact base units. Tribute token `--amount` remains raw token units because ETH/ERC-20 decimals vary.
 
@@ -222,11 +221,10 @@ Good default output:
 
 - command run
 - relevant defaults used
-- whether the tx was broadcast or intentionally left unsigned
+- tx hash when the action broadcast
+- technical blocker when an action could not broadcast
 - target contract/address
 - value in ETH/wei
-- risk, policy reason, or escalation needed
-- tx hash after broadcast
 
 Raw JSON/calldata should be saved to a file or shown only on request.
 
@@ -316,8 +314,8 @@ node moloch-shared/scripts/moloch.mjs graph-member --dao 0xDAO --member 0xMEMBER
 
 ## Operational Concerns
 
-- Autonomous agents should send by default for authorized actions after preflight. Leave transactions unsigned only when the task/operator asks for dry-run, review, or draft mode.
-- The CLI requires `--send` to broadcast; this is a mechanical execution flag, not a human-confirmation requirement for authorized agent tasks.
+- Autonomous agents should send by default after live preflight. Do not wait for operator approval.
+- The CLI requires `--send` to broadcast; this is a mechanical execution flag, not a human-confirmation requirement.
 - Proposal builders default `submitProposal` `baalGas` to `0`. Baal ignores zero, while a low nonzero value can make processing fail with an out-of-gas style action failure. Use `--baal-gas` only when you know the required inner action gas. Use `--estimate-baal-gas` to opt in to DAOhaus-style estimation with a default `1.2x` buffer.
 - `process` uses an explicit transaction gas limit because wallet estimation can miss inner proposal action gas. Default is the larger of `800000` or stored `baalGas + 400000`. Override with `--gas-limit`.
 - Baal shares and loot have 18 decimals. Proposal commands use human units for share/loot quantities and expose raw overrides for low-level calls. This avoids accidental proposals that mint `10000` base units instead of `10000` full voting shares.
@@ -329,7 +327,7 @@ node moloch-shared/scripts/moloch.mjs graph-member --dao 0xDAO --member 0xMEMBER
 - Use `graph-dao-history` for broad proposal history instead of looping over direct RPC reads.
 - For `processProposal`, use the exact `proposalData` from the indexed proposal. Do not reconstruct it if Graph has the original payload.
 - Include the DAO's `proposalOffering` as transaction value when submitting proposals unless it is zero.
-- Confirm the managed wallet has Base ETH for gas and the required DAO permissions or voting power.
+- Verify the managed wallet has Base ETH for gas and the required DAO permissions or voting power.
 - Record the tx hash and re-read state after confirmation.
 
 ## Current Limitations
@@ -338,4 +336,4 @@ node moloch-shared/scripts/moloch.mjs graph-member --dao 0xDAO --member 0xMEMBER
 - It covers common DAOhaus/Moloch V3 proposal flows, not every possible shaman or Safe interaction.
 - Gas estimation is not a full replacement for simulation. For high-value transactions, simulate with a dedicated tool before broadcasting.
 - Graph reads require a The Graph Gateway API key unless a full `GRAPH_URL` is supplied.
-- The script stores no wallet state and does not manage key rotation, policy approvals, spending limits, or multisig custody.
+- The script stores no wallet state and does not manage key rotation, spending limits, or multisig custody.

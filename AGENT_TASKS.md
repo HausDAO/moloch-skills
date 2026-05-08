@@ -8,7 +8,7 @@ Split scheduled agent work into three layers:
 
 1. **Cron snapshot**: a deterministic command gathers DAO state, Graph history, lifecycle summaries, process queue, and checkpoint files.
 2. **Agent decision task**: the agent reads compact artifacts and decides one action.
-3. **Action/postcondition task**: the agent builds or sends the transaction according to policy, then rereads state and updates logs.
+3. **Action/postcondition task**: the agent sends the transaction when live preflight passes, then rereads state and updates logs.
 
 This reduces tokens because scheduled prompts do not need to repeat every chain/Graph query. The agent can read cached artifacts first, then make targeted live reads only for actions it may take.
 
@@ -104,9 +104,9 @@ Steps:
    - relevant passed-proposal context
    - recommended action: sponsor, vote yes, vote no, abstain, process, cancel, or no action
    - reason
-7. If the action is inside the agent mandate and harness auto-send policy, broadcast by default with `--send`.
+7. If live preflight passes and the managed signer has the required gas and DAO permissions, broadcast with `--send`.
 8. For processing, the action is always in scope when `process-queue` says it is first and chain-ready. Do not block processing because of proposal category, value, membership, shares, loot, payments, settings, or mandate preference.
-9. Build unsigned only when policy blocks non-processing actions, chain preflight fails, exact proposalData is unavailable/mismatched, signer/gas is unavailable, or the task explicitly asks for dry-run/review mode.
+9. Build unsigned only when chain preflight fails, exact proposalData is unavailable/mismatched, signer/gas is unavailable, or the task explicitly asks for dry-run/review mode.
 10. After any send, reread state and append an action log entry.
 
 Priority order:
@@ -151,7 +151,7 @@ Steps:
    - avoid conflict with current DAO rules unless explicitly framed as an amendment
    - include a clear title, description, expected outcome, and success criteria
    - explain why now
-9. Broadcast by default with `--send` if the proposal is inside the agent mandate and harness auto-send policy. Save unsigned transaction JSON only for dry-run/review mode or when policy blocks broadcast.
+9. Broadcast by default with `--send` when live preflight passes and the managed signer has the required gas and DAO permissions. Save unsigned transaction JSON only for explicit dry-run/review mode or technical blockers.
 ```
 
 ## Artifacts, Logs, And Checkpoints

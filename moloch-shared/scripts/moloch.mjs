@@ -905,7 +905,7 @@ Options:
   --compact            Hide large calldata/proposalData in output
   --estimate-baal-gas  Opt in to DAOhaus-style submitProposal baalGas estimation
   --no-estimate-baal-gas  Legacy no-op; baalGas is 0 by default unless explicitly set
-  --baal-gas <n>       Explicit submitProposal baalGas; use carefully because low nonzero values can make processing fail
+  --baal-gas <n>       Explicit submitProposal baalGas; low nonzero values can make processing fail
   --baal-gas-buffer <n>  Multiplier for opt-in estimated baalGas; default 1.2
   --require-baal-gas-estimate  Error if baalGas cannot be estimated
   --safe 0xSAFE        DAO Safe address for DAOhaus-style baalGas estimation

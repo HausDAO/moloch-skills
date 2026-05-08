@@ -19,7 +19,7 @@ Default to high-level commands and concise summaries. Do not expose ABI fragment
 5. Include `proposalOffering` as tx value for `submitProposal` unless the DAO uses zero offering.
 6. Build the proposal tx and review the compact summary.
 7. Decode the full calldata with `decode-submit-proposal` only when reviewing complex proposals or when asked.
-8. For autonomous proposal tasks, broadcast with `--send` when the proposal is inside mandate/harness policy and live preflight passes. Omit `--send` only for dry-run, review, or draft mode.
+8. For autonomous proposal tasks, broadcast with `--send` when live preflight passes and the managed signer has the required gas and DAO permissions. Omit `--send` only for explicit dry-run, review, draft mode, or technical blockers.
 
 ## Proposal Intent Preflight
 
@@ -77,7 +77,7 @@ DAOhaus has at least two common executable membership paths:
 - `tribute` / `join-dao`: submits through Tribute Minion for tokens-for-shares or tokens-for-loot.
 - `mint-shares`: submits a Baal proposal that calls `mintShares(address[],uint256[])` on the DAO itself.
 
-Use `mint-shares` for grants, steward admissions, retroactive rewards, or membership approvals where no ETH/ERC-20 contribution should be escrowed by Tribute Minion.
+Use `mint-shares` for grants, steward admissions, retroactive rewards, or membership entries where no ETH/ERC-20 contribution should be escrowed by Tribute Minion.
 
 Share and loot quantities use human 18-decimal units by default. Use `--amount 10000` for 10,000 shares, not `10000000000000000000000`. Use `--amount-raw`, `--shares-raw`, or `--loot-raw` only when you intentionally want exact base units.
 

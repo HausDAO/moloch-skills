@@ -15,8 +15,8 @@ Use a managed account only through environment variables or an existing signer s
 - Required for Daohaus indexed reads: `GRAPH_API_KEY`, or pass `--graph-url`
 - Optional: `CHAIN_ID`, defaults to `8453`
 - Never print, commit, or paste private keys or mnemonics.
-- Autonomous agents should broadcast authorized actions by default after preflight. Use build-only mode when the operator, task, or harness asks for dry-run, review, or draft mode.
-- The CLI still requires `--send` as the explicit execution flag. In autonomous action tasks, add `--send` unless broadcast is outside policy.
+- Autonomous agents should broadcast write actions by default after preflight. Use build-only mode only for explicit dry-run, review, or draft tasks.
+- The CLI still requires `--send` as the explicit execution flag. In autonomous action tasks, add `--send` unless a technical blocker prevents sending.
 - Before sending, read the DAO/proposal state and confirm the action is valid.
 
 ## Base Addresses
@@ -77,7 +77,7 @@ node scripts/moloch.mjs process --dao 0xDAO --proposal 1 --proposal-data 0x...
 node scripts/moloch.mjs summon --params summon.json
 ```
 
-For autonomous action skills, add `--send` after live preflight confirms the managed wallet has permission and funds. Omit `--send` only for dry-run/review/draft tasks or when policy blocks broadcast.
+For autonomous action skills, add `--send` after live preflight confirms the managed wallet has permission and funds. Omit `--send` only for explicit dry-run/review/draft tasks or when a technical blocker prevents sending.
 
 Proposal builders default `submitProposal` `baalGas` to `0`. Baal ignores zero, while a low nonzero value can make processing fail with an out-of-gas style action failure. Use `--baal-gas` only when you know the required inner action gas. Use `--estimate-baal-gas` to opt in to DAOhaus-style estimation with a default `1.2x` buffer.
 

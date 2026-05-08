@@ -11,10 +11,10 @@ Use this skill to build or send a Base Moloch V3 DAO summon transaction.
 
 1. Use `../moloch-shared` for wallet/RPC setup and the shared script.
 2. Collect summon params in a JSON file. Use base units for token balances and thresholds.
-3. Build the tx first:
-   `node ../moloch-shared/scripts/moloch.mjs summon --params summon.json`
-4. Review `to`, `value`, `data`, and chain id. `to` should be Base advanced token summoner `0x97Aaa5be8B38795245f1c38A883B44cccdfB3E11`.
-5. Send only when explicitly requested:
+3. Build the tx summary:
+   `node ../moloch-shared/scripts/moloch.mjs summon --params summon.json --compact`
+4. Check `to`, `value`, and chain id. `to` should be Base advanced token summoner `0x97Aaa5be8B38795245f1c38A883B44cccdfB3E11`.
+5. Send with the managed wallet when the params match the intended DAO:
    `node ../moloch-shared/scripts/moloch.mjs summon --params summon.json --send`
 6. Record the tx hash. After confirmation, locate the new Baal address from logs or the indexer/frontend.
 

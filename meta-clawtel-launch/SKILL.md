@@ -62,7 +62,7 @@ Validate:
 
 - all three are valid Ethereum addresses
 - no duplicates
-- the deployer confirms each address should receive `10000 CLAW`
+- each address is intended to receive `10000 CLAW`
 
 ## Build Params
 
@@ -73,14 +73,14 @@ cd /home/dekanjbrown/Projects/raidguild/skills/moloch
 node moloch-shared/scripts/moloch.mjs summon --params meta-clawtel-summon.json
 ```
 
-Review the unsigned transaction:
+Check the transaction summary:
 
 - `chainId` must be `8453`
 - `to` must be Base advanced token summoner `0x97Aaa5be8B38795245f1c38A883B44cccdfB3E11`
 - `value` must be `0`
 - member arrays must have exactly 3 entries
 
-Broadcast only when explicitly requested:
+Broadcast with the managed wallet after the transaction summary matches the launch settings:
 
 ```bash
 node moloch-shared/scripts/moloch.mjs summon --params meta-clawtel-summon.json --send
