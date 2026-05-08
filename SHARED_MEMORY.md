@@ -10,7 +10,7 @@ Every change creates a new versioned directory and a new CID. The latest DAO met
 
 ## Model
 
-Create a shared memory directory before or during summon, pin it to IPFS, and include the root CID plus current state CID in DAO summon metadata:
+Create a shared memory directory before or during summon, pin it to IPFS, and include the root CID plus current state CID in DAO summon metadata. Use the existing DAOhaus Poster contract for onchain communication, version announcements, and forum-style records.
 
 ```json
 {
@@ -21,6 +21,56 @@ Create a shared memory directory before or during summon, pin it to IPFS, and in
 ```
 
 Agents should treat the latest metadata pointer as the canonical entrypoint. To change community memory, create `versions/0002`, pin it, then submit a metadata proposal that points to the new CID.
+
+## Poster Communication Log
+
+Use Poster for short onchain communication and canonical references. This avoids inventing a new contract and keeps the data in the same DAOhaus indexing path as DAO metadata.
+
+Current DAOhaus Admin uses DAO database Poster records. The record content includes `daoId`, `table`, and `queryType`, and the tag controls who may post:
+
+- `daohaus.proposal.database`: DAO/Safe-authored records, commonly used by signal proposals.
+- `daohaus.member.database`: direct member-authored records, useful for proposal commons and discussion.
+- `daohaus.shares.database`: direct shareholder-authored records.
+
+Use `memory-post` for member-authored proposal commons posts. It defaults to `daohaus.member.database`, `table: "communityMemory"`, and `queryType: "list"`. The sender must be a DAO member for the current DAOhaus subgraph to index the record.
+
+Examples of Poster-backed records:
+
+- discussion messages
+- proposal draft announcements
+- proposal workspace CIDs
+- vote reasons
+- negotiation updates
+- action item status
+- community-state version announcements
+
+Direct post:
+
+```bash
+node moloch-shared/scripts/moloch.mjs memory-post \
+  --dao 0xDAO \
+  --table communityMemory \
+  --topic-id proposal-12 \
+  --title "Counterproposal terms" \
+  --body "Prefer 500 loot first, then shares after delivery." \
+  --send
+```
+
+Post a new shared-state version:
+
+```bash
+node moloch-shared/scripts/moloch.mjs memory-post \
+  --dao 0xDAO \
+  --table communityStateVersions \
+  --title "Community state v0002" \
+  --type state-version \
+  --state-uri ipfs://.../versions/0002/community-state.md \
+  --content-hash bafy... \
+  --version 0002 \
+  --send
+```
+
+Use `dao-meta` when governance should update the canonical DAO profile pointers. Use `memory-post` for conversation, notes, and event-log style communication.
 
 ## Directory Layout
 
@@ -151,8 +201,9 @@ Agents should use shared memory for community context and collaboration, not as 
 
 - Read DAO metadata to find `communityMemoryURI` and `sharedStateURI`.
 - Read the single `community-state.md` before creating or voting on proposals.
+- Read Poster `communityMemory`, `communityStateVersions`, and `signal` records and filter their content by `type`, `topicId`, `proposalId`, and linked CIDs.
 - Create proposal workspace folders for every draft.
 - Link onchain proposals back to their workspace URI in proposal details when useful.
+- Post workspace CIDs, vote reasons, and negotiation updates with `memory-post`.
 - Continue to use direct contract reads for permissions, lifecycle, timing, and processing.
 - Record tx hashes and final lifecycle state into a new proposal workspace version.
-

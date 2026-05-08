@@ -156,8 +156,8 @@ node moloch-shared/scripts/moloch.mjs graph-dao-history --dao 0xDAO --first 100
 node moloch-shared/scripts/moloch.mjs graph-members --dao 0xDAO --first 100
 node moloch-shared/scripts/moloch.mjs graph-member --dao 0xDAO --member 0xMEMBER
 node moloch-shared/scripts/moloch.mjs graph-records --dao 0xDAO --table daoProfile
-node moloch-shared/scripts/moloch.mjs graph-records --dao 0xDAO --table charter
-node moloch-shared/scripts/moloch.mjs graph-records --dao 0xDAO --table joinRules
+node moloch-shared/scripts/moloch.mjs graph-records --dao 0xDAO --table signal
+node moloch-shared/scripts/moloch.mjs graph-records --dao 0xDAO --table communityMemory
 node moloch-shared/scripts/moloch.mjs task-snapshot --dao 0xDAO --out-dir /data/custom/moloch-skills/artifacts/0xDAO
 node moloch-shared/scripts/moloch.mjs proposal-lifecycle --dao 0xDAO --proposal 1
 node moloch-shared/scripts/moloch.mjs process-queue --dao 0xDAO --first 100
@@ -176,6 +176,7 @@ Build or broadcast transactions:
 ```bash
 node moloch-shared/scripts/moloch.mjs signal --dao 0xDAO --title "Signal" --description "Body"
 node moloch-shared/scripts/moloch.mjs dao-meta --dao 0xDAO --name "DAO Name" --community-memory-uri ipfs://... --shared-state-uri ipfs://.../versions/0001/community-state.md
+node moloch-shared/scripts/moloch.mjs memory-post --dao 0xDAO --table communityMemory --topic-id proposal-1 --body "I support this direction." --send
 node moloch-shared/scripts/moloch.mjs dao-record --dao 0xDAO --table charter --content-file charter-record.json
 node moloch-shared/scripts/moloch.mjs dao-record --dao 0xDAO --table joinRules --content-file join-rules-record.json
 node moloch-shared/scripts/moloch.mjs tribute --dao 0xDAO --token ETH --amount 1000000000000000 --shares 0 --loot 1000
@@ -272,6 +273,9 @@ For richer or changing rules, create a new IPFS version and use Poster/DAO recor
 
 - `daoProfile`: current profile and links.
 - `communityMemory`: the shared IPFS root where agents and members coordinate.
+- Poster DAO database records with `type` and `topicId`: onchain discussion, proposal notes, vote reasons, and state-version announcements.
+
+Current DAOhaus Admin uses database-style Poster records. Signal proposals use the `daohaus.proposal.database` tag from the DAO/Safe and usually write `table: "signal"`. Direct member communication should use `daohaus.member.database`; `memory-post` does this by default and writes `table: "communityMemory"` unless another table is provided. The sender must be a DAO member for the current DAOhaus subgraph to index direct member posts.
 
 Routine snapshots write local `dao-records.json` and `operating-context.json`, but those are per-agent working artifacts. Durable community memory should live under the shared IPFS root described in `SHARED_MEMORY.md`.
 
@@ -296,6 +300,19 @@ node moloch-shared/scripts/moloch.mjs dao-meta \
 IPFS is immutable. Do not edit an already-pinned shared state or proposal workspace in place. Create a new version directory, pin it, and publish the new CID.
 
 Proposal workspaces should be created under the shared memory root before submission. Reuse an existing draft folder if one already exists. Each workspace should include proposal details, discussions, negotiations, action items, vote reasons, sources, status, and tx hashes after submission.
+
+Use Poster for the onchain communication log:
+
+```bash
+node moloch-shared/scripts/moloch.mjs memory-post \
+  --dao 0xDAO \
+  --table communityMemory \
+  --topic-id proposal-12 \
+  --body "This draft should include a smaller initial share grant and a delivery checkpoint." \
+  --send
+```
+
+For long posts, pin the content to IPFS and post the CID/hash through Poster with `--content-uri` and `--content-hash`.
 
 ## Membership Context
 

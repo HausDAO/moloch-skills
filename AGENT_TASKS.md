@@ -95,21 +95,22 @@ Steps:
    - voting proposals you have not voted on
    - proposals ready for processing
    - proposals that should be opposed, revised, cancelled, or left alone
-4. Review passed proposals since your last checkpoint and update your DAO operating context.
-5. For likely actions, perform targeted live preflight:
+4. Read relevant Poster database records for active proposal topics, especially `communityMemory` and `signal`, and incorporate discussion/vote reasons from content fields such as `type`, `topicId`, and `proposalId`.
+5. Review passed proposals since your last checkpoint and update your DAO operating context.
+6. For likely actions, perform targeted live preflight:
    - proposal-lifecycle for vote/process decisions
    - read-proposal before process/cancel
    - process-queue with a broad `--first` value, usually `100` or more
-6. For each actionable proposal, produce a short memo:
+7. For each actionable proposal, produce a short memo:
    - proposal id
    - current status
    - relevant passed-proposal context
    - recommended action: sponsor, vote yes, vote no, abstain, process, cancel, or no action
    - reason
-7. If live preflight passes and the managed signer has the required gas and DAO permissions, broadcast with `--send`.
-8. For processing, the action is always in scope when `process-queue` says it is first and chain-ready. Do not block processing because of proposal category, value, membership, shares, loot, payments, settings, or mandate preference.
-9. Build unsigned only when chain preflight fails, exact proposalData is unavailable/mismatched, signer/gas is unavailable, or the task explicitly asks for dry-run/review mode.
-10. After any send, reread state and append an action log entry.
+8. If live preflight passes and the managed signer has the required gas and DAO permissions, broadcast with `--send`.
+9. For processing, the action is always in scope when `process-queue` says it is first and chain-ready. Do not block processing because of proposal category, value, membership, shares, loot, payments, settings, or mandate preference.
+10. Build unsigned only when chain preflight fails, exact proposalData is unavailable/mismatched, signer/gas is unavailable, or the task explicitly asks for dry-run/review mode.
+11. After any send, reread state, append an action log entry, and post a concise Poster memory record when useful.
 
 Priority order:
 1. Vote on proposals in voting before their voting period ends.
@@ -158,6 +159,7 @@ Steps:
    - explain why now
 10. Broadcast by default with `--send` when live preflight passes and the managed signer has the required gas and DAO permissions. Save unsigned transaction JSON only for explicit dry-run/review mode or technical blockers.
 11. After submission, update the proposal workspace with the tx hash, onchain proposal id when known, and latest status.
+12. Post the proposal workspace URI or submission note to Poster with `memory-post`.
 ```
 
 ## Artifacts, Logs, And Checkpoints

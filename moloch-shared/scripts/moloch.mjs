@@ -31,6 +31,8 @@ const THE_GRAPH_GATEWAY = 'https://gateway.thegraph.com/api';
 const POSTER_TAG_DAO_DB = 'daohaus.proposal.database';
 const POSTER_TAG_SUMMONER = 'daohaus.summoner.daoProfile';
 const POSTER_TAG_DAO_PROFILE_UPDATE = 'daohaus.shares.daoProfile';
+const POSTER_TAG_MEMBER_DB = 'daohaus.member.database';
+const POSTER_TAG_SHARES_DB = 'daohaus.shares.database';
 const POSTER_POST_SELECTOR = toFunctionSelector('post(string,string)');
 const ACTION_GAS_LIMIT_ADDITION = 150000n;
 const PROCESS_PROPOSAL_GAS_LIMIT_ADDITION = 400000n;
@@ -273,13 +275,31 @@ function compactLinks(p) {
   return links;
 }
 
-function daoRecordContent(dao, table, content) {
+function daoRecordContent(dao, table, content, queryType = 'latest') {
   return {
     daoId: dao,
     table,
-    queryType: 'latest',
+    queryType,
     ...content,
   };
+}
+
+function memoryPostContent(dao, table, content) {
+  return daoRecordContent(dao, table, Object.fromEntries(Object.entries({
+    type: content.type || 'proposal-commons-post',
+    title: content.title,
+    body: content.body,
+    topicId: content.topicId,
+    parentId: content.parentId,
+    proposalId: content.proposalId,
+    contentURI: content.contentURI || content.link,
+    contentHash: content.contentHash,
+    workspaceURI: content.workspaceURI,
+    stateURI: content.stateURI,
+    agent: content.agent,
+    version: content.version,
+    createdAt: content.createdAt || new Date().toISOString(),
+  }).filter(([, value]) => value !== undefined && value !== null && value !== '')), content.queryType || 'list');
 }
 
 function daoProfileContent(dao, p) {
@@ -898,12 +918,13 @@ async function main() {
   graph-dao-history    DAO plus proposal history in one Graph query
   graph-members        Indexed members with shares, loot, delegation, vote history
   graph-member         One indexed member: --member 0x...
-  graph-records        DAO Poster records: --table daoProfile|charter|joinRules
+  graph-records        DAO Poster records: --table daoProfile|signal|communityMemory
   proposal-lifecycle   Derived status: unsponsored/voting/grace/needsProcessing/failed/processed
   process-queue        Oldest ready-to-process proposals first
   signal               Text/metadata governance signal. Not for membership, shares, or loot.
   dao-meta             Proposal to update daoProfile metadata/links through Poster
   dao-record           Proposal to post a charter/joinRules/manifesto record through Poster
+  memory-post          Direct Poster post for DAO forum/memory/discussion records
   tribute, join-dao    Real tokens-for-shares or tokens-for-loot proposal via Tribute Minion
   mint-shares          Direct Baal proposal to mint voting shares to member address(es)
   gov-settings         Governance config proposal
@@ -1077,7 +1098,29 @@ Share and loot quantities default to human 18-decimal units:
   }
 
   let out;
-  if (command === 'signal') {
+  if (command === 'memory-post' || command === 'poster-post') {
+    const dao = requireDao();
+    const p = arg('content-file') ? jsonFile(arg('content-file')) : {};
+    const table = arg('table', p.table || 'communityMemory');
+    const content = memoryPostContent(dao, table, {
+      ...p,
+      title: arg('title', p.title),
+      body: arg('body', p.body || arg('description', '')),
+      topicId: arg('topic-id', p.topicId),
+      parentId: arg('parent-id', p.parentId),
+      proposalId: arg('proposal', p.proposalId),
+      contentURI: arg('content-uri', p.contentURI || arg('link', p.link)),
+      contentHash: arg('content-hash', p.contentHash),
+      workspaceURI: arg('workspace-uri', p.workspaceURI),
+      stateURI: arg('state-uri', p.stateURI),
+      agent: arg('agent', p.agent),
+      version: arg('version', p.version),
+      queryType: arg('query-type', p.queryType || 'list'),
+    });
+    const tag = arg('tag', POSTER_TAG_MEMBER_DB);
+    const data = encodeFunctionData({ abi: POSTER_ABI, functionName: 'post', args: [JSON.stringify(content), tag] });
+    out = withSummary(tx(POSTER, data), { action: 'post', proposalKind: 'MEMORY_POST', submissionTarget: 'POSTER', dao, recordTable: table, tag, queryType: content.queryType, title: content.title, topicId: content.topicId, proposalId: content.proposalId, contentURI: content.contentURI, note: 'Direct Poster post using the DAOhaus member database tag. The sender must be a DAO member for current DAOhaus indexing.' });
+  } else if (command === 'signal') {
     const dao = requireDao();
     const title = arg('title');
     const description = arg('description', '');

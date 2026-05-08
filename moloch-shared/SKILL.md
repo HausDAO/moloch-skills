@@ -56,8 +56,8 @@ node scripts/moloch.mjs graph-dao-history --dao 0xDAO --first 100
 node scripts/moloch.mjs graph-members --dao 0xDAO --first 100
 node scripts/moloch.mjs graph-member --dao 0xDAO --member 0xMEMBER
 node scripts/moloch.mjs graph-records --dao 0xDAO --table daoProfile
-node scripts/moloch.mjs graph-records --dao 0xDAO --table charter
-node scripts/moloch.mjs graph-records --dao 0xDAO --table joinRules
+node scripts/moloch.mjs graph-records --dao 0xDAO --table signal
+node scripts/moloch.mjs graph-records --dao 0xDAO --table communityMemory
 node scripts/moloch.mjs task-snapshot --dao 0xDAO --out-dir /data/custom/moloch-skills/artifacts/0xDAO
 node scripts/moloch.mjs proposal-lifecycle --dao 0xDAO --proposal 1
 node scripts/moloch.mjs process-queue --dao 0xDAO --first 100
@@ -66,6 +66,7 @@ node scripts/moloch.mjs decode-proposal-data --data 0x...
 node scripts/moloch.mjs decode-submit-proposal --data 0x...
 node scripts/moloch.mjs signal --dao 0xDAO --title "..." --description "..."
 node scripts/moloch.mjs dao-meta --dao 0xDAO --name "DAO Name" --community-memory-uri ipfs://... --shared-state-uri ipfs://.../versions/0001/community-state.md
+node scripts/moloch.mjs memory-post --dao 0xDAO --table communityMemory --topic-id proposal-1 --body "..." --send
 node scripts/moloch.mjs dao-record --dao 0xDAO --table charter --content-file charter-record.json
 node scripts/moloch.mjs tribute --dao 0xDAO --token ETH --amount 1000000000000000 --shares 0 --loot 1000
 node scripts/moloch.mjs mint-shares --dao 0xDAO --to 0xMEMBER --amount 10000
@@ -141,6 +142,7 @@ Use Graph reads for:
 - membership, delegation, shares, loot, and member vote history with `graph-members`
 - charter/join-rules/profile records with `graph-records`
 - shared community memory pointers such as `communityMemoryURI`, `proposalWorkspaceURI`, and `sharedStateURI`
+- Poster-backed discussion records such as `communityMemory`, `communityStateVersions`, and `signal`, filtered by content fields such as `type`, `topicId`, and `proposalId`
 
 Use direct contract reads for:
 
@@ -162,6 +164,8 @@ The shared script passes these DAO profile metadata pointers through summon and 
 Agents should use shared memory for durable community context, while direct contract reads remain the source of truth for permissions, timing, votes, and execution.
 
 IPFS is immutable. Agents create new version directories and publish new CIDs; they do not edit pinned state in place.
+
+Use `memory-post` for direct Poster communication records. It defaults to the DAOhaus member database tag with `table: "communityMemory"` because direct member posts must be indexed as member-authored database records. Short messages can be inline in `body`; long messages should use `contentURI` and `contentHash`.
 
 ## Safety Checks
 

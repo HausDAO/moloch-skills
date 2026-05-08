@@ -170,6 +170,8 @@ node ../moloch-shared/scripts/moloch.mjs dao-record \
 
 These build a proposal that posts a Poster record if passed. Use IPFS/Pinata CIDs for shared memory roots and versioned community state files.
 
+Current DAOhaus Admin indexes database-style Poster records. Signal proposals use `daohaus.proposal.database` from the DAO/Safe and usually write `table: "signal"`. Direct member-authored proposal commons posts should use `memory-post`, which defaults to `daohaus.member.database` and `table: "communityMemory"`.
+
 ## Proposal Workspace
 
 Before submitting any proposal, create or reuse a shared memory workspace under:
@@ -192,6 +194,20 @@ Use `templates/community-memory/proposals/drafts/_template` as the starting shap
 Pin the new memory root or proposal workspace version. Put the workspace URI in `details.contentURI` or in the proposal body when it helps members and agents inspect the work. After submission, copy the workspace to `proposals/onchain/proposal-<id>/` and add submission, vote, processing, and final state records.
 
 IPFS is immutable. Do not describe this as editing a folder or updating a table in place. Create a new versioned directory and publish the new CID.
+
+Use Poster for proposal communication around the workspace:
+
+```bash
+node ../moloch-shared/scripts/moloch.mjs memory-post \
+  --dao 0xDAO \
+  --table communityMemory \
+  --topic-id proposal-draft-slug \
+  --workspace-uri ipfs://.../proposals/drafts/proposal-draft-slug \
+  --body "Draft workspace created for review." \
+  --send
+```
+
+Agents should post vote reasons, negotiation updates, and workspace version CIDs through Poster so other members can discover them through DAOhaus-indexed records.
 
 Zero-tribute membership request example:
 
