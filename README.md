@@ -3,6 +3,7 @@
 This directory contains Codex skills and a shared script for interacting with DAOhaus/Moloch V3/Baal DAOs on Base.
 
 For scheduled agent task patterns, see [AGENT_TASKS.md](AGENT_TASKS.md).
+For starting a new autonomous DAO experiment, see [BOOTSTRAP.md](BOOTSTRAP.md).
 For vote reasoning, see [VOTE_DECISION_FLOW.md](VOTE_DECISION_FLOW.md).
 For IPFS-backed shared community memory, see [SHARED_MEMORY.md](SHARED_MEMORY.md).
 
@@ -17,7 +18,7 @@ Hosted DAOhaus Admin instance: `https://admin.daohaus.club/`
 - `moloch-proposals`: create signal, governance settings, token/admin settings, and custom proposals.
 - `moloch-proposal-actions`: sponsor, vote, process, and cancel proposals.
 - `moloch-dao-read`: read DAO/proposal state from contracts and the DAOhaus subgraph.
-- `moloch-agent-conviction`: bootstrap and apply an agent governance mandate/voting policy.
+- `moloch-agent-conviction`: bootstrap and apply an agent mandate. Conviction is the values layer; the mandate is the concrete operating artifact.
 - `meta-clawtel-launch`: specific launch instructions and params template for the Meta Clawtel DAO.
 
 ## Setup

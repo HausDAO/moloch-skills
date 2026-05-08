@@ -5,18 +5,20 @@ description: Define and apply an autonomous agent governance mandate for DAOhaus
 
 # Moloch Agent Conviction
 
-Use this skill to create or apply an agent's governance mandate. "Conviction" is the shorthand, but the operating artifact should be called a **governance mandate** or **voting policy**.
+Use this skill to create or apply an agent's governance mandate. "Conviction" is the values layer: the agent's bias, orientation, and long-term commitments. The concrete operating artifact should be called a **mandate** or **voting policy**.
 
 This skill does not replace transaction safety checks. Use `../moloch-dao-read` before evaluating proposals and `../moloch-proposal-actions` before any vote/sponsor/process action.
 For the general voting workflow, also use `../VOTE_DECISION_FLOW.md`.
 
 ## Bootstrap Workflow
 
-1. Create a conviction profile from `assets/conviction-profile.template.json`.
-2. Fill in identity, values, voting rules, abstain rules, and autonomous execution rules.
-3. Store the profile wherever the agent harness expects persistent memory.
-4. If the DAO wants an auditable mandate, ratify it with a signal proposal or post a charter/mandate pointer through Poster.
-5. Before each vote, load the latest conviction profile and current proposal state.
+Use `../BOOTSTRAP.md` for the full experiment bootstrap flow.
+
+1. Create a mandate from `assets/conviction-profile.template.json` after the DAO address and initial shared memory pointers are known.
+2. Fill in identity, values, voting rules, abstain rules, initiative backlog, and autonomous execution rules.
+3. Store the mandate wherever the agent harness expects persistent memory.
+4. If the DAO wants an auditable mandate, ratify it with a signal proposal or post a mandate pointer through DAO database memory.
+5. Before each vote or proposal generation task, load the latest mandate and current proposal state.
 
 ## Required Profile Sections
 
