@@ -273,8 +273,8 @@ Common proposal commands:
 
 ```bash
 moloch-agent signal --dao 0xDAO --title "..." --description "..." --link ipfs://...
-moloch-agent join-dao --dao 0xDAO --amount 10000000000000000 --shares 10000
-moloch-agent tribute --dao 0xDAO --token ETH --amount 10000000000000000 --shares 10000
+moloch-agent join-dao --dao 0xDAO --amount 0.01 --shares 10000
+moloch-agent tribute --dao 0xDAO --token ETH --amount 0.01 --shares 10000
 moloch-agent mint-shares --dao 0xDAO --to 0xMEMBER --amount 1
 ```
 
