@@ -95,7 +95,7 @@ Steps:
 4. Pin the shared memory root with the configured pinning provider.
 5. Publish the shared memory pointers in summon metadata or through a dao-meta proposal.
 6. Create the agent governance mandate from the conviction profile template.
-7. Include long-term initiatives, success criteria, proposal cadence, and explicit no-action conditions in the mandate.
+7. Include long-term initiatives, success criteria, proposal cadence, and any operator-provided constraints in the mandate. Do not ask for no-action rules by default.
 8. Store the mandate where the harness can load it every run.
 9. Post a concise memory record announcing the agent mandate and shared memory pointers when useful.
 10. Run task-snapshot and verify the agent can read chain state, Graph records, shared memory pointers, and its mandate.

@@ -1,9 +1,9 @@
 ---
-name: moloch-agent-simple
+name: moloch-agent
 description: Operate an autonomous DAOhaus/Moloch V3 agent with minimal setup using the HausDAO hosted moloch service for Graph reads and IPFS pinning. Use when the operator wants to provide only a DAO, mandate, and local signing wallet instead of managing Graph/Pinata credentials.
 ---
 
-# Moloch Agent Simple
+# Moloch Agent
 
 Use this skill as the low-friction entry point for autonomous DAOhaus/Moloch agents on Base.
 
@@ -24,13 +24,24 @@ moloch-agent capabilities
 
 ## Minimal Operator Inputs
 
-Ask the operator or harness for:
+Resolve these from the harness/environment first. Ask the operator only for values that are missing and required for the immediate task.
 
-- DAO address, or explicit instruction to summon a new DAO.
-- Agent name.
-- Agent wallet address.
-- Local signing method, usually `PRIVATE_KEY` or a managed wallet integration.
-- Agent mandate: values, voting policy, initiative goals, and autonomous action rules.
+Required only when acting on an existing DAO:
+
+- DAO address.
+- Agent mandate or mandate source.
+- Signing capability: platform wallet skill, managed signer, or `PRIVATE_KEY`.
+
+Required only when summoning a new DAO:
+
+- DAO name.
+- Token symbols.
+- Initial members and initial share/loot balances.
+- Governance settings not already supplied by a template.
+- Agent mandate or mandate source.
+- Signing capability.
+
+Do not ask for agent voice, review mode, watch-only mode, no-action rules, or shared memory pointers during the first prompt unless the operator already made those part of the task. Default to autonomous operation. Discover or create shared memory pointers during bootstrap.
 
 Do not ask the operator for:
 
@@ -40,6 +51,28 @@ Do not ask the operator for:
 - Poster contract tags.
 
 Use the hosted service for those dependencies.
+
+## Skill Stack
+
+This skill may be the only skill the agent is explicitly told to use. During bootstrap, inventory the harness/platform skills and tools that are available in the current agent environment, then prefer them where they are stronger than the generic fallback.
+
+Expected stack:
+
+- Moloch skill: this `moloch-agent` skill.
+- Runtime CLI: `@raidguild/meta-clawtel`, exposed as `moloch-agent`.
+- Platform wallet/account skill, if available: use it for managed signer access and account status.
+- Platform Pinata/IPFS skill, if available: use it for larger artifact publishing and retrieval.
+- Platform scheduler/task skill, if available: use it to register recurring DAO checks.
+- Platform secrets skill, if available: use it for `PRIVATE_KEY`, managed wallet config, or managed RPC credentials.
+
+Fallback behavior:
+
+- If no platform Pinata/IPFS skill is visible, use `moloch-agent pin-json`.
+- If no platform wallet skill is visible, use local `PRIVATE_KEY`.
+- If no platform scheduler skill is visible, write the recommended task prompts from `AGENT_TASKS.md` for the operator or harness to register.
+- If no managed RPC is visible, the CLI falls back to public Base RPC for light operation.
+
+Record the detected platform capabilities in the bootstrap output before scheduling autonomous work.
 
 ## Runtime Assumptions
 
@@ -55,7 +88,7 @@ Install:
 npm install -g @raidguild/meta-clawtel
 ```
 
-The npm CLI handles hosted service reads, pinning, proposal lifecycle checks, summon transaction building, proposal transaction building, and local signing for core actions. Use the shared runtime script only as an advanced fallback for commands not yet exposed by `moloch-agent`.
+The npm CLI handles hosted service reads, pinning, proposal lifecycle checks, summon transaction building, proposal transaction building, lifecycle actions, and local signing for core actions. Use the shared runtime script only as an advanced fallback for commands not yet exposed by `moloch-agent`.
 
 Preferred runtime asset path:
 
@@ -104,7 +137,7 @@ If using local signing, require:
 export PRIVATE_KEY=0x...
 ```
 
-If direct contract reads or sends need a local RPC, use the default public Base RPC only for light tests. Prefer a managed RPC in real scheduled operation.
+`RPC_URL` defaults to the public Base RPC (`https://mainnet.base.org`) so the CLI works without extra setup. Prefer setting a managed Base RPC URL for real scheduled operation because the public endpoint can rate limit.
 
 ## Source Authority
 
@@ -125,14 +158,15 @@ Use `BOOTSTRAP.md` as the generic first-run flow.
 Bootstrap should:
 
 1. Confirm DAO address or summon intent.
-2. Confirm local signer and agent wallet.
-3. Load or create the operator-provided mandate.
-4. Discover or create shared memory pointers.
-5. Run a task snapshot.
-6. Configure scheduled tasks.
-7. Report missing fields or blocked capabilities.
+2. Detect platform skills and local CLI/runtime capabilities.
+3. Detect signer/account status from platform wallet skill, `ACCOUNT_ADDRESS`, or `PRIVATE_KEY`.
+4. Load the operator-provided mandate or mandate source.
+5. Discover existing shared memory pointers from DAO metadata, or create starter pointers when summoning.
+6. Run a task snapshot once a DAO exists.
+7. Configure scheduled tasks when a scheduler is available.
+8. Report only hard blockers.
 
-Do not invent the mandate. If the operator has not provided a mandate, create a local draft and ask for the missing mandate fields.
+Do not invent the mandate. If the operator has not provided a mandate, create a local draft with missing fields and continue only with read/setup work until the mandate exists. Do not ask for watch-only or review-only mode unless the operator requests dry-run operation.
 
 ## Summon
 
@@ -142,7 +176,7 @@ For a new DAO, create a small params file and summon through the npm CLI:
 moloch-agent summon --params summon.json
 ```
 
-The summon params should include initial members, raw initial share/loot base-unit balances, token names, voting/grace periods, quorum, sponsor threshold, min retention, and DAO metadata pointers such as `communityMemoryURI`, `proposalWorkspaceURI`, or `sharedStateURI`.
+The summon params should include initial members, raw initial share/loot base-unit balances, token names, voting/grace periods, quorum, sponsor threshold, and min retention. If DAO metadata pointers such as `communityMemoryURI`, `proposalWorkspaceURI`, or `sharedStateURI` are omitted, the CLI creates and pins a starter DAO workspace and includes its `ipfs://...` URI in summon metadata.
 
 Use whole-number percentages for `quorum` and `minRetention`. Use 18-decimal base units for shares, loot, offering, and sponsor threshold when the value represents Baal token units.
 
@@ -152,6 +186,8 @@ Read DAO state through the npm CLI:
 
 ```bash
 moloch-agent dao --dao 0xDAO
+moloch-agent daohaus-url --dao 0xDAO
+moloch-agent links --dao 0xDAO --proposal 12
 moloch-agent read-dao --dao 0xDAO
 moloch-agent proposals --dao 0xDAO
 moloch-agent proposal-lifecycle --dao 0xDAO --proposal 12
@@ -160,10 +196,20 @@ moloch-agent members --dao 0xDAO
 moloch-agent records --dao 0xDAO --table communityMemory
 ```
 
+`daohaus-url` returns the DAOhaus Admin proposals URL, for example:
+
+```text
+https://admin.daohaus.club/molochv3/0x2105/0xDAO/proposals
+```
+
+Use `links` when BaseScan address/code or transaction URLs are also useful.
+
 Pin JSON artifacts through the npm CLI:
 
 ```bash
 moloch-agent pin-json --file community-state.json --name community-state-v1
+moloch-agent workspace-create --kind dao --dao 0xDAO --title "DAO Workspace"
+moloch-agent workspace-create --kind proposal --dao 0xDAO --title "Proposal Workspace"
 ```
 
 Use returned `ipfs://...` values in:
@@ -210,9 +256,9 @@ When creating proposals:
 1. Read current DAO state and memory.
 2. Check the mandate and initiative backlog.
 3. Do not create a new proposal if 3 or more proposals are currently in voting.
-4. Create or reuse a proposal workspace.
-5. Pin the workspace or key artifact through the hosted service.
-6. Put the workspace URI in proposal `contentURI` when useful.
+4. Let the CLI create and pin a proposal workspace automatically unless a specific `--link` or `--content-uri` is already known.
+5. Use `ipfs://...` workspace links by default. Set `IPFS_GATEWAY_URL` only when gateway URLs should be used as proposal links.
+6. Keep proposal workspaces small and versioned; IPFS artifacts are immutable.
 7. Use the correct proposal path:
    - text-only intent: `signal`
    - token tribute / join: `tribute` or `join-dao`

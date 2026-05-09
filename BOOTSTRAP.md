@@ -17,25 +17,39 @@ The first run should answer these questions:
 
 1. Which DAO is this agent operating in, or should it summon a new DAO?
 2. Which wallet/account is the agent using?
-3. What is the operator-provided mandate?
-4. Where is shared DAO memory?
+3. Can the agent load an operator-provided mandate or mandate source?
+4. Can the agent discover or create shared DAO memory?
 5. Can the agent read chain state, Graph data, and DAO database records?
 6. Can the agent pin IPFS artifacts when needed?
 7. Which scheduled tasks should run?
+8. Which platform skills are available for wallet/account management, Pinata/IPFS publishing, secrets, scheduler/tasks, and filesystem persistence?
 
 ## Operator Inputs
 
-Ask the operator or harness for these values. Do not guess them.
+Resolve these from the harness/environment first. Ask the operator only for values that are missing and required for the immediate task.
 
-- Agent name.
-- Agent wallet address.
-- DAO address, or explicit instruction to summon a new DAO.
-- If summoning: DAO name, token symbols, initial members, governance settings, and initial metadata.
+Hard blockers for an existing DAO:
+
+- DAO address.
 - Mandate or mandate source path.
-- Whether the mandate should be public, private, or ratified by DAO proposal.
-- Shared memory root, if one already exists.
-- Pinning provider preference, if IPFS publishing is expected.
-- Scheduled task cadence.
+- Signing capability for write actions.
+
+Hard blockers for a new summon:
+
+- DAO name.
+- Token symbols.
+- Initial members and initial share/loot balances.
+- Governance settings not supplied by a template.
+- Mandate or mandate source path.
+- Signing capability.
+
+Discover without asking when possible:
+
+- Agent name and wallet address from harness identity, `ACCOUNT_ADDRESS`, or wallet skill.
+- Shared memory root from DAO metadata/records.
+- Pinning provider from platform skills or hosted service capabilities.
+- Scheduled task cadence from harness defaults.
+- Available platform skills or harness capabilities.
 
 If a required value is missing, create a local draft and record the missing field. Do not treat a draft mandate as ratified DAO truth.
 
@@ -54,6 +68,8 @@ Required for autonomous write actions:
 - managed signer or `PRIVATE_KEY`
 - funded wallet
 
+Use a platform wallet/account skill when the harness exposes one. If no wallet skill is visible, fall back to `PRIVATE_KEY`.
+
 Required for indexed discovery:
 
 - `GRAPH_URL` or `GRAPH_API_KEY`
@@ -61,6 +77,15 @@ Required for indexed discovery:
 Required for publishing larger/versioned artifacts:
 
 - Pinata or another pinning provider credential, if configured by the harness.
+
+Use a platform Pinata/IPFS skill when the harness exposes one. If no IPFS publishing skill is visible, fall back to the hosted service through `moloch-agent pin-json`.
+
+Also record whether platform skills exist for:
+
+- scheduler/tasks
+- secrets
+- filesystem persistence
+- operator notifications
 
 ## Mandate Setup
 
@@ -155,4 +180,3 @@ At the end of bootstrap, produce a compact operator-facing summary:
 - Dependency status: RPC, Graph, signer, pinning.
 - Scheduled tasks configured.
 - Missing fields or blocked capabilities.
-
