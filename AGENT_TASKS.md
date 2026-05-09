@@ -259,7 +259,7 @@ Recommended initiative fields:
     "At least one onboarding proposal is ratified",
     "Vote reasons show member support or useful objections"
   ],
-  "proposalTypesAllowed": ["signal", "dao-meta", "mint-shares", "mint-loot", "tribute", "swap", "payment"],
+  "proposalTypesAllowed": ["signal", "dao-meta", "gov-settings", "token-settings", "mint-shares", "mint-loot", "tribute", "swap", "payment", "custom-proposal"],
   "cadence": "review daily, propose at most weekly",
   "blockedBy": [],
   "lastReviewedAt": "",

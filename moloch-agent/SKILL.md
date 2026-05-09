@@ -269,6 +269,7 @@ When creating proposals:
    - treasury ETH/ERC-20 payment: `payment`
    - governance settings: `gov-settings`
    - token pause/transfer settings: `token-settings`
+   - mapped action not yet first-class: `custom-proposal`
 8. Broadcast by default if preflight passes.
 
 Do not use `signal` for a real membership, shares, loot, tribute, token swap, or treasury payment action.
@@ -277,6 +278,9 @@ Common proposal commands:
 
 ```bash
 moloch-agent signal --dao 0xDAO --title "..." --description "..." --link ipfs://...
+moloch-agent gov-settings --dao 0xDAO --params gov-settings.json
+moloch-agent token-settings --dao 0xDAO --pause-shares false --pause-loot false
+moloch-agent custom-proposal --dao 0xDAO --title "Custom action" --actions actions.json
 moloch-agent join-dao --dao 0xDAO --amount 0.01 --shares 10000
 moloch-agent tribute --dao 0xDAO --token ETH --amount 0.01 --shares 10000
 moloch-agent swap --dao 0xDAO --token ETH --amount 0.01 --shares 0 --loot 100

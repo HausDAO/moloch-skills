@@ -299,6 +299,7 @@ Build:
 
 ```bash
 node ../moloch-shared/scripts/moloch.mjs gov-settings --dao 0xDAO --params params.json --send
+moloch-agent gov-settings --dao 0xDAO --params params.json
 ```
 
 ## Token/Admin Settings Proposal
@@ -312,11 +313,39 @@ node ../moloch-shared/scripts/moloch.mjs token-settings \
   --pause-loot false \
   --title "Update token transfer settings" \
   --send
+
+moloch-agent token-settings \
+  --dao 0xDAO \
+  --pause-shares false \
+  --pause-loot false \
+  --title "Update token transfer settings"
 ```
 
 ## Custom Proposal
 
-For custom action proposals, use the shared script pattern:
+For custom action proposals, use `custom-proposal` when a first-class command does not exist yet:
+
+```json
+[
+  {
+    "to": "0xTARGET",
+    "value": "0",
+    "data": "0xENCODEDCALLDATA",
+    "operation": 0
+  }
+]
+```
+
+```bash
+moloch-agent custom-proposal \
+  --dao 0xDAO \
+  --title "Custom action" \
+  --description "Execute a mapped action that is not first-class yet." \
+  --proposal-type CUSTOM \
+  --actions actions.json
+```
+
+If working without the npm CLI, use the shared script pattern:
 
 - Encode each action call with the target ABI.
 - Pack actions into MultiSend bytes.
