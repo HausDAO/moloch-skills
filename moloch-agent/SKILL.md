@@ -189,6 +189,8 @@ moloch-agent dao --dao 0xDAO
 moloch-agent daohaus-url --dao 0xDAO
 moloch-agent links --dao 0xDAO --proposal 12
 moloch-agent read-dao --dao 0xDAO
+moloch-agent balances --dao 0xDAO
+moloch-agent balances --address 0xADDRESS --token 0xERC20
 moloch-agent proposals --dao 0xDAO
 moloch-agent proposal-lifecycle --dao 0xDAO --proposal 12
 moloch-agent process-queue --dao 0xDAO
