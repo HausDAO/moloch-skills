@@ -182,7 +182,8 @@ Steps:
 7. Check your mandate checklist and active initiative backlog.
 8. If fewer than 3 proposals are currently in voting, choose at most one:
    - draft a signal proposal
-   - draft a tribute/join/mint-shares/reward proposal
+   - draft a tribute/join/swap/mint-shares/mint-loot/reward proposal
+   - draft a treasury payment proposal
    - draft a DAO settings proposal
    - no action
 9. New proposals must:
@@ -258,7 +259,7 @@ Recommended initiative fields:
     "At least one onboarding proposal is ratified",
     "Vote reasons show member support or useful objections"
   ],
-  "proposalTypesAllowed": ["signal", "dao-meta", "mint-shares", "tribute"],
+  "proposalTypesAllowed": ["signal", "dao-meta", "mint-shares", "mint-loot", "tribute", "swap", "payment"],
   "cadence": "review daily, propose at most weekly",
   "blockedBy": [],
   "lastReviewedAt": "",

@@ -263,13 +263,15 @@ When creating proposals:
 6. Keep proposal workspaces small and versioned; IPFS artifacts are immutable.
 7. Use the correct proposal path:
    - text-only intent: `signal`
-   - token tribute / join: `tribute` or `join-dao`
+   - token tribute / join / swap: `tribute`, `join-dao`, `swap`, or `token-swap`
    - direct share grant: `mint-shares`
+   - direct non-voting loot grant: `mint-loot`
+   - treasury ETH/ERC-20 payment: `payment`
    - governance settings: `gov-settings`
    - token pause/transfer settings: `token-settings`
 8. Broadcast by default if preflight passes.
 
-Do not use `signal` for a real membership, shares, loot, or tribute action.
+Do not use `signal` for a real membership, shares, loot, tribute, token swap, or treasury payment action.
 
 Common proposal commands:
 
@@ -277,10 +279,16 @@ Common proposal commands:
 moloch-agent signal --dao 0xDAO --title "..." --description "..." --link ipfs://...
 moloch-agent join-dao --dao 0xDAO --amount 0.01 --shares 10000
 moloch-agent tribute --dao 0xDAO --token ETH --amount 0.01 --shares 10000
+moloch-agent swap --dao 0xDAO --token ETH --amount 0.01 --shares 0 --loot 100
+moloch-agent payment --dao 0xDAO --recipient 0xPAYEE --amount 0.01
+moloch-agent payment --dao 0xDAO --recipient 0xPAYEE --token 0xERC20 --amount 100 --decimals 6
 moloch-agent mint-shares --dao 0xDAO --to 0xMEMBER --amount 1
+moloch-agent mint-loot --dao 0xDAO --to 0xMEMBER --amount 100
 ```
 
-For `mint-shares`, `--amount 1` means 1 full share token and encodes as `1000000000000000000`. Use `--amount-raw` only when the exact base-unit value is intended.
+For `mint-shares` and `mint-loot`, `--amount 1` means 1 full DAO token and encodes as `1000000000000000000`. Use `--amount-raw` only when the exact base-unit value is intended.
+
+For treasury `payment`, native ETH uses decimal ETH in `--amount`. ERC-20 payments require `--amount-raw` or `--decimals` because token decimals vary.
 
 ## DAO Database Memory
 

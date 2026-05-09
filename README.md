@@ -184,6 +184,10 @@ node moloch-shared/scripts/moloch.mjs dao-record --dao 0xDAO --table charter --c
 node moloch-shared/scripts/moloch.mjs dao-record --dao 0xDAO --table joinRules --content-file join-rules-record.json
 node moloch-shared/scripts/moloch.mjs tribute --dao 0xDAO --token ETH --amount 1000000000000000 --shares 0 --loot 1000
 node moloch-shared/scripts/moloch.mjs mint-shares --dao 0xDAO --to 0xMEMBER --amount 10000
+moloch-agent swap --dao 0xDAO --token ETH --amount 0.01 --shares 0 --loot 100
+moloch-agent payment --dao 0xDAO --recipient 0xPAYEE --amount 0.01
+moloch-agent payment --dao 0xDAO --recipient 0xPAYEE --token 0xERC20 --amount 100 --decimals 6
+moloch-agent mint-loot --dao 0xDAO --to 0xMEMBER --amount 100
 node moloch-shared/scripts/moloch.mjs gov-settings --dao 0xDAO --params params.json
 node moloch-shared/scripts/moloch.mjs token-settings --dao 0xDAO --pause-shares false --pause-loot false
 node moloch-shared/scripts/moloch.mjs sponsor --dao 0xDAO --proposal 1
@@ -194,7 +198,7 @@ node moloch-shared/scripts/moloch.mjs summon --params summon.json
 
 Append `--send` for autonomous broadcasts. Omit it only for explicit dry-run/review/draft mode or technical blockers.
 
-For Baal shares and loot, CLI quantities are human 18-decimal token units by default. `mint-shares --amount 10000` encodes `10000000000000000000000`. `tribute --shares 1 --loot 1000` encodes one share and one thousand loot. Use `--amount-raw`, `--shares-raw`, or `--loot-raw` only when intentionally passing exact base units. Tribute token `--amount` remains raw token units because ETH/ERC-20 decimals vary.
+For Baal shares and loot, CLI quantities are human 18-decimal token units by default. `mint-shares --amount 10000` encodes `10000000000000000000000`. `mint-loot --amount 100` encodes one hundred non-voting loot. `tribute --shares 1 --loot 1000` encodes one share and one thousand loot. Use `--amount-raw`, `--shares-raw`, or `--loot-raw` only when intentionally passing exact base units. Tribute token `--amount` remains raw token units because ERC-20 decimals vary; the npm CLI accepts human decimal ETH for native tribute. Treasury `payment` uses decimal ETH unless an ERC-20 `--token` is provided, in which case use `--amount-raw` or `--decimals`.
 
 Autonomous action example:
 
@@ -235,7 +239,7 @@ Raw JSON/calldata should be saved to a file or shown only on request.
 
 ## Proposal Intent Guardrail
 
-Use `signal` only for text-only governance intent. If the operator asks to join, request shares, request loot, create a membership proposal, or make a tribute proposal, use an executable membership path. Use `tribute` / `join-dao` for token tribute. Use `mint-shares` for direct voting-share grants with no tribute transfer. A signal about shares does not issue shares.
+Use `signal` only for text-only governance intent. If the operator asks to join, request shares, request loot, create a membership proposal, make a tribute/swap proposal, or pay funds from treasury, use an executable proposal path. Use `tribute` / `join-dao` / `swap` for token-for-shares or token-for-loot requests. Use `mint-shares` for direct voting-share grants with no tribute transfer. Use `mint-loot` for direct non-voting loot grants. Use `payment` for ETH/ERC-20 treasury transfers. A signal about shares, loot, or payments does not execute those actions.
 
 Use `dao-meta` or `dao-record` for DAO profile, shared memory, hosted docs, and join-rule pointers.
 

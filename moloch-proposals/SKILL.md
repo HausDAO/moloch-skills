@@ -78,8 +78,10 @@ DAOhaus has at least two common executable membership paths:
 
 - `tribute` / `join-dao`: submits through Tribute Minion for tokens-for-shares or tokens-for-loot.
 - `mint-shares`: submits a Baal proposal that calls `mintShares(address[],uint256[])` on the DAO itself.
+- `mint-loot`: submits a Baal proposal that calls `mintLoot(address[],uint256[])` on the DAO itself.
 
 Use `mint-shares` for grants, steward admissions, retroactive rewards, or membership entries where no ETH/ERC-20 contribution should be escrowed by Tribute Minion.
+Use `mint-loot` for non-voting rewards, trial memberships, reputation grants, or compensation that should not change voting power.
 
 Share and loot quantities use human 18-decimal units by default. Use `--amount 10000` for 10,000 shares, not `10000000000000000000000`. Use `--amount-raw`, `--shares-raw`, or `--loot-raw` only when you intentionally want exact base units.
 
@@ -104,10 +106,21 @@ node ../moloch-shared/scripts/moloch.mjs mint-shares \
   --send
 ```
 
-## Tribute / Join DAO Proposal
+Loot-only reward example:
+
+```bash
+moloch-agent mint-loot \
+  --dao 0xDAO \
+  --to 0xMEMBER \
+  --amount 100 \
+  --title "Reward contributor with loot"
+```
+
+## Tribute / Join / Swap Proposal
 
 Use this for tokens-for-shares or tokens-for-loot requests through the DAOhaus Tribute Minion.
 This is the first-class membership/admission path when the member contributes ETH or ERC-20 tribute.
+DAOhaus Admin labels this family "DAO Token Swap": request voting or non-voting DAO tokens in exchange for contributed tokens.
 
 Native ETH tribute:
 
@@ -135,6 +148,45 @@ node ../moloch-shared/scripts/moloch.mjs tribute \
 ```
 
 For ERC-20 tribute, check and approve Tribute Minion allowance before broadcasting. For ETH tribute, tx `value` equals `amount`. Tribute token `--amount` remains raw token units because ERC-20 decimals vary; share/loot outputs use human 18-decimal units by default.
+
+The npm CLI also exposes `swap` and `token-swap` as aliases for the same Tribute Minion proposal family:
+
+```bash
+moloch-agent swap \
+  --dao 0xDAO \
+  --token ETH \
+  --amount 0.01 \
+  --shares 0 \
+  --loot 100
+```
+
+## Treasury Payment Proposal
+
+Use `payment` when the DAO treasury should send native ETH or ERC-20 tokens to a recipient.
+
+Native ETH payment:
+
+```bash
+moloch-agent payment \
+  --dao 0xDAO \
+  --recipient 0xPAYEE \
+  --amount 0.01 \
+  --title "Pay contributor"
+```
+
+ERC-20 payment:
+
+```bash
+moloch-agent payment \
+  --dao 0xDAO \
+  --recipient 0xPAYEE \
+  --token 0xERC20 \
+  --amount 100 \
+  --decimals 6 \
+  --title "Pay contributor in USDC"
+```
+
+For ERC-20 payments, provide `--amount-raw` for exact token base units or `--decimals` so the CLI can parse a human amount. For balance reads of ERC-20s, the token address is required.
 
 ## DAO Metadata / Shared Memory Proposal
 
