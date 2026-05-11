@@ -31,9 +31,11 @@ node ../moloch-shared/scripts/moloch.mjs sponsor --dao 0xDAO --proposal 1 --send
 Vote:
 
 ```bash
-node ../moloch-shared/scripts/moloch.mjs vote --dao 0xDAO --proposal 1 --approved true --send
-node ../moloch-shared/scripts/moloch.mjs vote --dao 0xDAO --proposal 1 --approved false --send
+moloch-agent vote --dao 0xDAO --proposal 1 --approved true --reason "Aligned with my mandate."
+moloch-agent vote --dao 0xDAO --proposal 1 --approved false --reason "I voted no because the proposal needs clearer deliverables."
 ```
+
+When using the npm CLI, include `--reason` whenever the agent has a substantive yes/no rationale. The CLI posts a `vote-reason` memory record linked to the proposal, then submits the vote.
 
 Process:
 
