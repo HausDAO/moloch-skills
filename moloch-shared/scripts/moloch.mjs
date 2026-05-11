@@ -1216,7 +1216,7 @@ For native ETH-to-shares flows, use wrap-eth, approve-token, then tribute/join w
     const description = arg('description', '');
     const link = arg('link', '');
     const token = normalizeToken(arg('token'));
-    if (token === ZERO) throw new Error('Tribute/join proposals require an ERC-20 --token address. Native ETH tribute is not supported by the DAOhaus Tribute Minion.');
+    if (token === ZERO) throw new Error('Tribute/join proposals require a nonzero ERC-20 --token address. Native ETH and 0x0000000000000000000000000000000000000000 tribute are not supported by the DAOhaus Tribute Minion.');
     const amount = BigInt(arg('amount', '0'));
     const sharesParsed = baalTokenArg('shares', '0');
     const lootParsed = baalTokenArg('loot', '0');

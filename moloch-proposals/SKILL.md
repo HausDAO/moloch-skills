@@ -136,7 +136,7 @@ moloch-agent tribute \
   --send
 ```
 
-For ERC-20 tribute, check and approve Tribute Minion allowance before broadcasting. Native ETH tribute is not supported by the DAOhaus Tribute Minion. Transaction `value` is the DAO proposal offering only; it is not tribute amount. Tribute token `--amount` remains raw token units because ERC-20 decimals vary; share/loot outputs use human 18-decimal units by default.
+For ERC-20 tribute, check and approve Tribute Minion allowance before broadcasting. Native ETH and `0x0000000000000000000000000000000000000000` token tribute are not supported by the DAOhaus Tribute Minion. Transaction `value` is the DAO proposal offering only; it is not tribute amount. Tribute token `--amount` remains raw token units because ERC-20 decimals vary; share/loot outputs use human 18-decimal units by default.
 
 For native ETH-to-shares flows, wrap ETH into Base WETH first:
 
