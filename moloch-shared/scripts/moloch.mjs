@@ -12,6 +12,7 @@ import {
   encodeFunctionData,
   http,
   parseAbiParameters,
+  parseEther,
   parseUnits,
   toFunctionSelector,
 } from 'viem';
@@ -25,6 +26,7 @@ const BASE_CHAIN_ID = 8453;
 const SUMMONER = '0x97Aaa5be8B38795245f1c38A883B44cccdfB3E11';
 const POSTER = '0x000000000000cd17345801aa8147b8D3950260FF';
 const TRIBUTE_MINION = '0x00768B047f73D88b6e9c14bcA97221d6E179d468';
+const BASE_WETH = '0x4200000000000000000000000000000000000006';
 const GNOSIS_MULTISEND = '0x998739BFdAAdde7C933B942a68053933098f9EDa';
 const DAOHAUS_BASE_SUBGRAPH_ID = '7yh4eHJ4qpHEiLPAk9BXhL5YgYrTrRE6gWy8x4oHyAqW';
 const THE_GRAPH_GATEWAY = 'https://gateway.thegraph.com/api';
@@ -80,6 +82,15 @@ const MULTISEND_ABI = [
 
 const GNOSIS_MODULE_ABI = [
   { type: 'function', name: 'execTransactionFromModule', stateMutability: 'nonpayable', inputs: [{ name: 'to', type: 'address' }, { name: 'value', type: 'uint256' }, { name: 'data', type: 'bytes' }, { name: 'operation', type: 'uint8' }], outputs: [{ type: 'bool' }] },
+];
+
+const ERC20_APPROVE_ABI = [
+  { type: 'function', name: 'approve', stateMutability: 'nonpayable', inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ type: 'bool' }] },
+];
+
+const WETH_ABI = [
+  { type: 'function', name: 'deposit', stateMutability: 'payable', inputs: [], outputs: [] },
+  { type: 'function', name: 'withdraw', stateMutability: 'nonpayable', inputs: [{ name: 'amount', type: 'uint256' }], outputs: [] },
 ];
 
 function arg(name, fallback) {
@@ -933,6 +944,9 @@ async function main() {
   graph-records        DAO Poster records: --table daoProfile|signal|communityMemory
   proposal-lifecycle   Derived status: unsponsored/voting/grace/needsProcessing/failed/processed
   process-queue        Oldest ready-to-process proposals first
+  wrap-eth             Wrap native ETH to Base WETH
+  unwrap-eth           Unwrap Base WETH to native ETH
+  approve-token        Approve ERC-20 spending, default spender is Tribute Minion
   signal               Text/metadata governance signal. Not for membership, shares, or loot.
   dao-meta             Proposal to update daoProfile metadata/links through Poster
   dao-record           Proposal to post a charter/joinRules/manifesto record through Poster
@@ -968,6 +982,7 @@ Share and loot quantities default to human 18-decimal units:
   --shares 1 on tribute encodes 1000000000000000000
 
 Proposal offering is native tx value for submitProposal. Tribute/join uses ERC-20 tokens only; native ETH tribute is not supported by the DAOhaus Tribute Minion.
+For native ETH-to-shares flows, use wrap-eth, approve-token, then tribute/join with Base WETH: ${BASE_WETH}
 `);
     return;
   }
@@ -1112,7 +1127,23 @@ Proposal offering is native tx value for submitProposal. Tribute/join uses ERC-2
   }
 
   let out;
-  if (command === 'memory-post' || command === 'poster-post') {
+  if (command === 'wrap-eth' || command === 'wrap-weth') {
+    const amount = parseEther(arg('amount', '0'));
+    const weth = arg('weth', BASE_WETH);
+    const data = encodeFunctionData({ abi: WETH_ABI, functionName: 'deposit' });
+    out = withSummary(tx(weth, data, amount), { action: 'wrap-eth', token: weth, amount: amount.toString(), note: 'Wraps native ETH into WETH. Use WETH as the ERC-20 token for Tribute Minion swaps.' });
+  } else if (command === 'unwrap-eth' || command === 'unwrap-weth') {
+    const amount = parseEther(arg('amount', '0'));
+    const weth = arg('weth', BASE_WETH);
+    const data = encodeFunctionData({ abi: WETH_ABI, functionName: 'withdraw', args: [amount] });
+    out = withSummary(tx(weth, data), { action: 'unwrap-eth', token: weth, amount: amount.toString(), note: 'Unwraps WETH back to native ETH.' });
+  } else if (command === 'approve-token' || command === 'approve') {
+    const token = arg('token', BASE_WETH);
+    const spender = arg('spender', TRIBUTE_MINION);
+    const amount = has('max') ? (1n << 256n) - 1n : has('amount-raw') ? BigInt(arg('amount-raw')) : arg('decimals') ? parseUnits(arg('amount', '0'), Number(arg('decimals'))) : parseEther(arg('amount', '0'));
+    const data = encodeFunctionData({ abi: ERC20_APPROVE_ABI, functionName: 'approve', args: [spender, amount] });
+    out = withSummary(tx(token, data), { action: 'approve-token', token, spender, amount: amount.toString(), note: 'Approves ERC-20 spending. Tribute Minion needs allowance before token-for-shares/loot proposals can be submitted.' });
+  } else if (command === 'memory-post' || command === 'poster-post') {
     const dao = requireDao();
     const p = arg('content-file') ? jsonFile(arg('content-file')) : {};
     const table = arg('table', p.table || 'communityMemory');

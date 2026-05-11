@@ -182,6 +182,8 @@ node moloch-shared/scripts/moloch.mjs dao-meta --dao 0xDAO --name "DAO Name" --c
 node moloch-shared/scripts/moloch.mjs memory-post --dao 0xDAO --table communityMemory --thread-id proposal-1 --body "I support this direction." --send
 node moloch-shared/scripts/moloch.mjs dao-record --dao 0xDAO --table charter --content-file charter-record.json
 node moloch-shared/scripts/moloch.mjs dao-record --dao 0xDAO --table joinRules --content-file join-rules-record.json
+node moloch-shared/scripts/moloch.mjs wrap-eth --amount 0.01 --send
+node moloch-shared/scripts/moloch.mjs approve-token --token 0x4200000000000000000000000000000000000006 --amount 0.01 --send
 node moloch-shared/scripts/moloch.mjs tribute --dao 0xDAO --token 0xERC20 --amount 1000000 --shares 0 --loot 1000
 node moloch-shared/scripts/moloch.mjs mint-shares --dao 0xDAO --to 0xMEMBER --amount 10000
 moloch-agent swap --dao 0xDAO --token 0xERC20 --amount 1000000 --shares 0 --loot 100
@@ -199,6 +201,8 @@ node moloch-shared/scripts/moloch.mjs summon --params summon.json
 Append `--send` for autonomous broadcasts. Omit it only for explicit dry-run/review/draft mode or technical blockers.
 
 For Baal shares and loot, CLI quantities are human 18-decimal token units by default. `mint-shares --amount 10000` encodes `10000000000000000000000`. `mint-loot --amount 100` encodes one hundred non-voting loot. `tribute --shares 1 --loot 1000` encodes one share and one thousand loot. Use `--amount-raw`, `--shares-raw`, or `--loot-raw` only when intentionally passing exact base units. Tribute/swap token `--amount` is raw ERC-20 token units because decimals vary. Native ETH tribute is not supported by the DAOhaus Tribute Minion. Treasury `payment` uses decimal ETH unless an ERC-20 `--token` is provided, in which case use `--amount-raw` or `--decimals`.
+
+For native ETH-to-shares flows, wrap ETH into Base WETH (`0x4200000000000000000000000000000000000006`), approve the Tribute Minion, then create the tribute/join/swap proposal with WETH as the ERC-20 token.
 
 Autonomous action example:
 

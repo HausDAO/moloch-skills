@@ -138,6 +138,24 @@ moloch-agent tribute \
 
 For ERC-20 tribute, check and approve Tribute Minion allowance before broadcasting. Native ETH tribute is not supported by the DAOhaus Tribute Minion. Transaction `value` is the DAO proposal offering only; it is not tribute amount. Tribute token `--amount` remains raw token units because ERC-20 decimals vary; share/loot outputs use human 18-decimal units by default.
 
+For native ETH-to-shares flows, wrap ETH into Base WETH first:
+
+```bash
+moloch-agent wrap-eth --amount 0.01 --send
+moloch-agent approve-token \
+  --token 0x4200000000000000000000000000000000000006 \
+  --amount 0.01 \
+  --send
+moloch-agent tribute \
+  --dao 0xDAO \
+  --token 0x4200000000000000000000000000000000000006 \
+  --amount 10000000000000000 \
+  --shares 1 \
+  --send
+```
+
+The WETH `tribute --amount` is raw token units, so `0.01 WETH` is `10000000000000000`.
+
 The npm CLI also exposes `swap` and `token-swap` as aliases for the same Tribute Minion proposal family:
 
 ```bash

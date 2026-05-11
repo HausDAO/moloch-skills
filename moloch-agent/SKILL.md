@@ -291,6 +291,8 @@ moloch-agent signal --dao 0xDAO --title "..." --description "..."
 moloch-agent gov-settings --dao 0xDAO --params gov-settings.json
 moloch-agent token-settings --dao 0xDAO --pause-shares false --pause-loot false
 moloch-agent custom-proposal --dao 0xDAO --title "Custom action" --actions actions.json
+moloch-agent wrap-eth --amount 0.01
+moloch-agent approve-token --token 0x4200000000000000000000000000000000000006 --amount 0.01
 moloch-agent join-dao --dao 0xDAO --token 0xERC20 --amount 1000000 --shares 10000
 moloch-agent tribute --dao 0xDAO --token 0xERC20 --amount 1000000 --shares 10000
 moloch-agent swap --dao 0xDAO --token 0xERC20 --amount 1000000 --shares 0 --loot 100
