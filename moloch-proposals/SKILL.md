@@ -226,24 +226,17 @@ Current DAOhaus Admin indexes database-style Poster records. Signal proposals us
 
 ## Proposal Workspace
 
-Before submitting any proposal, create or reuse a shared memory workspace under:
+The npm CLI creates and pins a proposal workspace automatically for proposal commands and stores the workspace URI in proposal details `contentURI`. In normal operation, do not manually build proposal workspace folders and do not pass `--link` or `--content-uri`.
 
-```text
-community-memory/proposals/drafts/<proposal-slug>/
-```
+Use manual workspace creation only when the operator explicitly gives an already-pinned workspace URI or asks for a draft-only artifact. If using a manual workspace, keep it small and predictable:
 
-Use `templates/community-memory/proposals/drafts/_template` as the starting shape. At minimum, keep:
+- proposal details
+- action summary
+- discussion notes
+- vote reasons
+- status and tx hashes
 
-- `proposal.md`
-- `details.json`
-- `actions.json`
-- `discussions.md`
-- `negotiations.md`
-- `action-items.md`
-- `vote-reasons.md`
-- `status.json`
-
-Pin the new memory root or proposal workspace version. Put the workspace URI in `details.contentURI` or in the proposal body when it helps members and agents inspect the work. After submission, copy the workspace to `proposals/onchain/proposal-<id>/` and add submission, vote, processing, and final state records.
+After submission, post new discussion, vote, and retro records with `memory-post`, linked by `proposalId`, `threadId`, and `workspaceURI`. Do not mutate an old IPFS workspace; publish a new version and post the new CID.
 
 IPFS is immutable. Do not describe this as editing a folder or updating a table in place. Create a new versioned directory and publish the new CID.
 

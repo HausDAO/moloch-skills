@@ -258,7 +258,7 @@ When creating proposals:
 1. Read current DAO state and memory.
 2. Check the mandate and initiative backlog.
 3. Do not create a new proposal if 3 or more proposals are currently in voting.
-4. Let the CLI create and pin a proposal workspace automatically unless a specific `--link` or `--content-uri` is already known.
+4. Let the CLI create and pin a proposal workspace automatically. Do not pass `--link` or `--content-uri` unless it is already an IPFS workspace URI for this proposal.
 5. Use `ipfs://...` workspace links by default. Set `IPFS_GATEWAY_URL` only when gateway URLs should be used as proposal links.
 6. Keep proposal workspaces small and versioned; IPFS artifacts are immutable.
 7. Use the correct proposal path:
@@ -277,7 +277,7 @@ Do not use `signal` for a real membership, shares, loot, tribute, token swap, or
 Common proposal commands:
 
 ```bash
-moloch-agent signal --dao 0xDAO --title "..." --description "..." --link ipfs://...
+moloch-agent signal --dao 0xDAO --title "..." --description "..."
 moloch-agent gov-settings --dao 0xDAO --params gov-settings.json
 moloch-agent token-settings --dao 0xDAO --pause-shares false --pause-loot false
 moloch-agent custom-proposal --dao 0xDAO --title "Custom action" --actions actions.json
@@ -289,6 +289,8 @@ moloch-agent payment --dao 0xDAO --recipient 0xPAYEE --token 0xERC20 --amount 10
 moloch-agent mint-shares --dao 0xDAO --to 0xMEMBER --amount 1
 moloch-agent mint-loot --dao 0xDAO --to 0xMEMBER --amount 100
 ```
+
+In normal operation, omit `--link` on proposal commands. The CLI will pin a proposal workspace and set proposal details `contentURI` automatically.
 
 For `mint-shares` and `mint-loot`, `--amount 1` means 1 full DAO token and encodes as `1000000000000000000`. Use `--amount-raw` only when the exact base-unit value is intended.
 
