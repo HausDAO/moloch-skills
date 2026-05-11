@@ -19,6 +19,8 @@ Use this skill to build or send a Base Moloch V3 DAO summon transaction.
    `node ../moloch-shared/scripts/moloch.mjs summon --params summon.json --send`
 7. Record the tx hash. After confirmation, locate the new Baal address from logs or the indexer/frontend.
 
+Address rule: never expand shortened address previews such as `0x1234...abcd`. Use only full `0x` 40-hex-character addresses from wallet output, `moloch-agent account`, environment variables, chain/Graph reads, checked JSON files, or explicit full user input. Founder/member addresses in summon params must be copied exactly from an authoritative full-address source.
+
 ## Params Shape
 
 ```json
@@ -57,5 +59,6 @@ Use this skill to build or send a Base Moloch V3 DAO summon transaction.
 - Use `../SHARED_MEMORY.md` and `../templates/community-memory` to create the shared memory root before summon. If the root is not ready at summon, publish it later with a `dao-meta` proposal.
 - IPFS is immutable. To change shared state, create a new version directory and publish a new CID.
 - If no Safe exists yet, leave `safeAddress` unset or zero.
+- If the managed signer should be an initial member, run `moloch-agent account` and copy the returned full `address` exactly.
 - Use Base first. Do not switch chains unless the user asks.
 - `quorum` and `minRetention` are raw whole-number percentages from `0` to `100`, not 18-decimal fixed-point values.

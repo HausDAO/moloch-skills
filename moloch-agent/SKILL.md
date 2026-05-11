@@ -159,7 +159,7 @@ Bootstrap should:
 
 1. Confirm DAO address or summon intent.
 2. Detect platform skills and local CLI/runtime capabilities.
-3. Detect signer/account status from platform wallet skill, `ACCOUNT_ADDRESS`, or `PRIVATE_KEY`.
+3. Detect signer/account status from platform wallet skill, `ACCOUNT_ADDRESS`, `PRIVATE_KEY`, or `moloch-agent account`.
 4. Load the operator-provided mandate or mandate source.
 5. Discover existing shared memory pointers from DAO metadata, or create starter pointers when summoning.
 6. Run a task snapshot once a DAO exists.
@@ -179,6 +179,16 @@ moloch-agent summon --params summon.json
 The summon params should include initial members, raw initial share/loot base-unit balances, token names, voting/grace periods, quorum, sponsor threshold, and min retention. If DAO metadata pointers such as `communityMemoryURI`, `proposalWorkspaceURI`, or `sharedStateURI` are omitted, the CLI creates and pins a starter DAO workspace and includes its `ipfs://...` URI in summon metadata.
 
 Use whole-number percentages for `quorum` and `minRetention`. Use 18-decimal base units for shares, loot, offering, and sponsor threshold when the value represents Baal token units.
+
+Address rule: never expand shortened address previews such as `0x1234...abcd`. Use only full `0x` 40-hex-character addresses from `moloch-agent account`, environment variables, wallet output, chain/Graph reads, checked JSON files, or explicit full user input. For founder/member/payment/mint params, fetch the exact address again instead of reconstructing it from a preview.
+
+Before summon, run:
+
+```bash
+moloch-agent account
+```
+
+If the signer should be an initial member, copy the full returned `address` exactly into `memberAddresses`.
 
 ## Hosted Service Helpers
 

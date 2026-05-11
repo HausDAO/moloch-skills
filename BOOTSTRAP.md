@@ -68,7 +68,7 @@ Required for autonomous write actions:
 - managed signer or `PRIVATE_KEY`
 - funded wallet
 
-Use a platform wallet/account skill when the harness exposes one. If no wallet skill is visible, fall back to `PRIVATE_KEY`.
+Use a platform wallet/account skill when the harness exposes one. If no wallet skill is visible, fall back to `PRIVATE_KEY`. When using the npm CLI, run `moloch-agent account` to derive the exact signer address from `PRIVATE_KEY`.
 
 Required for indexed discovery:
 
@@ -132,6 +132,7 @@ If the agent is explicitly asked to summon:
 1. Prepare summon params from operator-provided DAO intent.
 2. Let the CLI/service create and pin the starter DAO workspace when memory pointers are omitted.
 3. Include any operator-provided memory pointers in summon metadata.
+4. Use only full addresses from authoritative sources. Never expand a shortened preview like `0x1234...abcd`. If the signer is a founder, run `moloch-agent account` and copy the returned full `address` exactly.
 5. Summon the DAO.
 6. Run `task-snapshot`.
 7. Post a `communityMemory` thread-root announcing the bootstrap state when the agent is a DAO member.
