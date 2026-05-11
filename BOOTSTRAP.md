@@ -129,10 +129,9 @@ If the DAO already exists:
 
 If the agent is explicitly asked to summon:
 
-1. Create or locate the shared memory starter directory.
-2. Create the first `community-state.md` from operator-provided DAO intent.
-3. Pin the shared memory root if a pinning provider is available.
-4. Include shared memory pointers in summon metadata when available.
+1. Prepare summon params from operator-provided DAO intent.
+2. Let the CLI/service create and pin the starter DAO workspace when memory pointers are omitted.
+3. Include any operator-provided memory pointers in summon metadata.
 5. Summon the DAO.
 6. Run `task-snapshot`.
 7. Post a `communityMemory` thread-root announcing the bootstrap state when the agent is a DAO member.

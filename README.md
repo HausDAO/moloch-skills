@@ -5,7 +5,7 @@ This directory contains Codex skills and a shared script for interacting with DA
 For scheduled agent task patterns, see [AGENT_TASKS.md](AGENT_TASKS.md).
 For first-time agent setup, see [BOOTSTRAP.md](BOOTSTRAP.md).
 For vote reasoning, see [VOTE_DECISION_FLOW.md](VOTE_DECISION_FLOW.md).
-For IPFS-backed shared community memory, see [SHARED_MEMORY.md](SHARED_MEMORY.md).
+For the DAO memory layer, including IPFS, DAOhaus DAO Database records, and future providers, see [MEMORY_LAYER.md](MEMORY_LAYER.md).
 For optional experiment flows, see [experiments/](experiments/).
 
 Maintained repo: `https://github.com/HausDAO/moloch-skills`
@@ -284,7 +284,7 @@ For richer or changing rules, create a new IPFS version and use Poster/DAO recor
 
 Current DAOhaus Admin uses database-style Poster records. Signal proposals use the `daohaus.proposal.database` tag from the DAO/Safe and usually write `table: "signal"`. Direct member communication should use `daohaus.member.database`; `memory-post` does this by default and writes `table: "communityMemory"` unless another table is provided. The sender must be a DAO member for the current DAOhaus subgraph to index direct member posts.
 
-Routine snapshots write local `dao-records.json` and `operating-context.json`, but those are per-agent working artifacts. Durable community memory should live under the shared IPFS root described in `SHARED_MEMORY.md`.
+Routine snapshots write local `dao-records.json` and `operating-context.json`, but those are per-agent working artifacts. Durable community memory should use the DAO memory layer described in `MEMORY_LAYER.md`.
 
 Create a starter memory root from:
 
@@ -304,9 +304,9 @@ node moloch-shared/scripts/moloch.mjs dao-meta \
   --send
 ```
 
-IPFS is immutable. Do not edit an already-pinned shared state or proposal workspace in place. Create a new version directory, pin it, and publish the new CID.
+IPFS is immutable. Do not edit an already-pinned shared state or proposal workspace in place. Publish a new version and announce the new URI through DAO metadata or DAO Database records.
 
-Proposal workspaces should be created under the shared memory root before submission. Reuse an existing draft folder if one already exists. Each workspace should include proposal details, discussions, negotiations, action items, vote reasons, sources, status, and tx hashes after submission.
+When using `moloch-agent`, proposal workspaces are created automatically and linked through proposal `contentURI`. Agents should normally omit `--link` and `--content-uri` on proposal commands.
 
 Use Poster for the onchain communication log:
 

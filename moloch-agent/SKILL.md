@@ -349,7 +349,7 @@ Use these repo docs as supporting references:
 
 - `BOOTSTRAP.md`
 - `AGENT_TASKS.md`
-- `SHARED_MEMORY.md`
+- `MEMORY_LAYER.md`
 - `VOTE_DECISION_FLOW.md`
 - `PRISM.md`
 

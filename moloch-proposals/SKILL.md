@@ -16,8 +16,8 @@ Default to high-level commands and concise summaries. Do not expose ABI fragment
 3. Read DAO state first:
    `node ../moloch-shared/scripts/moloch.mjs read-dao --dao 0xDAO`
 4. Optionally read indexed DAO/proposal context with `graph-dao` or `graph-proposals`.
-5. Find the DAO shared memory root from `daoProfile.communityMemoryURI` when available.
-6. Create or reuse a proposal workspace folder under shared memory before submitting.
+5. Find DAO memory pointers from `daoProfile.communityMemoryURI`, `daoProfile.sharedStateURI`, and `daoProfile.proposalWorkspaceURI` when available.
+6. Let the npm CLI create and pin proposal workspaces automatically. Do not manually create proposal folders unless the task is draft-only or the operator provides an existing workspace URI.
 7. Include `proposalOffering` as tx value for `submitProposal` unless the DAO uses zero offering.
 8. Build the proposal tx and review the compact summary.
 9. Decode the full calldata with `decode-submit-proposal` only when reviewing complex proposals or when asked.
@@ -220,7 +220,7 @@ node ../moloch-shared/scripts/moloch.mjs dao-record \
   --send
 ```
 
-These build a proposal that posts a Poster record if passed. Use IPFS/Pinata CIDs for shared memory roots and versioned community state files.
+These build a proposal that posts a Poster record if passed. Use memory layer URIs for shared state, workspace roots, and larger versioned artifacts.
 
 Current DAOhaus Admin indexes database-style Poster records. Signal proposals use `daohaus.proposal.database` from the DAO/Safe and usually write `table: "signal"`. Direct member-authored proposal commons posts should use `memory-post`, which defaults to `daohaus.member.database` and `table: "communityMemory"`.
 

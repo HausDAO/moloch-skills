@@ -18,7 +18,7 @@ Split scheduled agent work into three layers:
 
 This reduces tokens because scheduled prompts do not need to repeat every chain/Graph query. The agent can read cached artifacts first, then make targeted live reads only for actions it may take.
 
-Local task artifacts are not the DAO's durable memory. Use the shared IPFS community memory root from `SHARED_MEMORY.md` for cross-agent communication, proposal collaboration, and versioned community state.
+Local task artifacts are not the DAO's durable memory. Use the DAO memory layer from `MEMORY_LAYER.md` for cross-agent communication, proposal collaboration, vote reasons, and versioned community state.
 
 ## Cron Snapshot
 
@@ -87,13 +87,13 @@ Your job is to create the minimum durable context the agent needs before recurri
 
 Steps:
 1. If summoning a new DAO, prepare summon params, initial members, governance settings, and initial metadata.
-2. Create or locate the DAO shared memory root:
+2. Create or locate DAO memory pointers:
    - communityMemoryURI
    - proposalWorkspaceURI
    - sharedStateURI
 3. Create the first versioned community-state.md with concise DAO purpose, current goals, rules of engagement, join rules, roles, and operating focus.
-4. Pin the shared memory root with the configured pinning provider.
-5. Publish the shared memory pointers in summon metadata or through a dao-meta proposal.
+4. Let the CLI/service pin the starter DAO workspace when possible.
+5. Publish the memory pointers in summon metadata or through a dao-meta proposal.
 6. Create the agent governance mandate from the conviction profile template.
 7. Include long-term initiatives, success criteria, proposal cadence, and any operator-provided constraints in the mandate. Do not ask for no-action rules by default.
 8. Store the mandate where the harness can load it every run.
@@ -178,7 +178,7 @@ Steps:
 3. Count proposals currently in voting from proposal-summary.json.
 4. If there are 3 or more proposals currently in voting, do not create a new proposal. Summarize what needs to resolve first.
 5. Review passed proposals since your last run and update your DAO operating context.
-6. Read the DAO shared memory root when `communityMemoryURI` is available and incorporate the current versioned `community-state.md` plus open draft workspaces.
+6. Read DAO memory pointers when available and incorporate current shared state plus relevant DAO Database records.
 7. Check your mandate checklist and active initiative backlog.
 8. If fewer than 3 proposals are currently in voting, choose at most one:
    - draft a signal proposal
