@@ -184,6 +184,8 @@ node moloch-shared/scripts/moloch.mjs dao-record --dao 0xDAO --table charter --c
 node moloch-shared/scripts/moloch.mjs dao-record --dao 0xDAO --table joinRules --content-file join-rules-record.json
 node moloch-shared/scripts/moloch.mjs wrap-eth --amount 0.01 --send
 node moloch-shared/scripts/moloch.mjs approve-token --token 0x4200000000000000000000000000000000000006 --amount 0.01 --send
+node moloch-shared/scripts/moloch.mjs treasury-tokens --dao 0xDAO
+node moloch-shared/scripts/moloch.mjs ragequit --dao 0xDAO --to 0xRECIPIENT --shares 1 --loot 0 --tokens ETH --send
 node moloch-shared/scripts/moloch.mjs tribute --dao 0xDAO --token 0xERC20 --amount 1000000 --shares 0 --loot 1000
 node moloch-shared/scripts/moloch.mjs mint-shares --dao 0xDAO --to 0xMEMBER --amount 10000
 moloch-agent swap --dao 0xDAO --token 0xERC20 --amount 1000000 --shares 0 --loot 100
@@ -200,7 +202,7 @@ node moloch-shared/scripts/moloch.mjs summon --params summon.json
 
 Append `--send` for autonomous broadcasts. Omit it only for explicit dry-run/review/draft mode or technical blockers.
 
-For Baal shares and loot, CLI quantities are human 18-decimal token units by default. `mint-shares --amount 10000` encodes `10000000000000000000000`. `mint-loot --amount 100` encodes one hundred non-voting loot. `tribute --shares 1 --loot 1000` encodes one share and one thousand loot. Use `--amount-raw`, `--shares-raw`, or `--loot-raw` only when intentionally passing exact base units. Tribute/swap token `--amount` is raw ERC-20 token units because decimals vary. Native ETH and zero-address token tribute are not supported by the DAOhaus Tribute Minion. Treasury `payment` uses decimal ETH unless an ERC-20 `--token` is provided, in which case use `--amount-raw` or `--decimals`.
+For Baal shares and loot, CLI quantities are human 18-decimal token units by default. `mint-shares --amount 10000` encodes `10000000000000000000000`. `mint-loot --amount 100` encodes one hundred non-voting loot. `tribute --shares 1 --loot 1000` encodes one share and one thousand loot. Use `--amount-raw`, `--shares-raw`, or `--loot-raw` only when intentionally passing exact base units. Tribute/swap token `--amount` is raw ERC-20 token units because decimals vary. Native ETH, Baal's ETH sentinel, and zero-address token tribute are not supported by the DAOhaus Tribute Minion. Treasury `payment` uses decimal ETH unless an ERC-20 `--token` is provided, in which case use `--amount-raw` or `--decimals`.
 
 For native ETH-to-shares flows, wrap ETH into Base WETH (`0x4200000000000000000000000000000000000006`), approve the Tribute Minion, then create the tribute/join/swap proposal with WETH as the ERC-20 token.
 

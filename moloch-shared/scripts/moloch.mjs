@@ -14,6 +14,7 @@ import {
   parseAbiParameters,
   parseEther,
   parseUnits,
+  getAddress,
   toFunctionSelector,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
@@ -22,6 +23,7 @@ import { base } from 'viem/chains';
 import { request, gql } from 'graphql-request';
 
 const ZERO = '0x0000000000000000000000000000000000000000';
+const BAAL_ETH_TOKEN = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
 const BASE_CHAIN_ID = 8453;
 const SUMMONER = '0x97Aaa5be8B38795245f1c38A883B44cccdfB3E11';
 const POSTER = '0x000000000000cd17345801aa8147b8D3950260FF';
@@ -49,6 +51,7 @@ const BAAL_ABI = [
   { type: 'function', name: 'cancelProposal', stateMutability: 'nonpayable', inputs: [{ name: 'id', type: 'uint32' }], outputs: [] },
   { type: 'function', name: 'setGovernanceConfig', stateMutability: 'nonpayable', inputs: [{ name: '_governanceConfig', type: 'bytes' }], outputs: [] },
   { type: 'function', name: 'setAdminConfig', stateMutability: 'nonpayable', inputs: [{ name: 'pauseShares', type: 'bool' }, { name: 'pauseLoot', type: 'bool' }], outputs: [] },
+  { type: 'function', name: 'ragequit', stateMutability: 'nonpayable', inputs: [{ name: 'to', type: 'address' }, { name: 'sharesToBurn', type: 'uint256' }, { name: 'lootToBurn', type: 'uint256' }, { name: 'tokens', type: 'address[]' }], outputs: [] },
   { type: 'function', name: 'mintShares', stateMutability: 'nonpayable', inputs: [{ name: 'to', type: 'address[]' }, { name: 'amount', type: 'uint256[]' }], outputs: [] },
   { type: 'function', name: 'setShamans', stateMutability: 'nonpayable', inputs: [{ name: '_shamans', type: 'address[]' }, { name: '_permissions', type: 'uint256[]' }], outputs: [] },
   { type: 'function', name: 'executeAsBaal', stateMutability: 'nonpayable', inputs: [{ name: '_to', type: 'address' }, { name: '_value', type: 'uint256' }, { name: '_data', type: 'bytes' }], outputs: [] },
@@ -150,12 +153,22 @@ function compact(value) {
 
 function normalizeToken(value) {
   if (!value || value.toUpperCase() === 'ETH' || value.toUpperCase() === 'NATIVE') return ZERO;
+  if (value.toLowerCase() === BAAL_ETH_TOKEN.toLowerCase()) return BAAL_ETH_TOKEN;
   return value;
 }
 
 function listArg(name, fallback = '') {
   const value = arg(name, fallback);
   return String(value).split(',').map((item) => item.trim()).filter(Boolean);
+}
+
+function ragequitTokensArg() {
+  const tokens = listArg('tokens').map((token) => /^(ETH|NATIVE)$/i.test(token) ? BAAL_ETH_TOKEN : token);
+  const sorted = [...tokens].sort((a, b) => BigInt(a.toLowerCase()) < BigInt(b.toLowerCase()) ? -1 : 1);
+  if (tokens.some((token, index) => token.toLowerCase() !== sorted[index].toLowerCase())) {
+    throw new Error('Baal ragequit token list must be sorted ascending. Use ETH/NATIVE for the Baal ETH sentinel.');
+  }
+  return tokens;
 }
 
 function parseBaalTokenUnits(name, value) {
@@ -408,6 +421,28 @@ const RECORD_FIELDS = `
 
 async function graphDao(dao) {
   return request(graphUrl(), gql`query dao($daoid: String!) { dao(id: $daoid) { ${DAO_FIELDS} } }`, { daoid: dao.toLowerCase() });
+}
+
+async function treasuryTokens(dao) {
+  const result = await graphDao(dao);
+  const safeAddress = result?.dao?.safeAddress ? getAddress(result.dao.safeAddress) : undefined;
+  if (!safeAddress) throw new Error('Could not resolve DAO Safe address from Graph.');
+  const res = await fetch(`https://safe-transaction-base.safe.global/api/v1/safes/${safeAddress}/balances/?trusted=false`);
+  if (!res.ok) throw new Error(`Safe balances request failed: ${res.status}`);
+  const balances = await res.json();
+  const tokens = balances
+    .filter((item) => BigInt(String(item.balance || '0')) > 0n)
+    .map((item) => ({
+      tokenAddress: item.tokenAddress || BAAL_ETH_TOKEN,
+      symbol: item.token?.symbol || (item.tokenAddress ? '' : 'ETH'),
+      name: item.token?.name || (item.tokenAddress ? '' : 'Ether'),
+      decimals: item.token?.decimals,
+      balance: item.balance,
+    }));
+  const ragequitTokens = tokens
+    .map((item) => item.tokenAddress)
+    .sort((a, b) => BigInt(a.toLowerCase()) < BigInt(b.toLowerCase()) ? -1 : 1);
+  return { dao, safeAddress, tokens, ragequitTokens, ragequitTokensCsv: ragequitTokens.join(','), note: 'Use ragequitTokensCsv as --tokens. Native ETH is represented with Baal ETH sentinel.' };
 }
 
 async function graphProposal(dao, proposal) {
@@ -954,11 +989,13 @@ async function main() {
   graph-members        Indexed members with shares, loot, delegation, vote history
   graph-member         One indexed member: --member 0x...
   graph-records        DAO Poster records: --table daoProfile|signal|communityMemory
+  treasury-tokens      DAO Safe balances plus sorted ragequit token list
   proposal-lifecycle   Derived status: unsponsored/voting/grace/needsProcessing/failed/processed
   process-queue        Oldest ready-to-process proposals first
   wrap-eth             Wrap native ETH to Base WETH
   unwrap-eth           Unwrap Base WETH to native ETH
   approve-token        Approve ERC-20 spending, default spender is Tribute Minion
+  ragequit             Direct member ragequit: burn caller shares/loot and claim treasury assets
   signal               Text/metadata governance signal. Not for membership, shares, or loot.
   dao-meta             Proposal to update daoProfile metadata/links through Poster
   dao-record           Proposal to post a charter/joinRules/manifesto record through Poster
@@ -995,6 +1032,7 @@ Share and loot quantities default to human 18-decimal units:
 
 Proposal offering is native tx value for submitProposal. Tribute/join uses ERC-20 tokens only; native ETH tribute is not supported by the DAOhaus Tribute Minion.
 For native ETH-to-shares flows, use wrap-eth, approve-token, then tribute/join with Base WETH: ${BASE_WETH}
+Ragequit is not a proposal. Use --tokens ETH,0xERC20 for the sorted treasury token list; ETH maps to Baal's ETH sentinel.
 `);
     return;
   }
@@ -1107,6 +1145,11 @@ For native ETH-to-shares flows, use wrap-eth, approve-token, then tribute/join w
     return;
   }
 
+  if (command === 'treasury-tokens' || command === 'ragequit-tokens') {
+    console.log(stringify(await treasuryTokens(requireDao())));
+    return;
+  }
+
   if (command === 'proposal-lifecycle') {
     console.log(stringify(await lifecycleForProposal(requireDao(), Number(arg('proposal')))));
     return;
@@ -1155,6 +1198,15 @@ For native ETH-to-shares flows, use wrap-eth, approve-token, then tribute/join w
     const amount = has('max') ? (1n << 256n) - 1n : has('amount-raw') ? BigInt(arg('amount-raw')) : arg('decimals') ? parseUnits(arg('amount', '0'), Number(arg('decimals'))) : parseEther(arg('amount', '0'));
     const data = encodeFunctionData({ abi: ERC20_APPROVE_ABI, functionName: 'approve', args: [spender, amount] });
     out = withSummary(tx(token, data), { action: 'approve-token', token, spender, amount: amount.toString(), note: 'Approves ERC-20 spending. Tribute Minion needs allowance before token-for-shares/loot proposals can be submitted.' });
+  } else if (command === 'ragequit' || command === 'rage-quit') {
+    const dao = requireDao();
+    const to = arg('to');
+    if (!to) throw new Error('Missing --to 0xRECIPIENT');
+    const sharesParsed = baalTokenArg('shares', '0');
+    const lootParsed = baalTokenArg('loot', '0');
+    const tokens = ragequitTokensArg();
+    const data = encodeFunctionData({ abi: BAAL_ABI, functionName: 'ragequit', args: [to, sharesParsed.value, lootParsed.value, tokens] });
+    out = withSummary(tx(dao, data), { action: 'ragequit', dao, to, sharesToBurn: sharesParsed.value.toString(), lootToBurn: lootParsed.value.toString(), tokens, note: 'Direct member action. Burns caller shares/loot and claims proportional treasury assets. Token list must be sorted ascending for Baal.' });
   } else if (command === 'memory-post' || command === 'poster-post') {
     const dao = requireDao();
     const p = arg('content-file') ? jsonFile(arg('content-file')) : {};
@@ -1216,7 +1268,7 @@ For native ETH-to-shares flows, use wrap-eth, approve-token, then tribute/join w
     const description = arg('description', '');
     const link = arg('link', '');
     const token = normalizeToken(arg('token'));
-    if (token === ZERO) throw new Error('Tribute/join proposals require a nonzero ERC-20 --token address. Native ETH and 0x0000000000000000000000000000000000000000 tribute are not supported by the DAOhaus Tribute Minion.');
+    if (token === ZERO || token.toLowerCase() === BAAL_ETH_TOKEN.toLowerCase()) throw new Error('Tribute/join proposals require a nonzero ERC-20 --token address. Native ETH, Baal ETH sentinel, and 0x0000000000000000000000000000000000000000 tribute are not supported by the DAOhaus Tribute Minion.');
     const amount = BigInt(arg('amount', '0'));
     const sharesParsed = baalTokenArg('shares', '0');
     const lootParsed = baalTokenArg('loot', '0');
