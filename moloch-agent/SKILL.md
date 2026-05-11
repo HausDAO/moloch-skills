@@ -139,6 +139,8 @@ export PRIVATE_KEY=0x...
 
 `RPC_URL` defaults to the public Base RPC (`https://mainnet.base.org`) so the CLI works without extra setup. Prefer setting a managed Base RPC URL for real scheduled operation because the public endpoint can rate limit.
 
+Transaction commands wait for receipts by default to reduce stale nonce races between back-to-back writes such as sponsor then vote. Set `MOLOCH_WAIT_DEFAULT=false` only for fire-and-forget operation.
+
 ## Source Authority
 
 Use layered sources of truth:

@@ -941,9 +941,17 @@ async function sendIfRequested(unsigned) {
   const account = privateKeyToAccount(privateKey);
   const c = client();
   const wallet = createWalletClient({ account, chain: base, transport: http(process.env.RPC_URL || arg('rpc')) });
-  const hash = await wallet.sendTransaction({ account, to: unsigned.to, value: BigInt(unsigned.value || 0), data: unsigned.data, gas: unsigned.gas == null ? undefined : BigInt(unsigned.gas) });
+  const request = await c.prepareTransactionRequest({
+    account,
+    to: unsigned.to,
+    value: BigInt(unsigned.value || 0),
+    data: unsigned.data,
+    gas: unsigned.gas == null ? undefined : BigInt(unsigned.gas),
+    nonce: await c.getTransactionCount({ address: account.address, blockTag: 'pending' }),
+  });
+  const hash = await wallet.sendTransaction(request);
   const result = { hash, from: account.address, summary: unsigned.summary, unsigned };
-  if (has('wait')) {
+  if (has('wait') || process.env.MOLOCH_WAIT_DEFAULT !== 'false') {
     result.receipt = await c.waitForTransactionReceipt({ hash, timeout: Number(arg('wait-ms', 180000)) });
   }
   if (unsigned.summary?.dao && unsigned.summary?.proposalId) {

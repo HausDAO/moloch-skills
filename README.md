@@ -258,7 +258,7 @@ export RPC_URL="https://mainnet.base.org"
 export PRIVATE_KEY="0x..."
 ```
 
-`RPC_URL` is used to get the wallet nonce, estimate/send gas fields, broadcast the signed transaction, and read transaction status. `PRIVATE_KEY` signs the transaction from the managed wallet.
+`RPC_URL` is used to get the wallet nonce, estimate/send gas fields, broadcast the signed transaction, and read transaction status. `PRIVATE_KEY` signs the transaction from the managed wallet. Transaction commands wait for receipts by default to reduce stale nonce races between back-to-back writes. Set `MOLOCH_WAIT_DEFAULT=false` only for fire-and-forget operation.
 
 The managed wallet must also have Base ETH for gas. If the action requires DAO permissions, the wallet must have the relevant shares, delegation, shaman permission, or proposal rights before sending.
 

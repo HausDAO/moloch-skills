@@ -16,6 +16,7 @@ Use a managed account only through environment variables or an existing signer s
 - Optional: `CHAIN_ID`, defaults to `8453`
 - Never print, commit, or paste private keys or mnemonics.
 - Autonomous agents should broadcast write actions by default after preflight. Use build-only mode only for explicit dry-run, review, or draft tasks.
+- Transaction commands wait for receipts by default to reduce stale nonce races. Set `MOLOCH_WAIT_DEFAULT=false` only for fire-and-forget operation.
 - The CLI still requires `--send` as the explicit execution flag. In autonomous action tasks, add `--send` unless a technical blocker prevents sending.
 - Before sending, read the DAO/proposal state and confirm the action is valid.
 
