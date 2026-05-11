@@ -30,14 +30,14 @@ Choose the proposal path by operator intent:
 | Operator asks for | Use |
 | --- | --- |
 | signal, temperature check, text-only governance intent | `signal` |
-| join DAO with tribute, tokens-for-shares, tokens-for-loot | `tribute` / `join-dao` |
+| join DAO with ERC-20 tribute, tokens-for-shares, tokens-for-loot | `tribute` / `join-dao` |
 | grant or mint voting shares directly, no tribute involved | `mint-shares` |
 | update DAO profile, shared memory URI, community state URI, hosted docs links | `dao-meta` / `dao-record` |
 | change voting period, grace period, offering, quorum, retention | `gov-settings` |
 | change share/loot pause or transferability setting | `token-settings` |
 | arbitrary contract execution | custom proposal path |
 
-If the operator asks for shares, loot, membership, admission, or a join request, do not use `signal`. A signal can express support for admission, but it does not create an executable membership proposal. Use `tribute` / `join-dao` when the member contributes ETH or ERC-20 tribute. Use `mint-shares` when the DAO directly grants voting shares with no tribute transfer.
+If the operator asks for shares, loot, membership, admission, or a join request, do not use `signal`. A signal can express support for admission, but it does not create an executable membership proposal. Use `tribute` / `join-dao` when the member contributes ERC-20 tribute. Use `mint-shares` when the DAO directly grants voting shares with no tribute transfer.
 
 ## Details JSON
 
@@ -56,6 +56,8 @@ Daohaus expects details JSON with `title`, `description`, optional `contentURI`,
 ## Signal Proposal
 
 Proposal commands default `submitProposal` `baalGas` to `0`. This is intentional: Baal ignores a zero `baalGas`, while a low nonzero value can cause processing to fail with an out-of-gas style action failure. Use `--baal-gas` only when you know the required inner action gas. Use `--estimate-baal-gas` as an explicit opt-in for DAOhaus-style estimation with a default `1.2x` buffer.
+
+Proposal offering is separate from tribute or payment amounts. Offering is native chain token sent as transaction `value` to satisfy the DAO's configured proposal offering. Tribute/swap amounts are contributed ERC-20 token amounts handled by Tribute Minion. Treasury payment amounts are encoded inside proposal actions.
 
 ```bash
 node ../moloch-shared/scripts/moloch.mjs signal \
@@ -119,26 +121,13 @@ moloch-agent mint-loot \
 ## Tribute / Join / Swap Proposal
 
 Use this for tokens-for-shares or tokens-for-loot requests through the DAOhaus Tribute Minion.
-This is the first-class membership/admission path when the member contributes ETH or ERC-20 tribute.
+This is the first-class membership/admission path when the member contributes ERC-20 tribute.
 DAOhaus Admin labels this family "DAO Token Swap": request voting or non-voting DAO tokens in exchange for contributed tokens.
-
-Native ETH tribute:
-
-```bash
-node ../moloch-shared/scripts/moloch.mjs tribute \
-  --dao 0xDAO \
-  --token ETH \
-  --amount 1000000000000000 \
-  --shares 0 \
-  --loot 1000 \
-  --title "Join the DAO" \
-  --send
-```
 
 ERC-20 tribute:
 
 ```bash
-node ../moloch-shared/scripts/moloch.mjs tribute \
+moloch-agent tribute \
   --dao 0xDAO \
   --token 0xTOKEN \
   --amount 1000000 \
@@ -147,15 +136,15 @@ node ../moloch-shared/scripts/moloch.mjs tribute \
   --send
 ```
 
-For ERC-20 tribute, check and approve Tribute Minion allowance before broadcasting. For ETH tribute, tx `value` equals `amount`. Tribute token `--amount` remains raw token units because ERC-20 decimals vary; share/loot outputs use human 18-decimal units by default.
+For ERC-20 tribute, check and approve Tribute Minion allowance before broadcasting. Native ETH tribute is not supported by the DAOhaus Tribute Minion. Transaction `value` is the DAO proposal offering only; it is not tribute amount. Tribute token `--amount` remains raw token units because ERC-20 decimals vary; share/loot outputs use human 18-decimal units by default.
 
 The npm CLI also exposes `swap` and `token-swap` as aliases for the same Tribute Minion proposal family:
 
 ```bash
 moloch-agent swap \
   --dao 0xDAO \
-  --token ETH \
-  --amount 0.01 \
+  --token 0xTOKEN \
+  --amount 1000000 \
   --shares 0 \
   --loot 100
 ```
@@ -255,15 +244,13 @@ node ../moloch-shared/scripts/moloch.mjs memory-post \
 
 Agents should post vote reasons, negotiation updates, and workspace version CIDs through Poster so other members can discover them through DAOhaus-indexed records. Use the shared `community-memory/v1` envelope and group proposal discussion with a stable `threadId`.
 
-Zero-tribute membership request example:
+No-tribute membership request example:
 
 ```bash
-node ../moloch-shared/scripts/moloch.mjs join-dao \
+moloch-agent mint-shares \
   --dao 0xDAO \
-  --token ETH \
-  --amount 0 \
-  --shares 10000 \
-  --loot 0 \
+  --to 0xMEMBER \
+  --amount 10000 \
   --title "Admit Charter Steward" \
   --send
 ```

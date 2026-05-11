@@ -826,8 +826,17 @@ async function processGasLimit(dao, proposalId) {
   }
 }
 
-async function proposalTx({ dao, actions, title, description, link, proposalType, expiration = 0, baalGas, value = 0n }) {
+async function proposalOfferingValue(dao, fallback) {
+  if (has('proposal-offering')) return BigInt(arg('proposal-offering'));
+  if (has('value')) return BigInt(arg('value'));
+  if (fallback != null) return BigInt(fallback);
+  const daoState = await readDaoDirect(dao);
+  return BigInt(daoState.proposalOffering || 0);
+}
+
+async function proposalTx({ dao, actions, title, description, link, proposalType, expiration = 0, baalGas, value }) {
   const proposalData = encodeMultiAction(actions);
+  const txValue = value == null ? await proposalOfferingValue(dao) : BigInt(value);
   let resolvedBaalGas = baalGas == null ? 0n : BigInt(baalGas);
   let estimatedBaalGas = false;
   let baalGasRawEstimate;
@@ -852,7 +861,7 @@ async function proposalTx({ dao, actions, title, description, link, proposalType
     functionName: 'submitProposal',
     args: [proposalData, Number(expiration), resolvedBaalGas, details({ title, description, link, proposalType })],
   });
-  return { ...tx(dao, data, value), proposalData, baalGas: resolvedBaalGas.toString(), estimatedBaalGas, baalGasRawEstimate, baalGasBuffer, baalGasEstimateError };
+  return { ...tx(dao, data, txValue), proposalData, baalGas: resolvedBaalGas.toString(), proposalOffering: txValue.toString(), estimatedBaalGas, baalGasRawEstimate, baalGasBuffer, baalGasEstimateError };
 }
 
 function requireDao() {
@@ -957,6 +966,8 @@ Options:
 Share and loot quantities default to human 18-decimal units:
   --amount 10000 on mint-shares encodes 10000000000000000000000
   --shares 1 on tribute encodes 1000000000000000000
+
+Proposal offering is native tx value for submitProposal. Tribute/join uses ERC-20 tokens only; native ETH tribute is not supported by the DAOhaus Tribute Minion.
 `);
     return;
   }
@@ -1135,7 +1146,7 @@ Share and loot quantities default to human 18-decimal units:
     if (!title) throw new Error('Missing --title');
     ensureSignalIntent({ title, description });
     const postData = encodeFunctionData({ abi: POSTER_ABI, functionName: 'post', args: [JSON.stringify({ daoId: dao, table: 'signal', queryType: 'list', title, description, link }), POSTER_TAG_DAO_DB] });
-    out = withSummary(await proposalTx({ dao, title, description, link, proposalType: 'SIGNAL', expiration: Number(arg('expiration', 0)), baalGas: arg('baal-gas') == null ? undefined : BigInt(arg('baal-gas')), value: BigInt(arg('value', 0)), actions: [{ to: POSTER, value: 0, data: postData, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'SIGNAL', submissionTarget: 'BAAL', dao });
+    out = withSummary(await proposalTx({ dao, title, description, link, proposalType: 'SIGNAL', expiration: Number(arg('expiration', 0)), baalGas: arg('baal-gas') == null ? undefined : BigInt(arg('baal-gas')), actions: [{ to: POSTER, value: 0, data: postData, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'SIGNAL', submissionTarget: 'BAAL', dao });
   } else if (command === 'dao-meta') {
     const dao = requireDao();
     const p = arg('params') ? jsonFile(arg('params')) : {};
@@ -1143,7 +1154,7 @@ Share and loot quantities default to human 18-decimal units:
     const description = arg('description', p.proposalDescription || p.description || '');
     const content = daoProfileContent(dao, { ...p, name: arg('name', p.name), description: arg('dao-description', p.description), charterURI: arg('charter-uri', p.charterURI), joinRulesURI: arg('join-rules-uri', p.joinRulesURI), goalsURI: arg('goals-uri', p.goalsURI), manifestoURI: arg('manifesto-uri', p.manifestoURI), communityMemoryURI: arg('community-memory-uri', p.communityMemoryURI), proposalWorkspaceURI: arg('proposal-workspace-uri', p.proposalWorkspaceURI), sharedStateURI: arg('shared-state-uri', p.sharedStateURI), web: arg('web', p.web) });
     const postData = encodeFunctionData({ abi: POSTER_ABI, functionName: 'post', args: [JSON.stringify(content), POSTER_TAG_DAO_PROFILE_UPDATE] });
-    out = withSummary(await proposalTx({ dao, title, description, link: arg('link', p.link || ''), proposalType: 'UPDATE_METADATA_SETTINGS', expiration: Number(arg('expiration', p.expiration || 0)), baalGas: arg('baal-gas') == null && p.baalGas == null ? undefined : BigInt(arg('baal-gas', p.baalGas)), value: BigInt(arg('value', p.value || 0)), actions: [{ to: POSTER, value: 0, data: postData, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'UPDATE_METADATA_SETTINGS', submissionTarget: 'BAAL', dao, recordTable: 'daoProfile' });
+    out = withSummary(await proposalTx({ dao, title, description, link: arg('link', p.link || ''), proposalType: 'UPDATE_METADATA_SETTINGS', expiration: Number(arg('expiration', p.expiration || 0)), baalGas: arg('baal-gas') == null && p.baalGas == null ? undefined : BigInt(arg('baal-gas', p.baalGas)), value: p.value == null ? undefined : BigInt(p.value), actions: [{ to: POSTER, value: 0, data: postData, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'UPDATE_METADATA_SETTINGS', submissionTarget: 'BAAL', dao, recordTable: 'daoProfile' });
   } else if (command === 'dao-record') {
     const dao = requireDao();
     const table = arg('table');
@@ -1155,25 +1166,26 @@ Share and loot quantities default to human 18-decimal units:
     const title = arg('title', p.title || `Update ${table} record`);
     const description = arg('description', p.proposalDescription || `Post latest ${table} record for DAO agents and members.`);
     const postData = encodeFunctionData({ abi: POSTER_ABI, functionName: 'post', args: [JSON.stringify(record), POSTER_TAG_DAO_PROFILE_UPDATE] });
-    out = withSummary(await proposalTx({ dao, title, description, link: arg('link', p.link || content.uri || content.contentURI || ''), proposalType: 'UPDATE_METADATA_SETTINGS', expiration: Number(arg('expiration', p.expiration || 0)), baalGas: arg('baal-gas') == null && p.baalGas == null ? undefined : BigInt(arg('baal-gas', p.baalGas)), value: BigInt(arg('value', p.value || 0)), actions: [{ to: POSTER, value: 0, data: postData, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'UPDATE_METADATA_SETTINGS', submissionTarget: 'BAAL', dao, recordTable: table });
+    out = withSummary(await proposalTx({ dao, title, description, link: arg('link', p.link || content.uri || content.contentURI || ''), proposalType: 'UPDATE_METADATA_SETTINGS', expiration: Number(arg('expiration', p.expiration || 0)), baalGas: arg('baal-gas') == null && p.baalGas == null ? undefined : BigInt(arg('baal-gas', p.baalGas)), value: p.value == null ? undefined : BigInt(p.value), actions: [{ to: POSTER, value: 0, data: postData, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'UPDATE_METADATA_SETTINGS', submissionTarget: 'BAAL', dao, recordTable: table });
   } else if (command === 'tribute' || command === 'join-dao') {
     const dao = requireDao();
     const title = arg('title', 'Tribute for DAO tokens');
     const description = arg('description', '');
     const link = arg('link', '');
-    const token = normalizeToken(arg('token', 'ETH'));
+    const token = normalizeToken(arg('token'));
+    if (token === ZERO) throw new Error('Tribute/join proposals require an ERC-20 --token address. Native ETH tribute is not supported by the DAOhaus Tribute Minion.');
     const amount = BigInt(arg('amount', '0'));
     const sharesParsed = baalTokenArg('shares', '0');
     const lootParsed = baalTokenArg('loot', '0');
     const shares = sharesParsed.value;
     const loot = lootParsed.value;
-    const value = token === ZERO ? amount : 0n;
+    const value = await proposalOfferingValue(dao);
     const data = encodeFunctionData({
       abi: TRIBUTE_MINION_ABI,
       functionName: 'submitTributeProposal',
       args: [dao, token, amount, shares, loot, Number(arg('expiration', 0)), BigInt(arg('baal-gas', 0)), details({ title, description, link, proposalType: 'TOKENS_FOR_SHARES' })],
     });
-    out = withSummary(tx(TRIBUTE_MINION, data, value), { action: 'submitTributeProposal', proposalKind: 'TOKENS_FOR_SHARES', submissionTarget: 'TRIBUTE_MINION', dao, token, amount: amount.toString(), shares: shares.toString(), loot: loot.toString(), sharesInput: sharesParsed.input, lootInput: lootParsed.input, shareLootUnitMode: sharesParsed.mode === lootParsed.mode ? sharesParsed.mode : 'mixed', note: token === ZERO ? 'Native ETH tribute. Transaction value equals amount. Shares/loot are human 18-decimal units unless --shares-raw/--loot-raw is used.' : 'ERC-20 tribute. Approve the Tribute Minion before submitting if allowance is insufficient. Shares/loot are human 18-decimal units unless --shares-raw/--loot-raw is used.' });
+    out = withSummary(tx(TRIBUTE_MINION, data, value), { action: 'submitTributeProposal', proposalKind: 'TOKENS_FOR_SHARES', submissionTarget: 'TRIBUTE_MINION', dao, token, amount: amount.toString(), shares: shares.toString(), loot: loot.toString(), proposalOffering: value.toString(), sharesInput: sharesParsed.input, lootInput: lootParsed.input, shareLootUnitMode: sharesParsed.mode === lootParsed.mode ? sharesParsed.mode : 'mixed', note: 'ERC-20 tribute. Transaction value is the DAO proposal offering only. Approve the Tribute Minion before submitting if allowance is insufficient. Shares/loot are human 18-decimal units unless --shares-raw/--loot-raw is used.' });
   } else if (command === 'mint-shares') {
     const dao = requireDao();
     const title = arg('title', 'Mint voting shares');
@@ -1186,19 +1198,19 @@ Share and loot quantities default to human 18-decimal units:
     if (!amounts.length) throw new Error('Missing --amount 1[,...] for human share units, or --amount-raw 1000000000000000000[,...] for raw base units');
     if (amounts.length !== recipients.length) throw new Error('--to and --amount must have the same number of comma-separated values');
     const action = encodeFunctionData({ abi: BAAL_ABI, functionName: 'mintShares', args: [recipients, amounts] });
-    out = withSummary(await proposalTx({ dao, title, description, link, proposalType: 'MINT_SHARES', expiration: Number(arg('expiration', 0)), baalGas: arg('baal-gas') == null ? undefined : BigInt(arg('baal-gas')), value: BigInt(arg('value', 0)), actions: [{ to: dao, value: 0, data: action, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'MINT_SHARES', submissionTarget: 'BAAL', dao, recipients, amounts: amounts.map(String), amountInputs: parsedAmounts.inputs, amountUnitMode: parsedAmounts.mode, note: 'Direct Baal mintShares proposal. --amount uses human 18-decimal share units; use --amount-raw only for exact base units.' });
+    out = withSummary(await proposalTx({ dao, title, description, link, proposalType: 'MINT_SHARES', expiration: Number(arg('expiration', 0)), baalGas: arg('baal-gas') == null ? undefined : BigInt(arg('baal-gas')), actions: [{ to: dao, value: 0, data: action, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'MINT_SHARES', submissionTarget: 'BAAL', dao, recipients, amounts: amounts.map(String), amountInputs: parsedAmounts.inputs, amountUnitMode: parsedAmounts.mode, note: 'Direct Baal mintShares proposal. --amount uses human 18-decimal share units; use --amount-raw only for exact base units.' });
   } else if (command === 'gov-settings') {
     const dao = requireDao();
     const p = jsonFile(arg('params'));
     const inner = encodeValues(['uint32', 'uint32', 'uint256', 'uint256', 'uint256', 'uint256'], [p.votingPeriodInSeconds, p.gracePeriodInSeconds, BigInt(p.newOffering), rawPercent('quorum', p.quorum), BigInt(p.sponsorThreshold), rawPercent('minRetention', p.minRetention)]);
     const action = encodeFunctionData({ abi: BAAL_ABI, functionName: 'setGovernanceConfig', args: [inner] });
-    out = withSummary(await proposalTx({ dao, title: p.title, description: p.description || '', link: p.link || '', proposalType: 'UPDATE_GOV_SETTINGS', expiration: p.expiration || 0, baalGas: arg('baal-gas') == null && p.baalGas == null ? undefined : BigInt(arg('baal-gas', p.baalGas)), value: BigInt(p.value || 0), actions: [{ to: dao, value: 0, data: action, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'UPDATE_GOV_SETTINGS', submissionTarget: 'BAAL', dao });
+    out = withSummary(await proposalTx({ dao, title: p.title, description: p.description || '', link: p.link || '', proposalType: 'UPDATE_GOV_SETTINGS', expiration: p.expiration || 0, baalGas: arg('baal-gas') == null && p.baalGas == null ? undefined : BigInt(arg('baal-gas', p.baalGas)), value: p.value == null ? undefined : BigInt(p.value), actions: [{ to: dao, value: 0, data: action, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'UPDATE_GOV_SETTINGS', submissionTarget: 'BAAL', dao });
   } else if (command === 'token-settings') {
     const dao = requireDao();
     const title = arg('title', 'Update token settings');
     const description = arg('description', '');
     const action = encodeFunctionData({ abi: BAAL_ABI, functionName: 'setAdminConfig', args: [boolArg('pause-shares'), boolArg('pause-loot')] });
-    out = withSummary(await proposalTx({ dao, title, description, link: arg('link', ''), proposalType: 'TOKEN_SETTINGS', expiration: Number(arg('expiration', 0)), baalGas: arg('baal-gas') == null ? undefined : BigInt(arg('baal-gas')), value: BigInt(arg('value', 0)), actions: [{ to: dao, value: 0, data: action, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'TOKEN_SETTINGS', submissionTarget: 'BAAL', dao });
+    out = withSummary(await proposalTx({ dao, title, description, link: arg('link', ''), proposalType: 'TOKEN_SETTINGS', expiration: Number(arg('expiration', 0)), baalGas: arg('baal-gas') == null ? undefined : BigInt(arg('baal-gas')), actions: [{ to: dao, value: 0, data: action, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'TOKEN_SETTINGS', submissionTarget: 'BAAL', dao });
   } else if (['sponsor', 'vote', 'process', 'cancel'].includes(command)) {
     const dao = requireDao();
     const id = Number(arg('proposal'));

@@ -68,7 +68,7 @@ node scripts/moloch.mjs signal --dao 0xDAO --title "..." --description "..."
 node scripts/moloch.mjs dao-meta --dao 0xDAO --name "DAO Name" --community-memory-uri ipfs://... --shared-state-uri ipfs://.../versions/0001/community-state.md
 node scripts/moloch.mjs memory-post --dao 0xDAO --table communityMemory --thread-id proposal-1 --body "..." --send
 node scripts/moloch.mjs dao-record --dao 0xDAO --table charter --content-file charter-record.json
-node scripts/moloch.mjs tribute --dao 0xDAO --token ETH --amount 1000000000000000 --shares 0 --loot 1000
+node scripts/moloch.mjs tribute --dao 0xDAO --token 0xERC20 --amount 1000000 --shares 0 --loot 1000
 node scripts/moloch.mjs mint-shares --dao 0xDAO --to 0xMEMBER --amount 10000
 node scripts/moloch.mjs gov-settings --dao 0xDAO --params params.json
 node scripts/moloch.mjs token-settings --dao 0xDAO --pause-shares false --pause-loot false

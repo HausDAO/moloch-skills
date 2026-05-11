@@ -291,9 +291,9 @@ moloch-agent signal --dao 0xDAO --title "..." --description "..."
 moloch-agent gov-settings --dao 0xDAO --params gov-settings.json
 moloch-agent token-settings --dao 0xDAO --pause-shares false --pause-loot false
 moloch-agent custom-proposal --dao 0xDAO --title "Custom action" --actions actions.json
-moloch-agent join-dao --dao 0xDAO --amount 0.01 --shares 10000
-moloch-agent tribute --dao 0xDAO --token ETH --amount 0.01 --shares 10000
-moloch-agent swap --dao 0xDAO --token ETH --amount 0.01 --shares 0 --loot 100
+moloch-agent join-dao --dao 0xDAO --token 0xERC20 --amount 1000000 --shares 10000
+moloch-agent tribute --dao 0xDAO --token 0xERC20 --amount 1000000 --shares 10000
+moloch-agent swap --dao 0xDAO --token 0xERC20 --amount 1000000 --shares 0 --loot 100
 moloch-agent payment --dao 0xDAO --recipient 0xPAYEE --amount 0.01
 moloch-agent payment --dao 0xDAO --recipient 0xPAYEE --token 0xERC20 --amount 100 --decimals 6
 moloch-agent mint-shares --dao 0xDAO --to 0xMEMBER --amount 1
