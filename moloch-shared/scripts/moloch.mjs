@@ -951,8 +951,12 @@ async function sendIfRequested(unsigned) {
   });
   const hash = await wallet.sendTransaction(request);
   const result = { hash, from: account.address, summary: unsigned.summary, unsigned };
-  if (has('wait') || process.env.MOLOCH_WAIT_DEFAULT !== 'false') {
-    result.receipt = await c.waitForTransactionReceipt({ hash, timeout: Number(arg('wait-ms', 180000)) });
+  if (has('wait') && has('no-wait')) throw new Error('Use either --wait or --no-wait, not both.');
+  const confirmations = Number(arg('confirmations', 1));
+  if (!Number.isInteger(confirmations) || confirmations < 1) throw new Error('--confirmations must be a positive integer');
+  if (has('no-wait') && confirmations !== 1) throw new Error('--confirmations requires waiting; remove --no-wait.');
+  if (!has('no-wait') && (has('wait') || process.env.MOLOCH_WAIT_DEFAULT !== 'false')) {
+    result.receipt = await c.waitForTransactionReceipt({ hash, confirmations, timeout: Number(arg('wait-ms', 180000)) });
   }
   if (unsigned.summary?.dao && unsigned.summary?.proposalId) {
     try { result.postActionState = await lifecycleForProposal(unsigned.summary.dao, unsigned.summary.proposalId); } catch (error) { result.postActionStateError = error.message; }
@@ -1031,7 +1035,9 @@ Options:
   --proposal-workspace-uri ipfs://... DAO profile pointer to proposal workspaces
   --shared-state-uri ipfs://... DAO profile pointer to current shared state
   --send               Broadcast a write tx
-  --wait               Wait for receipt after send
+  --wait               Explicitly wait for receipt after send
+  --no-wait            Return immediately after broadcast
+  --confirmations <n>  Wait for n confirmations; default 1
   --vault-provider 1password --vault-item <item> [--vault-field private_key]
 
 Share and loot quantities default to human 18-decimal units:
