@@ -71,7 +71,7 @@ node scripts/moloch.mjs dao-record --dao 0xDAO --table charter --content-file ch
 node scripts/moloch.mjs wrap-eth --amount 0.01 --send
 node scripts/moloch.mjs approve-token --token 0x4200000000000000000000000000000000000006 --amount 0.01 --send
 node scripts/moloch.mjs treasury-tokens --dao 0xDAO
-node scripts/moloch.mjs ragequit --dao 0xDAO --to 0xRECIPIENT --shares 1 --loot 0 --tokens ETH --send
+node scripts/moloch.mjs ragequit --dao 0xDAO --to 0xRECIPIENT --shares 1 --loot 0 --tokens ETH --confirm-ragequit --send
 node scripts/moloch.mjs tribute --dao 0xDAO --token 0xERC20 --amount 1000000 --shares 0 --loot 1000
 node scripts/moloch.mjs mint-shares --dao 0xDAO --to 0xMEMBER --amount 10000
 node scripts/moloch.mjs gov-settings --dao 0xDAO --params params.json

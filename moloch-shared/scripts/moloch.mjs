@@ -995,7 +995,7 @@ async function main() {
   wrap-eth             Wrap native ETH to Base WETH
   unwrap-eth           Unwrap Base WETH to native ETH
   approve-token        Approve ERC-20 spending, default spender is Tribute Minion
-  ragequit             Direct member ragequit: burn caller shares/loot and claim treasury assets
+  ragequit             Direct member ragequit: serious exit action; requires --confirm-ragequit with --send
   signal               Text/metadata governance signal. Not for membership, shares, or loot.
   dao-meta             Proposal to update daoProfile metadata/links through Poster
   dao-record           Proposal to post a charter/joinRules/manifesto record through Poster
@@ -1032,7 +1032,7 @@ Share and loot quantities default to human 18-decimal units:
 
 Proposal offering is native tx value for submitProposal. Tribute/join uses ERC-20 tokens only; native ETH tribute is not supported by the DAOhaus Tribute Minion.
 For native ETH-to-shares flows, use wrap-eth, approve-token, then tribute/join with Base WETH: ${BASE_WETH}
-Ragequit is not a proposal. Use --tokens ETH,0xERC20 for the sorted treasury token list; ETH maps to Baal's ETH sentinel.
+Ragequit is not a proposal. It burns caller shares/loot and should be treated as an irreversible DAO exit action. Use --tokens ETH,0xERC20 for the sorted treasury token list; ETH maps to Baal's ETH sentinel.
 `);
     return;
   }
@@ -1199,6 +1199,7 @@ Ragequit is not a proposal. Use --tokens ETH,0xERC20 for the sorted treasury tok
     const data = encodeFunctionData({ abi: ERC20_APPROVE_ABI, functionName: 'approve', args: [spender, amount] });
     out = withSummary(tx(token, data), { action: 'approve-token', token, spender, amount: amount.toString(), note: 'Approves ERC-20 spending. Tribute Minion needs allowance before token-for-shares/loot proposals can be submitted.' });
   } else if (command === 'ragequit' || command === 'rage-quit') {
+    if (has('send') && !has('confirm-ragequit')) throw new Error('ragequit burns DAO shares/loot and exits treasury value. Re-run with --confirm-ragequit to broadcast, or omit --send to inspect.');
     const dao = requireDao();
     const to = arg('to');
     if (!to) throw new Error('Missing --to 0xRECIPIENT');

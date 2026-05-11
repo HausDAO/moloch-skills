@@ -195,6 +195,12 @@ moloch-agent payment \
 
 For ERC-20 payments, provide `--amount-raw` for exact token base units or `--decimals` so the CLI can parse a human amount. For balance reads of ERC-20s, the token address is required.
 
+## Ragequit
+
+`ragequit` is not a proposal. It is a direct member exit action that burns the caller's shares and/or loot and claims proportional treasury assets. Treat it as serious and usually exceptional. Broadcast requires `--confirm-ragequit`.
+
+Use `treasury-tokens --dao 0xDAO` first and pass the returned `ragequitTokensCsv` as `--tokens`.
+
 ## DAO Metadata / Shared Memory Proposal
 
 Use this for DAOhaus-readable metadata, agent-readable rules, and shared community memory pointers.

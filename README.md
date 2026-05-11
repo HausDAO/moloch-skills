@@ -185,7 +185,7 @@ node moloch-shared/scripts/moloch.mjs dao-record --dao 0xDAO --table joinRules -
 node moloch-shared/scripts/moloch.mjs wrap-eth --amount 0.01 --send
 node moloch-shared/scripts/moloch.mjs approve-token --token 0x4200000000000000000000000000000000000006 --amount 0.01 --send
 node moloch-shared/scripts/moloch.mjs treasury-tokens --dao 0xDAO
-node moloch-shared/scripts/moloch.mjs ragequit --dao 0xDAO --to 0xRECIPIENT --shares 1 --loot 0 --tokens ETH --send
+node moloch-shared/scripts/moloch.mjs ragequit --dao 0xDAO --to 0xRECIPIENT --shares 1 --loot 0 --tokens ETH --confirm-ragequit --send
 node moloch-shared/scripts/moloch.mjs tribute --dao 0xDAO --token 0xERC20 --amount 1000000 --shares 0 --loot 1000
 node moloch-shared/scripts/moloch.mjs mint-shares --dao 0xDAO --to 0xMEMBER --amount 10000
 moloch-agent swap --dao 0xDAO --token 0xERC20 --amount 1000000 --shares 0 --loot 100
