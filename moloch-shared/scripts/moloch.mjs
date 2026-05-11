@@ -481,6 +481,11 @@ function namedProposalStatus(status) {
   };
 }
 
+function namedProposalTuple(tuple) {
+  const names = ['id', 'prevProposalId', 'votingStarts', 'votingEnds', 'graceEnds', 'expiration', 'baalGas', 'yesVotes', 'noVotes', 'maxTotalSharesAndLootAtVote', 'maxTotalSharesAtSponsor', 'sponsor', 'proposalDataHash'];
+  return Object.fromEntries(names.map((name, index) => [name, tuple?.[index]?.toString?.() ?? String(tuple?.[index] ?? '')]));
+}
+
 function hasQuorum(proposal) {
   const totalShares = BigInt(proposal.dao?.totalShares || '0');
   const quorumPercent = BigInt(proposal.dao?.quorumPercent || '0');
@@ -509,6 +514,7 @@ function deriveProposalLifecycle(proposal, now = Math.floor(Date.now() / 1000), 
   const inGrace = sponsored && !cancelled && !processed && votingEnds < now && graceEnds > now;
   const graphReady = afterGrace && yes > no && quorum;
   const prevStateEligible = chain.prevState == null ? undefined : PREV_PROCESS_ELIGIBLE.has(Number(chain.prevState));
+  const prevProposalId = String(chain.proposal?.prevProposalId || proposal.prevProposalId || '');
   const chainState = chain.state == null ? undefined : Number(chain.state);
   const chainStateName = chainState == null ? undefined : STATE_NAMES[chainState] || `unknown-${chain.state}`;
   const prevStateName = chain.prevState == null ? undefined : STATE_NAMES[Number(chain.prevState)] || `unknown-${chain.prevState}`;
@@ -516,7 +522,9 @@ function deriveProposalLifecycle(proposal, now = Math.floor(Date.now() / 1000), 
   const stateDefeated = chainState == null ? undefined : chainState === 7;
   const failedQuorum = afterGrace && chainState == null && !quorum;
   const failedVote = afterGrace && (stateDefeated == null ? yes <= no : stateDefeated);
-  const processableNow = Boolean((stateReady == null ? graphReady : stateReady) && proposal.proposalData && prevStateEligible !== false);
+  const readyByChainOrGraph = stateReady == null ? graphReady : stateReady;
+  const blockedByPreviousProposal = Boolean(readyByChainOrGraph && proposal.proposalData && prevStateEligible === false);
+  const processableNow = Boolean(readyByChainOrGraph && proposal.proposalData && !blockedByPreviousProposal);
 
   let status = 'unknown';
   if (needsSponsor) status = 'unsponsored';
@@ -527,6 +535,7 @@ function deriveProposalLifecycle(proposal, now = Math.floor(Date.now() / 1000), 
   else if (inVoting) status = 'voting';
   else if (inGrace) status = 'grace';
   else if (processableNow) status = 'needsProcessing';
+  else if (blockedByPreviousProposal) status = 'blockedByPreviousProposal';
   else if (stateDefeated || failedQuorum || failedVote) status = 'failed';
 
   return {
@@ -539,6 +548,7 @@ function deriveProposalLifecycle(proposal, now = Math.floor(Date.now() / 1000), 
     graphReady,
     chainReady: stateReady,
     processableNow,
+    blockedByPreviousProposal,
     failedQuorum,
     failedVote,
     processed,
@@ -546,7 +556,7 @@ function deriveProposalLifecycle(proposal, now = Math.floor(Date.now() / 1000), 
     actionFailed,
     hasProposalData: Boolean(proposal.proposalData),
     chainState: chainStateName,
-    prevProposalId: String(proposal.prevProposalId ?? ''),
+    prevProposalId,
     prevState: prevStateName,
     prevStateEligible,
   };
@@ -555,13 +565,15 @@ function deriveProposalLifecycle(proposal, now = Math.floor(Date.now() / 1000), 
 async function chainProposalContext(dao, proposal) {
   const c = client();
   const id = Number(proposal.proposalId);
-  const prevId = Number(proposal.prevProposalId || 0);
-  const [rawStatus, state, prevState] = await Promise.all([
+  const [rawStatus, state, raw] = await Promise.all([
     c.readContract({ address: dao, abi: BAAL_ABI, functionName: 'getProposalStatus', args: [id] }),
     c.readContract({ address: dao, abi: BAAL_ABI, functionName: 'state', args: [id] }),
-    c.readContract({ address: dao, abi: BAAL_ABI, functionName: 'state', args: [prevId] }),
+    c.readContract({ address: dao, abi: BAAL_ABI, functionName: 'proposals', args: [BigInt(id)] }),
   ]);
-  return { namedStatus: namedProposalStatus(rawStatus), state, prevState };
+  const tuple = namedProposalTuple(raw);
+  const prevId = Number(tuple.prevProposalId || proposal.prevProposalId || 0);
+  const prevState = await c.readContract({ address: dao, abi: BAAL_ABI, functionName: 'state', args: [prevId] });
+  return { namedStatus: namedProposalStatus(rawStatus), state, prevState, proposal: tuple };
 }
 
 async function lifecycleForProposal(dao, proposalId) {
