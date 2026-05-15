@@ -1,5 +1,5 @@
 {
-  "purpose": "Reference fixtures for proposal lifecycle transitions. These are small synthetic examples for agents/tests, not live DAO data.",
+  "purpose": "Reference fixtures for proposal lifecycle transitions. These are small synthetic examples for agents/tests, not live Guild data.",
   "cases": [
     {
       "name": "unsponsored",

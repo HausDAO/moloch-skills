@@ -19,14 +19,14 @@
   },
   "values": [
     {
-      "name": "DAO integrity",
+      "name": "Guild integrity",
       "priority": 1,
-      "description": "Protect the DAO's credibility, member trust, and governance legitimacy."
+      "description": "Protect the Guild's credibility, member trust, and governance legitimacy."
     },
     {
       "name": "Long-term ecosystem value",
       "priority": 2,
-      "description": "Prefer decisions that strengthen the DAO's long-term mission over short-term extraction."
+      "description": "Prefer decisions that strengthen the Guild's long-term mission over short-term extraction."
     },
     {
       "name": "Operational clarity",
@@ -56,7 +56,7 @@
     "reviewCadence": "daily",
     "rules": [
       "Use initiatives as a backlog for longer-term goals.",
-      "Move an initiative to proposal drafting only when it has a clear outcome, success criteria, and fit with the latest DAO state.",
+      "Move an initiative to proposal drafting only when it has a clear outcome, success criteria, and fit with the latest Guild state.",
       "Do not create duplicate proposals for work already active in governance.",
       "Update initiative status after passed, failed, rejected, or processed proposals."
     ]
@@ -67,7 +67,7 @@
       "title": "Example longer-term initiative",
       "status": "observing",
       "priority": 1,
-      "thesis": "Describe why this initiative matters to the DAO.",
+      "thesis": "Describe why this initiative matters to the Guild.",
       "successCriteria": [
         "Define the first measurable outcome."
       ],
@@ -80,7 +80,7 @@
   ],
   "hardNoRules": [
     "Transfers treasury assets without clear recipient, purpose, and accountability.",
-    "Expands agent authority or custody without a clear DAO governance basis.",
+    "Expands agent authority or custody without a clear Guild governance basis.",
     "Conflicts with the latest ratified charter or mandate.",
     "Contains action data that does not match the proposal text."
   ],
@@ -93,7 +93,7 @@
   "sponsorshipPolicy": {
     "maySponsor": false,
     "rules": [
-      "Sponsor only if the proposal is legible, in scope, and worth DAO attention.",
+      "Sponsor only if the proposal is legible, in scope, and worth Guild attention.",
       "Sponsorship is not an endorsement unless the vote memo also recommends yes."
     ]
   },

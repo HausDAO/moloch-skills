@@ -12,13 +12,13 @@ Use this with the other `moloch-*` skills. Default network is Base mainnet.
 Use a managed account only through environment variables or an existing signer service.
 
 - Required for sending: `PRIVATE_KEY` and `RPC_URL`
-- Required for Daohaus indexed reads: `GRAPH_API_KEY`, or pass `--graph-url`
+- Required for DAOhaus indexed reads: `GRAPH_API_KEY`, or pass `--graph-url`
 - Optional: `CHAIN_ID`, defaults to `8453`
 - Never print, commit, or paste private keys or mnemonics.
 - Autonomous agents should broadcast write actions by default after preflight. Use build-only mode only for explicit dry-run, review, or draft tasks.
 - Transaction commands wait for receipts by default to reduce stale nonce races. Use `--wait` to make that explicit, `--confirmations N` to wait longer, or `--no-wait` only for fire-and-forget operation. `MOLOCH_WAIT_DEFAULT=false` remains a fallback for older wrappers.
 - The CLI still requires `--send` as the explicit execution flag. In autonomous action tasks, add `--send` unless a technical blocker prevents sending.
-- Before sending, read the DAO/proposal state and confirm the action is valid.
+- Before sending, read the Guild/proposal state and confirm the action is valid.
 
 ## Base Addresses
 
@@ -28,7 +28,7 @@ Use a managed account only through environment variables or an existing signer s
 - Moloch skills source: `https://github.com/HausDAO/moloch-skills`
 - DAOhaus frontend source: `https://github.com/HausDAO/daohaus-admin`
 - DAOhaus hosted admin: `https://admin.daohaus.club/`
-- Daohaus routes: `/summon` and `/molochv3/:daochain/:daoid`
+- DAOhaus routes: `/summon` and `/molochv3/:daochain/:daoid`
 
 ## Script
 
@@ -48,40 +48,42 @@ Common commands:
 ```bash
 node scripts/moloch.mjs capabilities
 node scripts/moloch.mjs new-account
-node scripts/moloch.mjs read-dao --dao 0xDAO
-node scripts/moloch.mjs read-proposal --dao 0xDAO --proposal 1
-node scripts/moloch.mjs graph-dao --dao 0xDAO
-node scripts/moloch.mjs graph-proposal --dao 0xDAO --proposal 1
-node scripts/moloch.mjs graph-proposals --dao 0xDAO --first 20
-node scripts/moloch.mjs graph-dao-history --dao 0xDAO --first 100
-node scripts/moloch.mjs graph-members --dao 0xDAO --first 100
-node scripts/moloch.mjs graph-member --dao 0xDAO --member 0xMEMBER
-node scripts/moloch.mjs graph-records --dao 0xDAO --table daoProfile
-node scripts/moloch.mjs graph-records --dao 0xDAO --table signal
-node scripts/moloch.mjs graph-records --dao 0xDAO --table communityMemory
-node scripts/moloch.mjs task-snapshot --dao 0xDAO --out-dir /data/custom/moloch-skills/artifacts/0xDAO
-node scripts/moloch.mjs proposal-lifecycle --dao 0xDAO --proposal 1
-node scripts/moloch.mjs process-queue --dao 0xDAO --first 100
+node scripts/moloch.mjs read-guild --guild 0xGUILD
+node scripts/moloch.mjs read-proposal --guild 0xGUILD --proposal 1
+node scripts/moloch.mjs graph-guild --guild 0xGUILD
+node scripts/moloch.mjs graph-proposal --guild 0xGUILD --proposal 1
+node scripts/moloch.mjs graph-proposals --guild 0xGUILD --first 20
+node scripts/moloch.mjs graph-guild-history --guild 0xGUILD --first 100
+node scripts/moloch.mjs graph-members --guild 0xGUILD --first 100
+node scripts/moloch.mjs graph-member --guild 0xGUILD --member 0xMEMBER
+node scripts/moloch.mjs graph-records --guild 0xGUILD --table daoProfile
+node scripts/moloch.mjs graph-records --guild 0xGUILD --table signal
+node scripts/moloch.mjs graph-records --guild 0xGUILD --table communityMemory
+node scripts/moloch.mjs task-snapshot --guild 0xGUILD --out-dir /data/custom/moloch-skills/artifacts/0xGUILD
+node scripts/moloch.mjs proposal-lifecycle --guild 0xGUILD --proposal 1
+node scripts/moloch.mjs process-queue --guild 0xGUILD --first 100
 node scripts/moloch.mjs details --title "..." --description "..." --proposal-type SIGNAL
 node scripts/moloch.mjs decode-proposal-data --data 0x...
 node scripts/moloch.mjs decode-submit-proposal --data 0x...
-node scripts/moloch.mjs signal --dao 0xDAO --title "..." --description "..."
-node scripts/moloch.mjs dao-meta --dao 0xDAO --name "DAO Name" --community-memory-uri ipfs://... --shared-state-uri ipfs://.../versions/0001/community-state.md
-node scripts/moloch.mjs memory-post --dao 0xDAO --table communityMemory --thread-id proposal-1 --body "..." --send
-node scripts/moloch.mjs dao-record --dao 0xDAO --table charter --content-file charter-record.json
+node scripts/moloch.mjs signal --guild 0xGUILD --title "..." --description "..."
+node scripts/moloch.mjs guild-meta --guild 0xGUILD --name "Guild Name" --community-memory-uri ipfs://... --shared-state-uri ipfs://.../versions/0001/community-state.md
+node scripts/moloch.mjs memory-post --guild 0xGUILD --table communityMemory --thread-id proposal-1 --body "..." --send
+node scripts/moloch.mjs guild-record --guild 0xGUILD --table charter --content-file charter-record.json
 node scripts/moloch.mjs wrap-eth --amount 0.01 --send
 node scripts/moloch.mjs approve-token --token 0x4200000000000000000000000000000000000006 --amount 0.01 --send
-node scripts/moloch.mjs treasury-tokens --dao 0xDAO
-node scripts/moloch.mjs ragequit --dao 0xDAO --to 0xRECIPIENT --shares 1 --loot 0 --tokens ETH --confirm-ragequit --send
-node scripts/moloch.mjs tribute --dao 0xDAO --token 0xERC20 --amount 1000000 --shares 0 --loot 1000
-node scripts/moloch.mjs mint-shares --dao 0xDAO --to 0xMEMBER --amount 10000
-node scripts/moloch.mjs gov-settings --dao 0xDAO --params params.json
-node scripts/moloch.mjs token-settings --dao 0xDAO --pause-shares false --pause-loot false
-node scripts/moloch.mjs sponsor --dao 0xDAO --proposal 1
-node scripts/moloch.mjs vote --dao 0xDAO --proposal 1 --approved true
-node scripts/moloch.mjs process --dao 0xDAO --proposal 1 --proposal-data 0x...
+node scripts/moloch.mjs treasury-tokens --guild 0xGUILD
+node scripts/moloch.mjs ragequit --guild 0xGUILD --to 0xRECIPIENT --shares 1 --loot 0 --tokens ETH --confirm-ragequit --send
+node scripts/moloch.mjs tribute --guild 0xGUILD --token 0xERC20 --amount 1000000 --shares 0 --loot 1000
+node scripts/moloch.mjs mint-shares --guild 0xGUILD --to 0xMEMBER --amount 10000
+node scripts/moloch.mjs gov-settings --guild 0xGUILD --params params.json
+node scripts/moloch.mjs token-settings --guild 0xGUILD --pause-shares false --pause-loot false
+node scripts/moloch.mjs sponsor --guild 0xGUILD --proposal 1
+node scripts/moloch.mjs vote --guild 0xGUILD --proposal 1 --approved true
+node scripts/moloch.mjs process --guild 0xGUILD --proposal 1 --proposal-data 0x...
 node scripts/moloch.mjs summon --params summon.json
 ```
+
+Use `--guild` in operator-facing workflows. Legacy `--dao`, `read-guild`, `graph-guild`, `guild-meta`, `guild-record`, and `join-guild` remain accepted for protocol-level compatibility.
 
 For autonomous action skills, add `--send` after live preflight confirms the managed wallet has permission and funds. Omit `--send` only for explicit dry-run/review/draft tasks or when a technical blocker prevents sending.
 
@@ -116,7 +118,7 @@ Moloch V3 proposals call `submitProposal(bytes proposalData, uint32 expiration, 
 
 - `proposalData` is usually a Gnosis MultiSend `multiSend(bytes)` call encoded against the MultiSend ABI.
 - Signal proposals post metadata through Poster.
-- Direct membership grants encode `mintShares(address[],uint256[])` against the Baal DAO.
+- Direct membership grants encode `mintShares(address[],uint256[])` against the Baal Guild.
 - Baal shares and loot have 18 decimals. Proposal command summaries include both the original human input and the encoded raw amount where relevant.
 - Governance settings encode `setGovernanceConfig(bytes)` where the inner bytes are:
   `uint32 votingPeriodInSeconds, uint32 gracePeriodInSeconds, uint256 newOffering, uint256 quorum, uint256 sponsorThreshold, uint256 minRetention`.
@@ -128,7 +130,7 @@ Use `details` to create valid proposal details JSON. Use `decode-submit-proposal
 
 ## Graph Reads
 
-Daohaus uses The Graph Gateway for indexed DAO data. Base DAOhaus subgraph id:
+DAOhaus uses The Graph Gateway for indexed Guild data. Base DAOhaus subgraph id:
 `7yh4eHJ4qpHEiLPAk9BXhL5YgYrTrRE6gWy8x4oHyAqW`.
 
 Use:
@@ -142,8 +144,8 @@ Use Graph reads for:
 - proposal metadata: `details`, `title`, `description`, `proposalType`
 - indexed `proposalData` needed for processing
 - vote history and member vote balances
-- Safe/vault/shaman lists and DAO profile data
-- broad proposal history with `graph-dao-history`
+- Safe/vault/shaman lists and Guild profile data
+- broad proposal history with `graph-guild-history`
 - membership, delegation, shares, loot, and member vote history with `graph-members`
 - charter/join-rules/profile records with `graph-records`
 - shared community memory pointers such as `communityMemoryURI`, `proposalWorkspaceURI`, and `sharedStateURI`
@@ -158,9 +160,9 @@ Use direct contract reads for:
 
 ## Shared Memory
 
-Use `../SHARED_MEMORY.md` for the IPFS-backed shared community memory framework. Shared memory is the DAO-level collaboration space for one versioned community-state file, proposal drafts, discussions, negotiations, vote reasons, and final proposal state.
+Use `../SHARED_MEMORY.md` for the IPFS-backed shared community memory framework. Shared memory is the Guild-level collaboration space for one versioned community-state file, proposal drafts, discussions, negotiations, vote reasons, and final proposal state.
 
-The shared script passes these DAO profile metadata pointers through summon and `dao-meta`:
+The shared script passes these Guild profile metadata pointers through summon and `guild-meta`:
 
 - `communityMemoryURI`
 - `proposalWorkspaceURI`
@@ -178,7 +180,7 @@ Use the stable `community-memory/v1` envelope for records. Prefer `threadId` as 
 
 Before broadcasting:
 
-1. Verify the chain is Base and the DAO address is the intended Baal contract.
+1. Verify the chain is Base and the Guild address is the intended Baal contract.
 2. Read `proposalOffering`; include that value when submitting proposals unless intentionally overriding.
 3. For sponsor/vote/process/cancel, read the proposal first and check status fields.
 4. If processing, use the exact Graph-indexed `proposalData` for that proposal. Do not reconstruct it from memory if indexed data is available.

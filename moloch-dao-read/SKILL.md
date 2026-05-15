@@ -1,9 +1,9 @@
 ---
 name: moloch-dao-read
-description: Read Moloch V3/Baal DAO and proposal state on Base. Use for proposal counts, proposal offering, sponsor threshold, proposal structs, proposal status, DAOhaus route/state inspection, and preflight checks before proposals or votes.
+description: Read Moloch V3/Baal Guild and proposal state on Base. Use for proposal counts, proposal offering, sponsor threshold, proposal structs, proposal status, DAOhaus route/state inspection, and preflight checks before proposals or votes.
 ---
 
-# Moloch DAO Read
+# Moloch Guild Read
 
 Use this skill before any write action.
 
@@ -12,19 +12,19 @@ Use this skill before any write action.
 Use the shared script:
 
 ```bash
-node ../moloch-shared/scripts/moloch.mjs read-dao --dao 0xDAO
-node ../moloch-shared/scripts/moloch.mjs read-proposal --dao 0xDAO --proposal 1
-node ../moloch-shared/scripts/moloch.mjs graph-dao --dao 0xDAO
-node ../moloch-shared/scripts/moloch.mjs graph-proposal --dao 0xDAO --proposal 1
-node ../moloch-shared/scripts/moloch.mjs graph-proposals --dao 0xDAO --first 20
-node ../moloch-shared/scripts/moloch.mjs graph-dao-history --dao 0xDAO --first 100
-node ../moloch-shared/scripts/moloch.mjs graph-members --dao 0xDAO --first 100
-node ../moloch-shared/scripts/moloch.mjs graph-member --dao 0xDAO --member 0xMEMBER
-node ../moloch-shared/scripts/moloch.mjs graph-records --dao 0xDAO --table daoProfile
-node ../moloch-shared/scripts/moloch.mjs graph-records --dao 0xDAO --table signal
-node ../moloch-shared/scripts/moloch.mjs graph-records --dao 0xDAO --table communityMemory
-node ../moloch-shared/scripts/moloch.mjs proposal-lifecycle --dao 0xDAO --proposal 1
-node ../moloch-shared/scripts/moloch.mjs process-queue --dao 0xDAO --first 100
+node ../moloch-shared/scripts/moloch.mjs read-guild --guild 0xGUILD
+node ../moloch-shared/scripts/moloch.mjs read-proposal --guild 0xGUILD --proposal 1
+node ../moloch-shared/scripts/moloch.mjs graph-guild --guild 0xGUILD
+node ../moloch-shared/scripts/moloch.mjs graph-proposal --guild 0xGUILD --proposal 1
+node ../moloch-shared/scripts/moloch.mjs graph-proposals --guild 0xGUILD --first 20
+node ../moloch-shared/scripts/moloch.mjs graph-guild-history --guild 0xGUILD --first 100
+node ../moloch-shared/scripts/moloch.mjs graph-members --guild 0xGUILD --first 100
+node ../moloch-shared/scripts/moloch.mjs graph-member --guild 0xGUILD --member 0xMEMBER
+node ../moloch-shared/scripts/moloch.mjs graph-records --guild 0xGUILD --table daoProfile
+node ../moloch-shared/scripts/moloch.mjs graph-records --guild 0xGUILD --table signal
+node ../moloch-shared/scripts/moloch.mjs graph-records --guild 0xGUILD --table communityMemory
+node ../moloch-shared/scripts/moloch.mjs proposal-lifecycle --guild 0xGUILD --proposal 1
+node ../moloch-shared/scripts/moloch.mjs process-queue --guild 0xGUILD --first 100
 ```
 
 Required env:
@@ -41,7 +41,7 @@ Use `https://gateway.thegraph.com/api/<api-key>/subgraphs/id/7yh4eHJ4qpHEiLPAk9B
 
 Prefer Graph batch reads for history and context. Avoid looping over many direct RPC calls unless the user needs fresh contract truth for each item.
 
-DAO-level:
+Guild-level:
 
 - `proposalCount`
 - `proposalOffering`
@@ -57,19 +57,19 @@ Proposal-level:
 - exact `proposalData` for processing, preferably from the indexed proposal payload
 - indexed `details`, `title`, `description`, `proposalType`, and vote history from Graph
 - member `shares`, `loot`, delegation, and vote history from Graph
-- DAO database records such as `daoProfile`, `signal`, `communityMemory`, `communityStateVersions`, charter/join-rule pointers, and proposal workspace announcements
+- Guild database records such as `daoProfile`, `signal`, `communityMemory`, `communityStateVersions`, charter/join-rule pointers, and proposal workspace announcements
 
-## Daohaus Frontend Context
+## DAOhaus Frontend Context
 
 DAOhaus admin uses routes like:
 
 ```text
-/molochv3/0x2105/0xDAO
-/molochv3/0x2105/0xDAO/proposals
-/molochv3/0x2105/0xDAO/proposal/1
+/molochv3/0x2105/0xGUILD
+/molochv3/0x2105/0xGUILD/proposals
+/molochv3/0x2105/0xGUILD/proposal/1
 ```
 
-The frontend source is `https://github.com/HausDAO/daohaus-admin`. In that app, Baal is the Moloch V3 DAO contract, and proposal write methods are on the Baal address.
+The frontend source is `https://github.com/HausDAO/daohaus-admin`. In that app, Baal is the Moloch V3 Guild contract, and proposal write methods are on the Baal address.
 
 ## Preflight Rule
 

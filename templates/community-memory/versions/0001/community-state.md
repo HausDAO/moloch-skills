@@ -4,7 +4,7 @@ Version: 0001
 
 ## Purpose
 
-Describe why the DAO exists.
+Describe why the Guild exists.
 
 ## Current Goals
 

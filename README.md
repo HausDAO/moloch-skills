@@ -1,11 +1,11 @@
 # Moloch Agent Skills
 
-This directory contains Codex skills and a shared script for interacting with DAOhaus/Moloch V3/Baal DAOs on Base.
+This directory contains Codex skills and a shared script for interacting with Guilds on Base. A Guild is the operator-facing name for an underlying DAOhaus/Moloch V3/Baal Guild; use protocol terms only for contracts, Graph fields, Poster tags, and DAOhaus-specific references.
 
 For scheduled agent task patterns, see [AGENT_TASKS.md](AGENT_TASKS.md).
 For first-time agent setup, see [BOOTSTRAP.md](BOOTSTRAP.md).
 For vote reasoning, see [VOTE_DECISION_FLOW.md](VOTE_DECISION_FLOW.md).
-For the DAO memory layer, including IPFS, DAOhaus DAO Database records, and future providers, see [MEMORY_LAYER.md](MEMORY_LAYER.md).
+For the Guild memory layer, including IPFS, DAOhaus database records, and future providers, see [MEMORY_LAYER.md](MEMORY_LAYER.md).
 For optional experiment flows, see [experiments/](experiments/).
 
 Maintained repo: `https://github.com/HausDAO/moloch-skills`
@@ -16,12 +16,12 @@ Hosted DAOhaus Admin instance: `https://admin.daohaus.club/`
 
 - `moloch-shared`: shared wallet, RPC, Graph, encoding, decoding, and transaction helpers.
 - `moloch-agent`: low-friction autonomous agent entry point using the hosted moloch service for Graph and Pinata.
-- `moloch-summon`: summon a new Moloch V3/Baal DAO.
+- `moloch-summon`: summon a new Moloch V3/Baal Guild.
 - `moloch-proposals`: create signal, governance settings, token/admin settings, and custom proposals.
 - `moloch-proposal-actions`: sponsor, vote, process, and cancel proposals.
-- `moloch-dao-read`: read DAO/proposal state from contracts and the DAOhaus subgraph.
+- `moloch-dao-read`: read Guild/proposal state from contracts and the DAOhaus subgraph.
 - `moloch-agent-conviction`: bootstrap and apply an agent mandate. Conviction is the values layer; the mandate is the concrete operating artifact.
-- `meta-clawtel-launch`: specific launch instructions and params template for the Meta Clawtel DAO.
+- `meta-clawtel-launch`: specific launch instructions and params template for the Meta Clawtel Guild.
 
 ## Setup
 
@@ -39,7 +39,7 @@ Check local capabilities and commit:
 node scripts/moloch.mjs capabilities
 ```
 
-If `tribute` / `join-dao` / `mint-shares` is missing from help or capabilities, the local bundle is stale.
+If `tribute` / `join-guild` / `mint-shares` is missing from help or capabilities, the local bundle is stale.
 
 ## Environment
 
@@ -120,11 +120,11 @@ These are the Base `0x2105` addresses from the DAOhaus admin contract keychain.
 | `GNOSIS_SIGNLIB` | `0x98FFBBF51bb33A056B08ddf711f289936AafF717` | Safe signature helper |
 | `ZODIAC_FACTORY` | `0x000000000000aDdB49795b0f9bA5BC298cDda236` | Zodiac module factory |
 
-For Meta Clawtel summon, the critical address is `V3_FACTORY_ADV_TOKEN`. After summon, proposal actions go to the newly created Baal DAO address, not the summoner.
+For Meta Clawtel summon, the critical address is `V3_FACTORY_ADV_TOKEN`. After summon, proposal actions go to the newly created Baal Guild address, not the summoner.
 
 ## Autonomy Model
 
-This pack is intended for always-on DAO agents with managed wallets. In that mode, the agent is expected to act autonomously and broadcast transactions without waiting for operator approval when these are true:
+This pack is intended for always-on Guild agents with managed wallets. In that mode, the agent is expected to act autonomously and broadcast transactions without waiting for operator approval when these are true:
 
 - the agent has a configured managed signer, `RPC_URL`, and gas funds
 - the action follows the agent's mandate, scheduled task, or harness configuration
@@ -145,25 +145,25 @@ This prints a private key once. Store it securely before funding the address. Th
 Read direct contract state:
 
 ```bash
-node moloch-shared/scripts/moloch.mjs read-dao --dao 0xDAO
-node moloch-shared/scripts/moloch.mjs read-proposal --dao 0xDAO --proposal 1
+node moloch-shared/scripts/moloch.mjs read-guild --guild 0xGUILD
+node moloch-shared/scripts/moloch.mjs read-proposal --guild 0xGUILD --proposal 1
 ```
 
 Read indexed DAOhaus subgraph state:
 
 ```bash
-node moloch-shared/scripts/moloch.mjs graph-dao --dao 0xDAO
-node moloch-shared/scripts/moloch.mjs graph-proposal --dao 0xDAO --proposal 1
-node moloch-shared/scripts/moloch.mjs graph-proposals --dao 0xDAO --first 20
-node moloch-shared/scripts/moloch.mjs graph-dao-history --dao 0xDAO --first 100
-node moloch-shared/scripts/moloch.mjs graph-members --dao 0xDAO --first 100
-node moloch-shared/scripts/moloch.mjs graph-member --dao 0xDAO --member 0xMEMBER
-node moloch-shared/scripts/moloch.mjs graph-records --dao 0xDAO --table daoProfile
-node moloch-shared/scripts/moloch.mjs graph-records --dao 0xDAO --table signal
-node moloch-shared/scripts/moloch.mjs graph-records --dao 0xDAO --table communityMemory
-node moloch-shared/scripts/moloch.mjs task-snapshot --dao 0xDAO --out-dir /data/custom/moloch-skills/artifacts/0xDAO
-node moloch-shared/scripts/moloch.mjs proposal-lifecycle --dao 0xDAO --proposal 1
-node moloch-shared/scripts/moloch.mjs process-queue --dao 0xDAO --first 100
+node moloch-shared/scripts/moloch.mjs graph-guild --guild 0xGUILD
+node moloch-shared/scripts/moloch.mjs graph-proposal --guild 0xGUILD --proposal 1
+node moloch-shared/scripts/moloch.mjs graph-proposals --guild 0xGUILD --first 20
+node moloch-shared/scripts/moloch.mjs graph-guild-history --guild 0xGUILD --first 100
+node moloch-shared/scripts/moloch.mjs graph-members --guild 0xGUILD --first 100
+node moloch-shared/scripts/moloch.mjs graph-member --guild 0xGUILD --member 0xMEMBER
+node moloch-shared/scripts/moloch.mjs graph-records --guild 0xGUILD --table daoProfile
+node moloch-shared/scripts/moloch.mjs graph-records --guild 0xGUILD --table signal
+node moloch-shared/scripts/moloch.mjs graph-records --guild 0xGUILD --table communityMemory
+node moloch-shared/scripts/moloch.mjs task-snapshot --guild 0xGUILD --out-dir /data/custom/moloch-skills/artifacts/0xGUILD
+node moloch-shared/scripts/moloch.mjs proposal-lifecycle --guild 0xGUILD --proposal 1
+node moloch-shared/scripts/moloch.mjs process-queue --guild 0xGUILD --first 100
 ```
 
 Build proposal details or decode proposal calldata:
@@ -177,26 +177,26 @@ node moloch-shared/scripts/moloch.mjs decode-proposal-data --data 0xINNER_PROPOS
 Build or broadcast transactions:
 
 ```bash
-node moloch-shared/scripts/moloch.mjs signal --dao 0xDAO --title "Signal" --description "Body"
-node moloch-shared/scripts/moloch.mjs dao-meta --dao 0xDAO --name "DAO Name" --community-memory-uri ipfs://... --shared-state-uri ipfs://.../versions/0001/community-state.md
-node moloch-shared/scripts/moloch.mjs memory-post --dao 0xDAO --table communityMemory --thread-id proposal-1 --body "I support this direction." --send
-node moloch-shared/scripts/moloch.mjs dao-record --dao 0xDAO --table charter --content-file charter-record.json
-node moloch-shared/scripts/moloch.mjs dao-record --dao 0xDAO --table joinRules --content-file join-rules-record.json
+node moloch-shared/scripts/moloch.mjs signal --guild 0xGUILD --title "Signal" --description "Body"
+node moloch-shared/scripts/moloch.mjs guild-meta --guild 0xGUILD --name "Guild Name" --community-memory-uri ipfs://... --shared-state-uri ipfs://.../versions/0001/community-state.md
+node moloch-shared/scripts/moloch.mjs memory-post --guild 0xGUILD --table communityMemory --thread-id proposal-1 --body "I support this direction." --send
+node moloch-shared/scripts/moloch.mjs guild-record --guild 0xGUILD --table charter --content-file charter-record.json
+node moloch-shared/scripts/moloch.mjs guild-record --guild 0xGUILD --table joinRules --content-file join-rules-record.json
 node moloch-shared/scripts/moloch.mjs wrap-eth --amount 0.01 --send
 node moloch-shared/scripts/moloch.mjs approve-token --token 0x4200000000000000000000000000000000000006 --amount 0.01 --send
-node moloch-shared/scripts/moloch.mjs treasury-tokens --dao 0xDAO
-node moloch-shared/scripts/moloch.mjs ragequit --dao 0xDAO --to 0xRECIPIENT --shares 1 --loot 0 --tokens ETH --confirm-ragequit --send
-node moloch-shared/scripts/moloch.mjs tribute --dao 0xDAO --token 0xERC20 --amount 1000000 --shares 0 --loot 1000
-node moloch-shared/scripts/moloch.mjs mint-shares --dao 0xDAO --to 0xMEMBER --amount 10000
-moloch-agent swap --dao 0xDAO --token 0xERC20 --amount 1000000 --shares 0 --loot 100
-moloch-agent payment --dao 0xDAO --recipient 0xPAYEE --amount 0.01
-moloch-agent payment --dao 0xDAO --recipient 0xPAYEE --token 0xERC20 --amount 100 --decimals 6
-moloch-agent mint-loot --dao 0xDAO --to 0xMEMBER --amount 100
-node moloch-shared/scripts/moloch.mjs gov-settings --dao 0xDAO --params params.json
-node moloch-shared/scripts/moloch.mjs token-settings --dao 0xDAO --pause-shares false --pause-loot false
-node moloch-shared/scripts/moloch.mjs sponsor --dao 0xDAO --proposal 1
-node moloch-shared/scripts/moloch.mjs vote --dao 0xDAO --proposal 1 --approved true
-node moloch-shared/scripts/moloch.mjs process --dao 0xDAO --proposal 1 --proposal-data 0x...
+node moloch-shared/scripts/moloch.mjs treasury-tokens --guild 0xGUILD
+node moloch-shared/scripts/moloch.mjs ragequit --guild 0xGUILD --to 0xRECIPIENT --shares 1 --loot 0 --tokens ETH --confirm-ragequit --send
+node moloch-shared/scripts/moloch.mjs tribute --guild 0xGUILD --token 0xERC20 --amount 1000000 --shares 0 --loot 1000
+node moloch-shared/scripts/moloch.mjs mint-shares --guild 0xGUILD --to 0xMEMBER --amount 10000
+moloch-agent swap --guild 0xGUILD --token 0xERC20 --amount 1000000 --shares 0 --loot 100
+moloch-agent payment --guild 0xGUILD --recipient 0xPAYEE --amount 0.01
+moloch-agent payment --guild 0xGUILD --recipient 0xPAYEE --token 0xERC20 --amount 100 --decimals 6
+moloch-agent mint-loot --guild 0xGUILD --to 0xMEMBER --amount 100
+node moloch-shared/scripts/moloch.mjs gov-settings --guild 0xGUILD --params params.json
+node moloch-shared/scripts/moloch.mjs token-settings --guild 0xGUILD --pause-shares false --pause-loot false
+node moloch-shared/scripts/moloch.mjs sponsor --guild 0xGUILD --proposal 1
+node moloch-shared/scripts/moloch.mjs vote --guild 0xGUILD --proposal 1 --approved true
+node moloch-shared/scripts/moloch.mjs process --guild 0xGUILD --proposal 1 --proposal-data 0x...
 node moloch-shared/scripts/moloch.mjs summon --params summon.json
 ```
 
@@ -209,14 +209,14 @@ For native ETH-to-shares flows, wrap ETH into Base WETH (`0x42000000000000000000
 Autonomous action example:
 
 ```bash
-node moloch-shared/scripts/moloch.mjs vote --dao 0xDAO --proposal 1 --approved true --send
+node moloch-shared/scripts/moloch.mjs vote --guild 0xGUILD --proposal 1 --approved true --send
 ```
 
 With 1Password CLI, avoid exporting the key into the shell:
 
 ```bash
 node moloch-shared/scripts/moloch.mjs vote \
-  --dao 0xDAO \
+  --guild 0xGUILD \
   --proposal 1 \
   --approved true \
   --send \
@@ -245,9 +245,9 @@ Raw JSON/calldata should be saved to a file or shown only on request.
 
 ## Proposal Intent Guardrail
 
-Use `signal` only for text-only governance intent. If the operator asks to join, request shares, request loot, create a membership proposal, make a tribute/swap proposal, or pay funds from treasury, use an executable proposal path. Use `tribute` / `join-dao` / `swap` for token-for-shares or token-for-loot requests. Use `mint-shares` for direct voting-share grants with no tribute transfer. Use `mint-loot` for direct non-voting loot grants. Use `payment` for ETH/ERC-20 treasury transfers. A signal about shares, loot, or payments does not execute those actions.
+Use `signal` only for text-only governance intent. If the operator asks to join, request shares, request loot, create a membership proposal, make a tribute/swap proposal, or pay funds from treasury, use an executable proposal path. Use `tribute` / `join-guild` / `swap` for token-for-shares or token-for-loot requests. Use `mint-shares` for direct voting-share grants with no tribute transfer. Use `mint-loot` for direct non-voting loot grants. Use `payment` for ETH/ERC-20 treasury transfers. A signal about shares, loot, or payments does not execute those actions.
 
-Use `dao-meta` or `dao-record` for DAO profile, shared memory, hosted docs, and join-rule pointers.
+Use `guild-meta` or `guild-record` for Guild profile, shared memory, hosted docs, and join-rule pointers.
 
 ## Onchain Submission Requirements
 
@@ -260,7 +260,7 @@ export PRIVATE_KEY="0x..."
 
 `RPC_URL` is used to get the wallet nonce, estimate/send gas fields, broadcast the signed transaction, and read transaction status. `PRIVATE_KEY` signs the transaction from the managed wallet. Transaction commands wait for receipts by default to reduce stale nonce races between back-to-back writes. Use `--wait` to make that explicit, `--confirmations N` to wait longer, or `--no-wait` only for fire-and-forget operation. `MOLOCH_WAIT_DEFAULT=false` remains a fallback for older wrappers.
 
-The managed wallet must also have Base ETH for gas. If the action requires DAO permissions, the wallet must have the relevant shares, delegation, shaman permission, or proposal rights before sending.
+The managed wallet must also have Base ETH for gas. If the action requires Guild permissions, the wallet must have the relevant shares, delegation, shaman permission, or proposal rights before sending.
 
 Graph config is separate and read-only:
 
@@ -268,13 +268,13 @@ Graph config is separate and read-only:
 export GRAPH_URL="https://gateway.thegraph.com/api/YOUR_GRAPH_KEY/subgraphs/id/7yh4eHJ4qpHEiLPAk9BXhL5YgYrTrRE6gWy8x4oHyAqW"
 ```
 
-## DAO Metadata, Charter, And Join Rules
+## Guild Metadata, Charter, And Join Rules
 
-Summon posts initial DAO profile metadata through Poster. Create and pin a shared community memory root before summon whenever possible, then include it in the initial metadata. Keep shared state simple: one versioned `community-state.md` file, not separate manifesto/charter/intent files.
+Summon posts initial Guild profile metadata through Poster. Create and pin a shared community memory root before summon whenever possible, then include it in the initial metadata. Keep shared state simple: one versioned `community-state.md` file, not separate manifesto/charter/intent files.
 
 ```json
 {
-  "daoName": "Example DAO",
+  "daoName": "Example Guild",
   "description": "Short public description",
   "communityMemoryURI": "ipfs://...",
   "proposalWorkspaceURI": "ipfs://.../proposals",
@@ -282,15 +282,15 @@ Summon posts initial DAO profile metadata through Poster. Create and pin a share
 }
 ```
 
-For richer or changing rules, create a new IPFS version and use Poster/DAO records or `dao-meta` proposal ratification to point at the new CID:
+For richer or changing rules, create a new IPFS version and use Poster/Guild records or `guild-meta` proposal ratification to point at the new CID:
 
 - `daoProfile`: current profile and links.
 - `communityMemory`: the shared IPFS root where agents and members coordinate.
-- Poster DAO database records with `type` and `topicId`: onchain discussion, proposal notes, vote reasons, and state-version announcements.
+- Poster Guild database records with `type` and `topicId`: onchain discussion, proposal notes, vote reasons, and state-version announcements.
 
-Current DAOhaus Admin uses database-style Poster records. Signal proposals use the `daohaus.proposal.database` tag from the DAO/Safe and usually write `table: "signal"`. Direct member communication should use `daohaus.member.database`; `memory-post` does this by default and writes `table: "communityMemory"` unless another table is provided. The sender must be a DAO member for the current DAOhaus subgraph to index direct member posts.
+Current DAOhaus Admin uses database-style Poster records. Signal proposals use the `daohaus.proposal.database` tag from the Guild/Safe and usually write `table: "signal"`. Direct member communication should use `daohaus.member.database`; `memory-post` does this by default and writes `table: "communityMemory"` unless another table is provided. The sender must be a Guild member for the current DAOhaus subgraph to index direct member posts.
 
-Routine snapshots write local `dao-records.json` and `operating-context.json`, but those are per-agent working artifacts. Durable community memory should use the DAO memory layer described in `MEMORY_LAYER.md`.
+Routine snapshots write local `guild-records.json` and `operating-context.json`, but those are per-agent working artifacts. Durable community memory should use the Guild memory layer described in `MEMORY_LAYER.md`.
 
 Create a starter memory root from:
 
@@ -298,19 +298,19 @@ Create a starter memory root from:
 cp -R templates/community-memory ./community-memory
 ```
 
-Fill in `community-memory/manifest.json` and `community-memory/versions/0001/community-state.md`, pin the directory, then publish the root CID in summon metadata or with `dao-meta`:
+Fill in `community-memory/manifest.json` and `community-memory/versions/0001/community-state.md`, pin the directory, then publish the root CID in summon metadata or with `guild-meta`:
 
 ```bash
-node moloch-shared/scripts/moloch.mjs dao-meta \
-  --dao 0xDAO \
-  --name "DAO Name" \
+node moloch-shared/scripts/moloch.mjs guild-meta \
+  --guild 0xGUILD \
+  --name "Guild Name" \
   --community-memory-uri ipfs://... \
   --proposal-workspace-uri ipfs://.../proposals \
   --shared-state-uri ipfs://.../versions/0001/community-state.md \
   --send
 ```
 
-IPFS is immutable. Do not edit an already-pinned shared state or proposal workspace in place. Publish a new version and announce the new URI through DAO metadata or DAO Database records.
+IPFS is immutable. Do not edit an already-pinned shared state or proposal workspace in place. Publish a new version and announce the new URI through Guild metadata or Guild Database records.
 
 When using `moloch-agent`, proposal workspaces are created automatically and linked through proposal `contentURI`. Agents should normally omit `--link` and `--content-uri` on proposal commands.
 
@@ -318,7 +318,7 @@ Use Poster for the onchain communication log:
 
 ```bash
 node moloch-shared/scripts/moloch.mjs memory-post \
-  --dao 0xDAO \
+  --guild 0xGUILD \
   --table communityMemory \
   --thread-id proposal-12-deliberation \
   --body "This draft should include a smaller initial share grant and a delivery checkpoint." \
@@ -334,8 +334,8 @@ Community memory records use a small `community-memory/v1` envelope. Keep `daoId
 Use member reads to understand who has shares/loot, delegation, and vote history:
 
 ```bash
-node moloch-shared/scripts/moloch.mjs graph-members --dao 0xDAO --first 100
-node moloch-shared/scripts/moloch.mjs graph-member --dao 0xDAO --member 0xMEMBER
+node moloch-shared/scripts/moloch.mjs graph-members --guild 0xGUILD --first 100
+node moloch-shared/scripts/moloch.mjs graph-member --guild 0xGUILD --member 0xMEMBER
 ```
 
 `task-snapshot` also writes `membership-summary.json`.
@@ -352,10 +352,10 @@ node moloch-shared/scripts/moloch.mjs graph-member --dao 0xDAO --member 0xMEMBER
 - Use Graph member data for membership, shares, loot, delegation, and vote history context.
 - Use direct contract reads for permission, timing, and current threshold checks.
 - Governance `quorum` and `minRetention` are raw whole-number percentages from `0` to `100`, not 18-decimal fixed-point values.
-- Use `graph-dao-history` for broad proposal history instead of looping over direct RPC reads.
+- Use `graph-guild-history` for broad proposal history instead of looping over direct RPC reads.
 - For `processProposal`, use the exact `proposalData` from the indexed proposal. Do not reconstruct it if Graph has the original payload.
-- Include the DAO's `proposalOffering` as transaction value when submitting proposals unless it is zero.
-- Verify the managed wallet has Base ETH for gas and the required DAO permissions or voting power.
+- Include the Guild's `proposalOffering` as transaction value when submitting proposals unless it is zero.
+- Verify the managed wallet has Base ETH for gas and the required Guild permissions or voting power.
 - Record the tx hash and re-read state after confirmation.
 
 ## Current Limitations

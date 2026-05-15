@@ -11,12 +11,12 @@ Use this skill for proposal lifecycle actions.
 
 1. Use `../moloch-shared` for wallet/RPC setup.
 2. Read proposal state before acting:
-   `node ../moloch-shared/scripts/moloch.mjs read-proposal --dao 0xDAO --proposal 1`
+   `node ../moloch-shared/scripts/moloch.mjs read-proposal --guild 0xGUILD --proposal 1`
 3. Read indexed proposal details before acting:
-   `node ../moloch-shared/scripts/moloch.mjs graph-proposal --dao 0xDAO --proposal 1`
+   `node ../moloch-shared/scripts/moloch.mjs graph-proposal --guild 0xGUILD --proposal 1`
 4. Derive lifecycle before acting:
-   `node ../moloch-shared/scripts/moloch.mjs proposal-lifecycle --dao 0xDAO --proposal 1`
-5. If live preflight passes and the managed signer has the required gas and DAO permissions, broadcast with `--send`.
+   `node ../moloch-shared/scripts/moloch.mjs proposal-lifecycle --guild 0xGUILD --proposal 1`
+5. If live preflight passes and the managed signer has the required gas and Guild permissions, broadcast with `--send`.
 6. Build unsigned only when the task explicitly asks for dry-run/review/draft mode or a technical blocker prevents sending.
 7. Re-read the proposal after confirmation and record the tx hash.
 
@@ -25,14 +25,14 @@ Use this skill for proposal lifecycle actions.
 Sponsor:
 
 ```bash
-node ../moloch-shared/scripts/moloch.mjs sponsor --dao 0xDAO --proposal 1 --send
+node ../moloch-shared/scripts/moloch.mjs sponsor --guild 0xGUILD --proposal 1 --send
 ```
 
 Vote:
 
 ```bash
-moloch-agent vote --dao 0xDAO --proposal 1 --approved true --reason "Aligned with my mandate."
-moloch-agent vote --dao 0xDAO --proposal 1 --approved false --reason "I voted no because the proposal needs clearer deliverables."
+moloch-agent vote --guild 0xGUILD --proposal 1 --approved true --reason "Aligned with my mandate."
+moloch-agent vote --guild 0xGUILD --proposal 1 --approved false --reason "I voted no because the proposal needs clearer deliverables."
 ```
 
 When using the npm CLI, include `--reason` whenever the agent has a substantive yes/no rationale. The CLI posts a `vote-reason` memory record linked to the proposal, then submits the vote.
@@ -40,7 +40,7 @@ When using the npm CLI, include `--reason` whenever the agent has a substantive 
 Process:
 
 ```bash
-node ../moloch-shared/scripts/moloch.mjs process --dao 0xDAO --proposal 1 --proposal-data 0x... --send
+node ../moloch-shared/scripts/moloch.mjs process --guild 0xGUILD --proposal 1 --proposal-data 0x... --send
 ```
 
 Processing is required contract maintenance after governance is complete. It is not a second vote. If `process-queue` marks a proposal as the first chain-ready item, process it unless chain preflight fails, exact indexed `proposalData` is unavailable or mismatched, or signer/gas is unavailable.
@@ -56,7 +56,7 @@ node ../moloch-shared/scripts/moloch.mjs decode-proposal-data --data 0xPROPOSAL_
 Queue processing oldest ready proposal first:
 
 ```bash
-node ../moloch-shared/scripts/moloch.mjs process-queue --dao 0xDAO --first 100
+node ../moloch-shared/scripts/moloch.mjs process-queue --guild 0xGUILD --first 100
 ```
 
 Process only the first item in `process-queue`. After a successful process transaction, re-run `process-queue` before processing the next proposal. Baal proposals are ordered by `prevProposalId`; later proposals may appear ready by time/vote checks but still be blocked until earlier proposals are terminal.
@@ -64,7 +64,7 @@ Process only the first item in `process-queue`. After a successful process trans
 Cancel:
 
 ```bash
-node ../moloch-shared/scripts/moloch.mjs cancel --dao 0xDAO --proposal 1 --send
+node ../moloch-shared/scripts/moloch.mjs cancel --guild 0xGUILD --proposal 1 --send
 ```
 
 Omit `--send` only for explicit dry-run/review mode or when a technical blocker prevents sending.

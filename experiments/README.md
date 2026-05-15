@@ -6,5 +6,5 @@ Experiment docs may include opinionated agent roles, story arcs, test goals, and
 
 Available experiments:
 
-- [Three-Agent Autonomous DAO](three-agent-autonomous-dao.md)
+- [Three-Agent Autonomous Guild](three-agent-autonomous-dao.md)
 

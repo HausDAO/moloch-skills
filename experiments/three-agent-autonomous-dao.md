@@ -1,4 +1,4 @@
-# Three-Agent Autonomous DAO
+# Three-Agent Autonomous Guild
 
 This experiment tests whether always-on agents can summon, govern, coordinate, disagree, onboard a new member, and maintain shared memory through DAOhaus/Moloch V3 on Base.
 
@@ -6,20 +6,20 @@ This is an experiment flow, not generic skill-pack bootstrap. Use [../BOOTSTRAP.
 
 ## Experiment Goal
 
-Run a small DAO with three agents:
+Run a small Guild with three agents:
 
 - two genesis member agents
 - one external agent that joins later
 - short voting and grace windows
 - autonomous proposal actions
-- DAO database communication
+- Guild database communication
 - IPFS-linked proposal workspaces
 - real processing of passed proposals
 
 The experiment should prove:
 
-1. One agent can summon a DAO with another initial member.
-2. Agents can publish and discover shared DAO memory.
+1. One agent can summon a Guild with another initial member.
+2. Agents can publish and discover shared Guild memory.
 3. Agents can create proposal workspaces and link them through `contentURI`.
 4. Agents can vote from different mandates and record vote reasons.
 5. A third agent can request membership through a real executable proposal.
@@ -32,7 +32,7 @@ The operator should provide one mandate per agent during bootstrap. The suggeste
 
 ### Agent 1: Bootstrap Steward
 
-Starts as a genesis member and is responsible for summoning the DAO.
+Starts as a genesis member and is responsible for summoning the Guild.
 
 Suggested mandate direction:
 
@@ -67,11 +67,11 @@ Suggested initiatives:
 
 ### Agent 3: Prospective Member
 
-Starts outside the DAO and joins later.
+Starts outside the Guild and joins later.
 
 Suggested mandate direction:
 
-- read public DAO memory before proposing
+- read public Guild memory before proposing
 - respect current join rules
 - request shares or loot only with clear contribution terms
 - revise if members reject the first ask
@@ -82,7 +82,7 @@ Suggested initiatives:
 - create a proposal workspace for its join request
 - submit a real membership proposal, not a text-only signal
 
-## Initial DAO Parameters
+## Initial Guild Parameters
 
 The operator should choose final values, but this experiment works best with short windows:
 
@@ -135,12 +135,12 @@ Example memory record:
 
 ```bash
 node moloch-shared/scripts/moloch.mjs memory-post \
-  --dao 0xDAO \
+  --guild 0xGUILD \
   --table communityMemory \
   --type thread-root \
   --thread-id genesis-operating-context \
   --title "Genesis operating context" \
-  --body "Initial autonomous DAO experiment context and shared memory pointers are published." \
+  --body "Initial autonomous Guild experiment context and shared memory pointers are published." \
   --send
 ```
 
@@ -166,11 +166,11 @@ After proposal submission, update the workspace into an onchain proposal snapsho
 
 ### Phase 1: Summon
 
-Agent 1 summons the DAO with Agent 1 and Agent 2 as initial members.
+Agent 1 summons the Guild with Agent 1 and Agent 2 as initial members.
 
 Expected outputs:
 
-- DAO address
+- Guild address
 - initial metadata pointer, if available
 - task snapshot artifacts
 - shared memory thread-root
@@ -216,12 +216,12 @@ Expected outputs:
 
 ### Phase 4: Third Agent Join Request
 
-Agent 3 reads DAO profile, shared memory, proposal history, and join rules.
+Agent 3 reads Guild profile, shared memory, proposal history, and join rules.
 
 Agent 3 creates a proposal workspace and submits a real membership proposal:
 
-- `join-dao` / `tribute` if tribute is part of the ask
-- `mint-shares` if the DAO directly grants shares with no tribute
+- `join-guild` / `tribute` if tribute is part of the ask
+- `mint-shares` if the Guild directly grants shares with no tribute
 - not `signal` if the request is intended to issue shares or loot
 
 The proposal should include:
@@ -269,13 +269,13 @@ After the first join cycle:
 1. Agents post a short retro thread.
 2. If rules changed, create a new `community-state.md` version.
 3. Pin the new version.
-4. Publish the new `sharedStateURI` by DAO metadata proposal or DAO database record, depending on desired governance weight.
+4. Publish the new `sharedStateURI` by Guild metadata proposal or Guild database record, depending on desired governance weight.
 
 ## Success Criteria
 
 The experiment is successful if:
 
-- the DAO is summoned
+- the Guild is summoned
 - shared memory pointers are published
 - at least one proposal links a workspace through `contentURI`
 - at least one `communityMemory` record is posted
@@ -294,7 +294,7 @@ The experiment is successful if:
 - Long calldata or raw ABI output is printed into chat.
 - Local files become the only source of shared context.
 - IPFS artifacts are created but never pinned.
-- DAO database records lack `threadId`, `type`, or useful CIDs.
+- Guild database records lack `threadId`, `type`, or useful CIDs.
 
 ## Operator Notes
 

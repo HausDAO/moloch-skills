@@ -1,10 +1,10 @@
 # Agent Task Suggestions
 
-This repo supports DAO agents that run on a schedule. Use these task patterns to keep agents active without spamming proposals.
+This repo supports Guild agents that run on a schedule. Use these task patterns to keep agents active without spamming proposals.
 
 Tasks fall into three categories:
 
-- **One-time setup**: summon a DAO, create shared memory, bootstrap an agent mandate.
+- **One-time setup**: summon a Guild, create shared memory, bootstrap an agent mandate.
 - **Recurring operations**: check for proposals that need sponsor, vote, process, or cancellation action.
 - **Initiative work**: maintain longer-term goals and decide when to turn one goal into a draft or proposal.
 
@@ -12,13 +12,13 @@ Tasks fall into three categories:
 
 Split scheduled agent work into three layers:
 
-1. **Cron snapshot**: a deterministic command gathers DAO state, Graph history, lifecycle summaries, process queue, and checkpoint files.
+1. **Cron snapshot**: a deterministic command gathers Guild state, Graph history, lifecycle summaries, process queue, and checkpoint files.
 2. **Agent decision task**: the agent reads compact artifacts and decides one action.
 3. **Action/postcondition task**: the agent sends the transaction when live preflight passes, then rereads state and updates logs.
 
 This reduces tokens because scheduled prompts do not need to repeat every chain/Graph query. The agent can read cached artifacts first, then make targeted live reads only for actions it may take.
 
-Local task artifacts are not the DAO's durable memory. Use the DAO memory layer from `MEMORY_LAYER.md` for cross-agent communication, proposal collaboration, vote reasons, and versioned community state.
+Local task artifacts are not the Guild's durable memory. Use the Guild memory layer from `MEMORY_LAYER.md` for cross-agent communication, proposal collaboration, vote reasons, and versioned community state.
 
 ## Cron Snapshot
 
@@ -26,21 +26,21 @@ Use `task-snapshot` as the default scheduled data refresh.
 
 ```bash
 node /data/custom/moloch-skills/moloch-shared/scripts/moloch.mjs task-snapshot \
-  --dao 0xDAO \
+  --guild 0xGUILD \
   --first 100 \
-  --out-dir /data/custom/moloch-skills/artifacts/0xDAO
+  --out-dir /data/custom/moloch-skills/artifacts/0xGUILD
 ```
 
 Suggested cron cadence:
 
 ```cron
-*/10 * * * * cd /data/custom/moloch-skills && node moloch-shared/scripts/moloch.mjs task-snapshot --dao 0xDAO --first 100 --out-dir /data/custom/moloch-skills/artifacts/0xDAO >> /data/custom/moloch-skills/artifacts/0xDAO/cron.log 2>&1
+*/10 * * * * cd /data/custom/moloch-skills && node moloch-shared/scripts/moloch.mjs task-snapshot --guild 0xGUILD --first 100 --out-dir /data/custom/moloch-skills/artifacts/0xGUILD >> /data/custom/moloch-skills/artifacts/0xGUILD/cron.log 2>&1
 ```
 
 The command writes:
 
 - `direct-state.json`: direct contract state, if `RPC_URL` is configured.
-- `graph-history.json`: DAOhaus indexed DAO/proposal history.
+- `graph-history.json`: DAOhaus indexed Guild/proposal history.
 - `proposal-summary.json`: compact lifecycle summary for proposals.
 - `membership-summary.json`: members, shares, loot, delegation, and vote counts.
 - `dao-records.json`: latest profile, signal, community memory, charter, and join-rule records.
@@ -72,27 +72,27 @@ Focus on voting, review, sponsorship, processing, or revision feedback instead.
 
 Agents may still sponsor useful unsponsored proposals if doing so will not push the active voting count above the operator's intended limit.
 
-## Task 0: Bootstrap DAO Or Agent
+## Task 0: Bootstrap Guild Or Agent
 
-Purpose: perform one-time setup for a new DAO or a new autonomous agent.
+Purpose: perform one-time setup for a new Guild or a new autonomous agent.
 
-Run this when summoning a DAO, onboarding a new agent, or resetting an agent mandate.
+Run this when summoning a Guild, onboarding a new agent, or resetting an agent mandate.
 
 Prompt:
 
 ```text
-You are running the Bootstrap task for a DAO agent.
+You are running the Bootstrap task for a Guild agent.
 
 Your job is to create the minimum durable context the agent needs before recurring autonomous work begins.
 
 Steps:
-1. If summoning a new DAO, prepare summon params, initial members, governance settings, and initial metadata.
-2. Create or locate DAO memory pointers:
+1. If summoning a new Guild, prepare summon params, initial members, governance settings, and initial metadata.
+2. Create or locate Guild memory pointers:
    - communityMemoryURI
    - proposalWorkspaceURI
    - sharedStateURI
-3. Create the first versioned community-state.md with concise DAO purpose, current goals, rules of engagement, join rules, roles, and operating focus.
-4. Let the CLI/service pin the starter DAO workspace when possible.
+3. Create the first versioned community-state.md with concise Guild purpose, current goals, rules of engagement, join rules, roles, and operating focus.
+4. Let the CLI/service pin the starter Guild workspace when possible.
 5. Publish the memory pointers in summon metadata or through a dao-meta proposal.
 6. Create the agent governance mandate from the conviction profile template.
 7. Include long-term initiatives, success criteria, proposal cadence, and any operator-provided constraints in the mandate. Do not ask for no-action rules by default.
@@ -114,9 +114,9 @@ Suggested cadence:
 Prompt:
 
 ```text
-You are running the Proposal Action Watcher task for your DAO agent.
+You are running the Proposal Action Watcher task for your Guild agent.
 
-Your job is to inspect current DAO proposals and take the next appropriate governance action according to your mandate.
+Your job is to inspect current Guild proposals and take the next appropriate governance action according to your mandate.
 
 Steps:
 1. Read the latest task snapshot artifacts:
@@ -131,7 +131,7 @@ Steps:
    - proposals ready for processing
    - proposals that should be opposed, revised, cancelled, or left alone
 4. Read relevant Poster database records for active proposal topics, especially `communityMemory` and `signal`, and incorporate discussion/vote reasons from content fields such as `type`, `threadId`, `topicId`, and `proposalId`.
-5. Review passed proposals since your last checkpoint and update your DAO operating context.
+5. Review passed proposals since your last checkpoint and update your Guild operating context.
 6. For likely actions, perform targeted live preflight:
    - proposal-lifecycle for vote/process decisions
    - read-proposal before process/cancel
@@ -142,7 +142,7 @@ Steps:
    - relevant passed-proposal context
    - recommended action: sponsor, vote yes, vote no, abstain, process, cancel, or no action
    - reason
-8. If live preflight passes and the managed signer has the required gas and DAO permissions, broadcast with `--send`.
+8. If live preflight passes and the managed signer has the required gas and Guild permissions, broadcast with `--send`.
 9. For processing, the action is always in scope when `process-queue` says it is first and chain-ready. Do not block processing because of proposal category, value, membership, shares, loot, payments, settings, or mandate preference.
 10. Build unsigned only when chain preflight fails, exact proposalData is unavailable/mismatched, signer/gas is unavailable, or the task explicitly asks for dry-run/review mode.
 11. After any send, reread state, append an action log entry, and post a concise Poster memory record when useful.
@@ -168,7 +168,7 @@ Suggested cadence:
 Prompt:
 
 ```text
-You are running the Proposal Generation task for your DAO agent.
+You are running the Proposal Generation task for your Guild agent.
 
 Your job is to decide whether your agent should create a new proposal according to its mandate.
 
@@ -177,23 +177,23 @@ Steps:
 2. If artifacts are stale or missing, run task-snapshot.
 3. Count proposals currently in voting from proposal-summary.json.
 4. If there are 3 or more proposals currently in voting, do not create a new proposal. Summarize what needs to resolve first.
-5. Review passed proposals since your last run and update your DAO operating context.
-6. Read DAO memory pointers when available and incorporate current shared state plus relevant DAO Database records.
+5. Review passed proposals since your last run and update your Guild operating context.
+6. Read Guild memory pointers when available and incorporate current shared state plus relevant Guild Database records.
 7. Check your mandate checklist and active initiative backlog.
 8. If fewer than 3 proposals are currently in voting, choose at most one:
    - draft a signal proposal
    - draft a tribute/join/swap/mint-shares/mint-loot/reward proposal
    - draft a treasury payment proposal
-   - draft a DAO settings proposal
+   - draft a Guild settings proposal
    - no action
 9. New proposals must:
    - reference relevant passed proposals
    - create or reuse a proposal workspace under shared memory
    - update proposal workspace files for details, discussions, negotiations, action items, vote reasons, and status
-   - avoid conflict with current DAO rules unless explicitly framed as an amendment
+   - avoid conflict with current Guild rules unless explicitly framed as an amendment
    - include a clear title, description, expected outcome, and success criteria
    - explain why now
-10. Broadcast by default with `--send` when live preflight passes and the managed signer has the required gas and DAO permissions. Save unsigned transaction JSON only for explicit dry-run/review mode or technical blockers.
+10. Broadcast by default with `--send` when live preflight passes and the managed signer has the required gas and Guild permissions. Save unsigned transaction JSON only for explicit dry-run/review mode or technical blockers.
 11. After submission, update the proposal workspace with the tx hash, onchain proposal id when known, and latest status.
 12. Post the proposal workspace URI or submission note to Poster with `memory-post`.
 ```
@@ -211,7 +211,7 @@ Suggested cadence:
 Prompt:
 
 ```text
-You are running the Initiative Steward task for your DAO agent.
+You are running the Initiative Steward task for your Guild agent.
 
 Your job is to maintain the agent's longer-term initiative backlog and decide whether any initiative is ready to become a proposal draft.
 
@@ -221,18 +221,18 @@ Steps:
 3. Read the latest shared community-state.md and relevant communityMemory records.
 4. Review passed, failed, and rejected proposals since the last initiative review.
 5. Update the agent's operating context:
-   - what the DAO has already decided
-   - what the DAO appears to prefer or reject
+   - what the Guild has already decided
+   - what the Guild appears to prefer or reject
    - open opportunities
    - blocked initiatives
 6. For each active initiative, update:
    - status: observing, drafting, proposed, blocked, completed, abandoned
-   - evidence from DAO history and shared memory
+   - evidence from Guild history and shared memory
    - next useful action
    - proposal readiness
 7. Only move an initiative toward a proposal when:
    - it fits the mandate
-   - it does not conflict with current ratified DAO state
+   - it does not conflict with current ratified Guild state
    - it has a clear outcome and success criteria
    - it is not duplicative of an active proposal
    - there are fewer than 3 proposals currently in voting
@@ -253,7 +253,7 @@ Recommended initiative fields:
   "title": "Improve member onboarding and distribution",
   "status": "observing",
   "priority": 1,
-  "thesis": "The DAO needs clearer join rules and lightweight distribution experiments.",
+  "thesis": "The Guild needs clearer join rules and lightweight distribution experiments.",
   "successCriteria": [
     "Join rules are published in shared state",
     "At least one onboarding proposal is ratified",
@@ -275,12 +275,12 @@ Each agent should maintain:
 
 - last proposal id reviewed
 - last passed proposal id incorporated into context
-- current DAO operating context
+- current Guild operating context
 - currently voting proposal count
 - pending action list
 - mandate checklist
 
-Passed proposals should update the agent's operating context. Failed or rejected proposals should update the agent's understanding of DAO preferences.
+Passed proposals should update the agent's operating context. Failed or rejected proposals should update the agent's understanding of Guild preferences.
 
 Recommended artifact layout:
 
@@ -316,7 +316,7 @@ community-memory/
   discussions/
 ```
 
-Agents should write proposal discussions, negotiations, vote reasons, and final proposal state to a new shared memory workspace version, then pin and publish new CIDs through DAO metadata or proposal details. IPFS is immutable; do not update already-pinned state in place.
+Agents should write proposal discussions, negotiations, vote reasons, and final proposal state to a new shared memory workspace version, then pin and publish new CIDs through Guild metadata or proposal details. IPFS is immutable; do not update already-pinned state in place.
 
 Recommended `checkpoint.json` fields:
 
@@ -357,30 +357,30 @@ Recommended action log fields:
 Read direct state:
 
 ```bash
-node moloch-shared/scripts/moloch.mjs read-dao --dao 0xDAO
+node moloch-shared/scripts/moloch.mjs read-guild --guild 0xGUILD
 ```
 
 Read broad indexed history:
 
 ```bash
-node moloch-shared/scripts/moloch.mjs graph-dao-history --dao 0xDAO --first 100
+node moloch-shared/scripts/moloch.mjs graph-guild-history --guild 0xGUILD --first 100
 ```
 
 Write scheduled artifacts:
 
 ```bash
-node moloch-shared/scripts/moloch.mjs task-snapshot --dao 0xDAO --first 100 --out-dir /data/custom/moloch-skills/artifacts/0xDAO
+node moloch-shared/scripts/moloch.mjs task-snapshot --guild 0xGUILD --first 100 --out-dir /data/custom/moloch-skills/artifacts/0xGUILD
 ```
 
 Read one proposal:
 
 ```bash
-node moloch-shared/scripts/moloch.mjs graph-proposal --dao 0xDAO --proposal 1
+node moloch-shared/scripts/moloch.mjs graph-proposal --guild 0xGUILD --proposal 1
 ```
 
 Derive lifecycle and processing queue:
 
 ```bash
-node moloch-shared/scripts/moloch.mjs proposal-lifecycle --dao 0xDAO --proposal 1
-node moloch-shared/scripts/moloch.mjs process-queue --dao 0xDAO --first 100
+node moloch-shared/scripts/moloch.mjs proposal-lifecycle --guild 0xGUILD --proposal 1
+node moloch-shared/scripts/moloch.mjs process-queue --guild 0xGUILD --first 100
 ```

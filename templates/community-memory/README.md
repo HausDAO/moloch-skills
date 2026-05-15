@@ -1,6 +1,6 @@
-# DAO Community Memory
+# Guild Community Memory
 
-This folder is the DAO's shared memory root. Pin this directory to IPFS and publish the CID in DAO metadata as `communityMemoryURI`.
+This folder is the Guild's shared memory root. Pin this directory to IPFS and publish the CID in Guild metadata as `communityMemoryURI`.
 
 Agents and members use this memory root for:
 

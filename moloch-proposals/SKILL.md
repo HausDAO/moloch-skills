@@ -13,15 +13,15 @@ Default to high-level commands and concise summaries. Do not expose ABI fragment
 
 1. Use `../moloch-shared` for RPC, wallet, and transaction script setup.
 2. Run proposal intent preflight before choosing a command.
-3. Read DAO state first:
-   `node ../moloch-shared/scripts/moloch.mjs read-dao --dao 0xDAO`
-4. Optionally read indexed DAO/proposal context with `graph-dao` or `graph-proposals`.
-5. Find DAO memory pointers from `daoProfile.communityMemoryURI`, `daoProfile.sharedStateURI`, and `daoProfile.proposalWorkspaceURI` when available.
+3. Read Guild state first:
+   `node ../moloch-shared/scripts/moloch.mjs read-guild --guild 0xGUILD`
+4. Optionally read indexed Guild/proposal context with `graph-guild` or `graph-proposals`.
+5. Find Guild memory pointers from `daoProfile.communityMemoryURI`, `daoProfile.sharedStateURI`, and `daoProfile.proposalWorkspaceURI` when available.
 6. Let the npm CLI create and pin proposal workspaces automatically. Do not manually create proposal folders unless the task is draft-only or the operator provides an existing workspace URI.
-7. Include `proposalOffering` as tx value for `submitProposal` unless the DAO uses zero offering.
+7. Include `proposalOffering` as tx value for `submitProposal` unless the Guild uses zero offering.
 8. Build the proposal tx and review the compact summary.
 9. Decode the full calldata with `decode-submit-proposal` only when reviewing complex proposals or when asked.
-10. For autonomous proposal tasks, broadcast with `--send` when live preflight passes and the managed signer has the required gas and DAO permissions. Omit `--send` only for explicit dry-run, review, draft mode, or technical blockers.
+10. For autonomous proposal tasks, broadcast with `--send` when live preflight passes and the managed signer has the required gas and Guild permissions. Omit `--send` only for explicit dry-run, review, draft mode, or technical blockers.
 
 ## Proposal Intent Preflight
 
@@ -30,14 +30,14 @@ Choose the proposal path by operator intent:
 | Operator asks for | Use |
 | --- | --- |
 | signal, temperature check, text-only governance intent | `signal` |
-| join DAO with ERC-20 tribute, tokens-for-shares, tokens-for-loot | `tribute` / `join-dao` |
+| join Guild with ERC-20 tribute, tokens-for-shares, tokens-for-loot | `tribute` / `join-guild` |
 | grant or mint voting shares directly, no tribute involved | `mint-shares` |
-| update DAO profile, shared memory URI, community state URI, hosted docs links | `dao-meta` / `dao-record` |
+| update Guild profile, shared memory URI, community state URI, hosted docs links | `guild-meta` / `guild-record` |
 | change voting period, grace period, offering, quorum, retention | `gov-settings` |
 | change share/loot pause or transferability setting | `token-settings` |
 | arbitrary contract execution | custom proposal path |
 
-If the operator asks for shares, loot, membership, admission, or a join request, do not use `signal`. A signal can express support for admission, but it does not create an executable membership proposal. Use `tribute` / `join-dao` when the member contributes ERC-20 tribute. Use `mint-shares` when the DAO directly grants voting shares with no tribute transfer.
+If the operator asks for shares, loot, membership, admission, or a join request, do not use `signal`. A signal can express support for admission, but it does not create an executable membership proposal. Use `tribute` / `join-guild` when the member contributes ERC-20 tribute. Use `mint-shares` when the Guild directly grants voting shares with no tribute transfer.
 
 ## Details JSON
 
@@ -51,17 +51,17 @@ node ../moloch-shared/scripts/moloch.mjs details \
   --proposal-type SIGNAL
 ```
 
-Daohaus expects details JSON with `title`, `description`, optional `contentURI`, `contentURIType`, and `proposalType`.
+DAOhaus expects details JSON with `title`, `description`, optional `contentURI`, `contentURIType`, and `proposalType`.
 
 ## Signal Proposal
 
 Proposal commands default `submitProposal` `baalGas` to `0`. This is intentional: Baal ignores a zero `baalGas`, while a low nonzero value can cause processing to fail with an out-of-gas style action failure. Use `--baal-gas` only when you know the required inner action gas. Use `--estimate-baal-gas` as an explicit opt-in for DAOhaus-style estimation with a default `1.2x` buffer.
 
-Proposal offering is separate from tribute or payment amounts. Offering is native chain token sent as transaction `value` to satisfy the DAO's configured proposal offering. Tribute/swap amounts are contributed ERC-20 token amounts handled by Tribute Minion. Treasury payment amounts are encoded inside proposal actions.
+Proposal offering is separate from tribute or payment amounts. Offering is native chain token sent as transaction `value` to satisfy the Guild's configured proposal offering. Tribute/swap amounts are contributed ERC-20 token amounts handled by Tribute Minion. Treasury payment amounts are encoded inside proposal actions.
 
 ```bash
 node ../moloch-shared/scripts/moloch.mjs signal \
-  --dao 0xDAO \
+  --guild 0xGUILD \
   --title "Signal title" \
   --description "Signal body" \
   --link "https://..." \
@@ -78,9 +78,9 @@ If DAOhaus Admin shows a Poster decoding error such as `Encoded function signatu
 
 DAOhaus has at least two common executable membership paths:
 
-- `tribute` / `join-dao`: submits through Tribute Minion for tokens-for-shares or tokens-for-loot.
-- `mint-shares`: submits a Baal proposal that calls `mintShares(address[],uint256[])` on the DAO itself.
-- `mint-loot`: submits a Baal proposal that calls `mintLoot(address[],uint256[])` on the DAO itself.
+- `tribute` / `join-guild`: submits through Tribute Minion for tokens-for-shares or tokens-for-loot.
+- `mint-shares`: submits a Baal proposal that calls `mintShares(address[],uint256[])` on the Guild itself.
+- `mint-loot`: submits a Baal proposal that calls `mintLoot(address[],uint256[])` on the Guild itself.
 
 Use `mint-shares` for grants, steward admissions, retroactive rewards, or membership entries where no ETH/ERC-20 contribution should be escrowed by Tribute Minion.
 Use `mint-loot` for non-voting rewards, trial memberships, reputation grants, or compensation that should not change voting power.
@@ -89,7 +89,7 @@ Share and loot quantities use human 18-decimal units by default. Use `--amount 1
 
 ```bash
 node ../moloch-shared/scripts/moloch.mjs mint-shares \
-  --dao 0xDAO \
+  --guild 0xGUILD \
   --to 0xMEMBER \
   --amount 1 \
   --title "Admit new voting member" \
@@ -101,7 +101,7 @@ For multiple recipients, pass comma-separated values with matching lengths:
 
 ```bash
 node ../moloch-shared/scripts/moloch.mjs mint-shares \
-  --dao 0xDAO \
+  --guild 0xGUILD \
   --to 0xA,0xB \
   --amount 1,2.5 \
   --title "Mint contributor shares" \
@@ -112,7 +112,7 @@ Loot-only reward example:
 
 ```bash
 moloch-agent mint-loot \
-  --dao 0xDAO \
+  --guild 0xGUILD \
   --to 0xMEMBER \
   --amount 100 \
   --title "Reward contributor with loot"
@@ -122,13 +122,13 @@ moloch-agent mint-loot \
 
 Use this for tokens-for-shares or tokens-for-loot requests through the DAOhaus Tribute Minion.
 This is the first-class membership/admission path when the member contributes ERC-20 tribute.
-DAOhaus Admin labels this family "DAO Token Swap": request voting or non-voting DAO tokens in exchange for contributed tokens.
+DAOhaus Admin labels this family "Guild Token Swap": request voting or non-voting Guild tokens in exchange for contributed tokens.
 
 ERC-20 tribute:
 
 ```bash
 moloch-agent tribute \
-  --dao 0xDAO \
+  --guild 0xGUILD \
   --token 0xTOKEN \
   --amount 1000000 \
   --shares 1 \
@@ -136,7 +136,7 @@ moloch-agent tribute \
   --send
 ```
 
-For ERC-20 tribute, check and approve Tribute Minion allowance before broadcasting. Native ETH, Baal's ETH sentinel, and `0x0000000000000000000000000000000000000000` token tribute are not supported by the DAOhaus Tribute Minion. Transaction `value` is the DAO proposal offering only; it is not tribute amount. Tribute token `--amount` remains raw token units because ERC-20 decimals vary; share/loot outputs use human 18-decimal units by default.
+For ERC-20 tribute, check and approve Tribute Minion allowance before broadcasting. Native ETH, Baal's ETH sentinel, and `0x0000000000000000000000000000000000000000` token tribute are not supported by the DAOhaus Tribute Minion. Transaction `value` is the Guild proposal offering only; it is not tribute amount. Tribute token `--amount` remains raw token units because ERC-20 decimals vary; share/loot outputs use human 18-decimal units by default.
 
 For native ETH-to-shares flows, wrap ETH into Base WETH first:
 
@@ -147,7 +147,7 @@ moloch-agent approve-token \
   --amount 0.01 \
   --send
 moloch-agent tribute \
-  --dao 0xDAO \
+  --guild 0xGUILD \
   --token 0x4200000000000000000000000000000000000006 \
   --amount 10000000000000000 \
   --shares 1 \
@@ -160,7 +160,7 @@ The npm CLI also exposes `swap` and `token-swap` as aliases for the same Tribute
 
 ```bash
 moloch-agent swap \
-  --dao 0xDAO \
+  --guild 0xGUILD \
   --token 0xTOKEN \
   --amount 1000000 \
   --shares 0 \
@@ -169,13 +169,13 @@ moloch-agent swap \
 
 ## Treasury Payment Proposal
 
-Use `payment` when the DAO treasury should send native ETH or ERC-20 tokens to a recipient.
+Use `payment` when the Guild treasury should send native ETH or ERC-20 tokens to a recipient.
 
 Native ETH payment:
 
 ```bash
 moloch-agent payment \
-  --dao 0xDAO \
+  --guild 0xGUILD \
   --recipient 0xPAYEE \
   --amount 0.01 \
   --title "Pay contributor"
@@ -185,7 +185,7 @@ ERC-20 payment:
 
 ```bash
 moloch-agent payment \
-  --dao 0xDAO \
+  --guild 0xGUILD \
   --recipient 0xPAYEE \
   --token 0xERC20 \
   --amount 100 \
@@ -199,18 +199,18 @@ For ERC-20 payments, provide `--amount-raw` for exact token base units or `--dec
 
 `ragequit` is not a proposal. It is a direct member exit action that burns the caller's shares and/or loot and claims proportional treasury assets. Treat it as serious and usually exceptional. Broadcast requires `--confirm-ragequit`.
 
-Use `treasury-tokens --dao 0xDAO` first and pass the returned `ragequitTokensCsv` as `--tokens`.
+Use `treasury-tokens --guild 0xGUILD` first and pass the returned `ragequitTokensCsv` as `--tokens`.
 
-## DAO Metadata / Shared Memory Proposal
+## Guild Metadata / Shared Memory Proposal
 
 Use this for DAOhaus-readable metadata, agent-readable rules, and shared community memory pointers.
 
 Profile links:
 
 ```bash
-node ../moloch-shared/scripts/moloch.mjs dao-meta \
-  --dao 0xDAO \
-  --name "DAO Name" \
+node ../moloch-shared/scripts/moloch.mjs guild-meta \
+  --guild 0xGUILD \
+  --name "Guild Name" \
   --community-memory-uri ipfs://... \
   --proposal-workspace-uri ipfs://.../proposals \
   --shared-state-uri ipfs://.../versions/0001/community-state.md \
@@ -220,14 +220,14 @@ node ../moloch-shared/scripts/moloch.mjs dao-meta \
 Custom records remain available for DAOs that already use Poster tables:
 
 ```bash
-node ../moloch-shared/scripts/moloch.mjs dao-record \
-  --dao 0xDAO \
+node ../moloch-shared/scripts/moloch.mjs guild-record \
+  --guild 0xGUILD \
   --table charter \
   --content-file charter-record.json \
   --send
 
-node ../moloch-shared/scripts/moloch.mjs dao-record \
-  --dao 0xDAO \
+node ../moloch-shared/scripts/moloch.mjs guild-record \
+  --guild 0xGUILD \
   --table joinRules \
   --content-file join-rules-record.json \
   --send
@@ -235,7 +235,7 @@ node ../moloch-shared/scripts/moloch.mjs dao-record \
 
 These build a proposal that posts a Poster record if passed. Use memory layer URIs for shared state, workspace roots, and larger versioned artifacts.
 
-Current DAOhaus Admin indexes database-style Poster records. Signal proposals use `daohaus.proposal.database` from the DAO/Safe and usually write `table: "signal"`. Direct member-authored proposal commons posts should use `memory-post`, which defaults to `daohaus.member.database` and `table: "communityMemory"`.
+Current DAOhaus Admin indexes database-style Poster records. Signal proposals use `daohaus.proposal.database` from the Guild/Safe and usually write `table: "signal"`. Direct member-authored proposal commons posts should use `memory-post`, which defaults to `daohaus.member.database` and `table: "communityMemory"`.
 
 ## Proposal Workspace
 
@@ -257,7 +257,7 @@ Use Poster for proposal communication around the workspace:
 
 ```bash
 node ../moloch-shared/scripts/moloch.mjs memory-post \
-  --dao 0xDAO \
+  --guild 0xGUILD \
   --table communityMemory \
   --thread-id proposal-draft-slug \
   --type draft-announcement \
@@ -272,7 +272,7 @@ No-tribute membership request example:
 
 ```bash
 moloch-agent mint-shares \
-  --dao 0xDAO \
+  --guild 0xGUILD \
   --to 0xMEMBER \
   --amount 10000 \
   --title "Admit Charter Steward" \
@@ -302,24 +302,24 @@ Create `params.json`:
 Build:
 
 ```bash
-node ../moloch-shared/scripts/moloch.mjs gov-settings --dao 0xDAO --params params.json --send
-moloch-agent gov-settings --dao 0xDAO --params params.json
+node ../moloch-shared/scripts/moloch.mjs gov-settings --guild 0xGUILD --params params.json --send
+moloch-agent gov-settings --guild 0xGUILD --params params.json
 ```
 
 ## Token/Admin Settings Proposal
 
-Daohaus names this token settings, but the Baal call is `setAdminConfig(bool pauseShares, bool pauseLoot)`.
+DAOhaus names this token settings, but the Baal call is `setAdminConfig(bool pauseShares, bool pauseLoot)`.
 
 ```bash
 node ../moloch-shared/scripts/moloch.mjs token-settings \
-  --dao 0xDAO \
+  --guild 0xGUILD \
   --pause-shares false \
   --pause-loot false \
   --title "Update token transfer settings" \
   --send
 
 moloch-agent token-settings \
-  --dao 0xDAO \
+  --guild 0xGUILD \
   --pause-shares false \
   --pause-loot false \
   --title "Update token transfer settings"
@@ -342,7 +342,7 @@ For custom action proposals, use `custom-proposal` when a first-class command do
 
 ```bash
 moloch-agent custom-proposal \
-  --dao 0xDAO \
+  --guild 0xGUILD \
   --title "Custom action" \
   --description "Execute a mapped action that is not first-class yet." \
   --proposal-type CUSTOM \

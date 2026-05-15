@@ -1,11 +1,11 @@
 # Prism Integration
 
-This repo contains Codex skills plus runtime assets for DAOhaus/Moloch V3/Baal DAO operations.
+This repo contains Codex skills plus runtime assets for DAOhaus/Moloch V3/Baal Guild operations.
 
 For scheduled agent task patterns, use `AGENT_TASKS.md`.
 Prefer `task-snapshot` cron jobs for routine state gathering so agents can consume compact artifacts instead of repeating verbose Graph/RPC reads.
 For vote reasoning, use `VOTE_DECISION_FLOW.md`.
-For shared DAO memory and proposal workspaces, use `SHARED_MEMORY.md`.
+For shared Guild memory and proposal workspaces, use `SHARED_MEMORY.md`.
 
 ## Prism Install Pattern
 
@@ -83,16 +83,16 @@ Use a dedicated RPC provider such as Alchemy or Infura for agent runs. Public Ba
 ## Autonomous Execution Rules
 
 - Read-only skills may run freely.
-- Prism action skills should broadcast by default when live preflight passes and the managed signer has the required gas and DAO permissions.
+- Prism action skills should broadcast by default when live preflight passes and the managed signer has the required gas and Guild permissions.
 - Transaction-building skills should use unsigned transaction JSON only for explicit dry-run, review, or draft tasks.
-- Do not ask for operator approval before sending routine DAO actions.
+- Do not ask for operator approval before sending routine Guild actions.
 - Do not broadcast with `--send` when chain preflight fails, required proposal data is missing or mismatched, signer/gas is unavailable, or the task explicitly asks for build-only mode.
-- Before broadcasting, re-read current DAO/proposal state from chain.
+- Before broadcasting, re-read current Guild/proposal state from chain.
 - Graph data can lag; use direct contract reads for permissions, timing, and threshold checks.
 - Record transaction hashes and re-read state after confirmation.
 - Keep operator output abstract by default. Do not paste ABI fragments, large calldata, or full Graph JSON unless requested.
 - Use `proposal-lifecycle` and `process-queue` instead of raw Graph fields when deciding whether to vote or process.
-- Prism should treat managed DAO agents as autonomous actors and require post-action rereads.
+- Prism should treat managed Guild agents as autonomous actors and require post-action rereads.
 
 ## Recommended Prism Skill Split
 

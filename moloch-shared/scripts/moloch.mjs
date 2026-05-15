@@ -98,6 +98,7 @@ const WETH_ABI = [
 
 function arg(name, fallback) {
   const i = process.argv.indexOf(`--${name}`);
+  if (i === -1 && name === 'dao') return arg('guild', fallback);
   return i === -1 ? fallback : process.argv[i + 1];
 }
 
@@ -354,7 +355,7 @@ function looksLikeMembershipIntent(text) {
 function ensureSignalIntent({ title, description }) {
   if (has('force-signal')) return;
   if (looksLikeMembershipIntent(`${title}\n${description}`)) {
-    throw new Error('This looks like a membership/shares/loot request. Use `tribute` / `join-dao` for executable tokens-for-shares proposals, or add --force-signal if you intentionally want text-only signaling.');
+    throw new Error('This looks like a membership/shares/loot request. Use `tribute` / `join-guild` for executable tokens-for-shares proposals, or add --force-signal if you intentionally want text-only signaling.');
   }
 }
 
@@ -426,7 +427,7 @@ async function graphDao(dao) {
 async function treasuryTokens(dao) {
   const result = await graphDao(dao);
   const safeAddress = result?.dao?.safeAddress ? getAddress(result.dao.safeAddress) : undefined;
-  if (!safeAddress) throw new Error('Could not resolve DAO Safe address from Graph.');
+  if (!safeAddress) throw new Error('Could not resolve Guild Safe address from Graph.');
   const res = await fetch(`https://safe-transaction-base.safe.global/api/v1/safes/${safeAddress}/balances/?trusted=false`);
   if (!res.ok) throw new Error(`Safe balances request failed: ${res.status}`);
   const balances = await res.json();
@@ -761,7 +762,7 @@ async function taskSnapshot(dao) {
     graphHistory: path.join(outDir, 'graph-history.json'),
     proposalSummary: path.join(outDir, 'proposal-summary.json'),
     membershipSummary: path.join(outDir, 'membership-summary.json'),
-    daoRecords: path.join(outDir, 'dao-records.json'),
+    daoRecords: path.join(outDir, 'guild-records.json'),
     operatingContext: path.join(outDir, 'operating-context.json'),
     processQueue: path.join(outDir, 'process-queue.json'),
     checkpoint: checkpointFile,
@@ -850,7 +851,7 @@ async function safeAddressForDao(dao) {
 
 async function estimateBaalGas(dao, actions, proposalData) {
   const safeAddress = await safeAddressForDao(dao);
-  if (!safeAddress) throw new Error('Missing DAO Safe address for DAOhaus-style baalGas estimation. Pass --safe 0xSAFE or configure Graph.');
+  if (!safeAddress) throw new Error('Missing Guild Safe address for DAOhaus-style baalGas estimation. Pass --safe 0xSAFE or configure Graph.');
   const c = client();
   const moduleData = encodeFunctionData({
     abi: GNOSIS_MODULE_ABI,
@@ -924,8 +925,19 @@ async function proposalTx({ dao, actions, title, description, link, proposalType
 
 function requireDao() {
   const dao = arg('dao');
-  if (!dao) throw new Error('Missing --dao 0x...');
+  if (!dao) throw new Error('Missing --guild 0x... (or legacy --dao 0x...)');
   return dao;
+}
+
+function normalizeCommand(command) {
+  return ({
+    'read-dao': 'read-guild',
+    'graph-dao': 'graph-guild',
+    'graph-dao-history': 'graph-guild-history',
+    'dao-meta': 'guild-meta',
+    'dao-record': 'guild-record',
+    'join-dao': 'join-guild',
+  })[command] || command;
 }
 
 function client() {
@@ -986,22 +998,22 @@ function repoCommit() {
 }
 
 async function main() {
-  const command = process.argv[2];
+  const command = normalizeCommand(process.argv[2]);
   if (!command || command === '--help') {
     console.log(`Moloch CLI commands:
   capabilities         Show supported proposal families and configured read/send capabilities
-  task-snapshot        Cron-friendly combined DAO/proposal/lifecycle artifact writer
+  task-snapshot        Cron-friendly combined Guild/proposal/lifecycle artifact writer
   new-account          Generate a fresh local Ethereum account
-  read-dao             Direct contract state for a DAO
+  read-guild             Direct contract state for a Guild
   read-proposal        Direct contract proposal tuple plus named getProposalStatus
-  graph-dao            Indexed DAO context from DAOhaus subgraph
+  graph-guild            Indexed Guild context from DAOhaus subgraph
   graph-proposal       Indexed proposal details, votes, proposalData
   graph-proposals      Indexed proposal list
-  graph-dao-history    DAO plus proposal history in one Graph query
+  graph-guild-history    Guild plus proposal history in one Graph query
   graph-members        Indexed members with shares, loot, delegation, vote history
   graph-member         One indexed member: --member 0x...
-  graph-records        DAO Poster records: --table daoProfile|signal|communityMemory
-  treasury-tokens      DAO Safe balances plus sorted ragequit token list
+  graph-records        Guild Poster records: --table daoProfile|signal|communityMemory
+  treasury-tokens      Guild Safe balances plus sorted ragequit token list
   proposal-lifecycle   Derived status: unsponsored/voting/grace/needsProcessing/failed/processed
   process-queue        Oldest ready-to-process proposals first
   wrap-eth             Wrap native ETH to Base WETH
@@ -1009,31 +1021,32 @@ async function main() {
   approve-token        Approve ERC-20 spending, default spender is Tribute Minion
   ragequit             Direct member ragequit: serious exit action; requires --confirm-ragequit with --send
   signal               Text/metadata governance signal. Not for membership, shares, or loot.
-  dao-meta             Proposal to update daoProfile metadata/links through Poster
-  dao-record           Proposal to post a charter/joinRules/manifesto record through Poster
-  memory-post          Direct Poster post for DAO forum/memory/discussion records
-  tribute, join-dao    Real tokens-for-shares or tokens-for-loot proposal via Tribute Minion
+  guild-meta             Proposal to update daoProfile metadata/links through Poster
+  guild-record           Proposal to post a charter/joinRules/manifesto record through Poster
+  memory-post          Direct Poster post for Guild forum/memory/discussion records
+  tribute, join-guild    Real tokens-for-shares or tokens-for-loot proposal via Tribute Minion
   mint-shares          Direct Baal proposal to mint voting shares to member address(es)
   gov-settings         Governance config proposal
   token-settings       Share/loot pause config proposal
   sponsor, vote, process, cancel  Proposal lifecycle actions
-  summon               Summon a DAO
+  summon               Summon a Guild
 
 Options:
+  --guild 0xGUILD     Guild address; legacy --dao also works
   --compact            Hide large calldata/proposalData in output
   --estimate-baal-gas  Opt in to DAOhaus-style submitProposal baalGas estimation
   --no-estimate-baal-gas  Legacy no-op; baalGas is 0 by default unless explicitly set
   --baal-gas <n>       Explicit submitProposal baalGas; low nonzero values can make processing fail
   --baal-gas-buffer <n>  Multiplier for opt-in estimated baalGas; default 1.2
   --require-baal-gas-estimate  Error if baalGas cannot be estimated
-  --safe 0xSAFE        DAO Safe address for DAOhaus-style baalGas estimation
+  --safe 0xSAFE        Guild Safe address for DAOhaus-style baalGas estimation
   --gas-limit <n>      Explicit transaction gas limit for sends
   --amount-raw <n>     Raw 18-decimal base units for mint-shares amount
   --shares-raw <n>     Raw 18-decimal base units for Tribute Minion shares
   --loot-raw <n>       Raw 18-decimal base units for Tribute Minion loot
-  --community-memory-uri ipfs://...  DAO profile pointer to shared memory root
-  --proposal-workspace-uri ipfs://... DAO profile pointer to proposal workspaces
-  --shared-state-uri ipfs://... DAO profile pointer to current shared state
+  --community-memory-uri ipfs://...  Guild profile pointer to shared memory root
+  --proposal-workspace-uri ipfs://... Guild profile pointer to proposal workspaces
+  --shared-state-uri ipfs://... Guild profile pointer to current shared state
   --send               Broadcast a write tx
   --wait               Explicitly wait for receipt after send
   --no-wait            Return immediately after broadcast
@@ -1046,7 +1059,7 @@ Share and loot quantities default to human 18-decimal units:
 
 Proposal offering is native tx value for submitProposal. Tribute/join uses ERC-20 tokens only; native ETH tribute is not supported by the DAOhaus Tribute Minion.
 For native ETH-to-shares flows, use wrap-eth, approve-token, then tribute/join with Base WETH: ${BASE_WETH}
-Ragequit is not a proposal. It burns caller shares/loot and should be treated as an irreversible DAO exit action. Use --tokens ETH,0xERC20 for the sorted treasury token list; ETH maps to Baal's ETH sentinel.
+Ragequit is not a proposal. It burns caller shares/loot and should be treated as an irreversible Guild exit action. Use --tokens ETH,0xERC20 for the sorted treasury token list; ETH maps to Baal's ETH sentinel.
 `);
     return;
   }
@@ -1073,7 +1086,7 @@ Ragequit is not a proposal. It burns caller shares/loot and should be treated as
       },
       maintainedAt: 'https://github.com/HausDAO/moloch-skills',
       graphEndpoint: `${THE_GRAPH_GATEWAY}/<api-key>/subgraphs/id/${DAOHAUS_BASE_SUBGRAPH_ID}`,
-      warning: 'If tribute/join-dao or mint-shares is missing from --help, the local skill bundle is outdated.',
+      warning: 'If tribute/join-guild or mint-shares is missing from --help, the local skill bundle is outdated.',
     }));
     return;
   }
@@ -1124,7 +1137,7 @@ Ragequit is not a proposal. It burns caller shares/loot and should be treated as
     return;
   }
 
-  if (command === 'graph-dao') {
+  if (command === 'graph-guild') {
     console.log(stringify(await graphDao(requireDao())));
     return;
   }
@@ -1139,7 +1152,7 @@ Ragequit is not a proposal. It burns caller shares/loot and should be treated as
     return;
   }
 
-  if (command === 'graph-dao-history') {
+  if (command === 'graph-guild-history') {
     console.log(stringify(await graphDaoHistory(requireDao())));
     return;
   }
@@ -1176,7 +1189,7 @@ Ragequit is not a proposal. It burns caller shares/loot and should be treated as
     return;
   }
 
-  if (command === 'read-dao') {
+  if (command === 'read-guild') {
     const dao = requireDao();
     console.log(stringify(await readDaoDirect(dao)));
     return;
@@ -1213,7 +1226,7 @@ Ragequit is not a proposal. It burns caller shares/loot and should be treated as
     const data = encodeFunctionData({ abi: ERC20_APPROVE_ABI, functionName: 'approve', args: [spender, amount] });
     out = withSummary(tx(token, data), { action: 'approve-token', token, spender, amount: amount.toString(), note: 'Approves ERC-20 spending. Tribute Minion needs allowance before token-for-shares/loot proposals can be submitted.' });
   } else if (command === 'ragequit' || command === 'rage-quit') {
-    if (has('send') && !has('confirm-ragequit')) throw new Error('ragequit burns DAO shares/loot and exits treasury value. Re-run with --confirm-ragequit to broadcast, or omit --send to inspect.');
+    if (has('send') && !has('confirm-ragequit')) throw new Error('ragequit burns Guild shares/loot and exits treasury value. Re-run with --confirm-ragequit to broadcast, or omit --send to inspect.');
     const dao = requireDao();
     const to = arg('to');
     if (!to) throw new Error('Missing --to 0xRECIPIENT');
@@ -1247,7 +1260,7 @@ Ragequit is not a proposal. It burns caller shares/loot and should be treated as
     });
     const tag = arg('tag', POSTER_TAG_MEMBER_DB);
     const data = encodeFunctionData({ abi: POSTER_ABI, functionName: 'post', args: [JSON.stringify(content), tag] });
-    out = withSummary(tx(POSTER, data), { action: 'post', proposalKind: 'MEMORY_POST', submissionTarget: 'POSTER', dao, recordTable: table, tag, queryType: content.queryType, type: content.type, title: content.title, threadId: content.threadId, topicId: content.topicId, proposalId: content.proposalId, draftId: content.draftId, contentURI: content.contentURI, note: 'Direct Poster post using the DAOhaus member database tag. The sender must be a DAO member for current DAOhaus indexing.' });
+    out = withSummary(tx(POSTER, data), { action: 'post', proposalKind: 'MEMORY_POST', submissionTarget: 'POSTER', dao, recordTable: table, tag, queryType: content.queryType, type: content.type, title: content.title, threadId: content.threadId, topicId: content.topicId, proposalId: content.proposalId, draftId: content.draftId, contentURI: content.contentURI, note: 'Direct Poster post using the DAOhaus member database tag. The sender must be a Guild member for current DAOhaus indexing.' });
   } else if (command === 'signal') {
     const dao = requireDao();
     const title = arg('title');
@@ -1257,15 +1270,15 @@ Ragequit is not a proposal. It burns caller shares/loot and should be treated as
     ensureSignalIntent({ title, description });
     const postData = encodeFunctionData({ abi: POSTER_ABI, functionName: 'post', args: [JSON.stringify({ daoId: dao, table: 'signal', queryType: 'list', title, description, link }), POSTER_TAG_DAO_DB] });
     out = withSummary(await proposalTx({ dao, title, description, link, proposalType: 'SIGNAL', expiration: Number(arg('expiration', 0)), baalGas: arg('baal-gas') == null ? undefined : BigInt(arg('baal-gas')), actions: [{ to: POSTER, value: 0, data: postData, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'SIGNAL', submissionTarget: 'BAAL', dao });
-  } else if (command === 'dao-meta') {
+  } else if (command === 'guild-meta') {
     const dao = requireDao();
     const p = arg('params') ? jsonFile(arg('params')) : {};
-    const title = arg('title', p.title || 'Update DAO metadata');
+    const title = arg('title', p.title || 'Update Guild metadata');
     const description = arg('description', p.proposalDescription || p.description || '');
     const content = daoProfileContent(dao, { ...p, name: arg('name', p.name), description: arg('dao-description', p.description), charterURI: arg('charter-uri', p.charterURI), joinRulesURI: arg('join-rules-uri', p.joinRulesURI), goalsURI: arg('goals-uri', p.goalsURI), manifestoURI: arg('manifesto-uri', p.manifestoURI), communityMemoryURI: arg('community-memory-uri', p.communityMemoryURI), proposalWorkspaceURI: arg('proposal-workspace-uri', p.proposalWorkspaceURI), sharedStateURI: arg('shared-state-uri', p.sharedStateURI), web: arg('web', p.web) });
     const postData = encodeFunctionData({ abi: POSTER_ABI, functionName: 'post', args: [JSON.stringify(content), POSTER_TAG_DAO_PROFILE_UPDATE] });
     out = withSummary(await proposalTx({ dao, title, description, link: arg('link', p.link || ''), proposalType: 'UPDATE_METADATA_SETTINGS', expiration: Number(arg('expiration', p.expiration || 0)), baalGas: arg('baal-gas') == null && p.baalGas == null ? undefined : BigInt(arg('baal-gas', p.baalGas)), value: p.value == null ? undefined : BigInt(p.value), actions: [{ to: POSTER, value: 0, data: postData, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'UPDATE_METADATA_SETTINGS', submissionTarget: 'BAAL', dao, recordTable: 'daoProfile' });
-  } else if (command === 'dao-record') {
+  } else if (command === 'guild-record') {
     const dao = requireDao();
     const table = arg('table');
     if (!table) throw new Error('Missing --table, for example charter or joinRules');
@@ -1274,12 +1287,12 @@ Ragequit is not a proposal. It burns caller shares/loot and should be treated as
     const content = contentFile ? jsonFile(contentFile) : p.content || p;
     const record = daoRecordContent(dao, table, content);
     const title = arg('title', p.title || `Update ${table} record`);
-    const description = arg('description', p.proposalDescription || `Post latest ${table} record for DAO agents and members.`);
+    const description = arg('description', p.proposalDescription || `Post latest ${table} record for Guild agents and members.`);
     const postData = encodeFunctionData({ abi: POSTER_ABI, functionName: 'post', args: [JSON.stringify(record), POSTER_TAG_DAO_PROFILE_UPDATE] });
     out = withSummary(await proposalTx({ dao, title, description, link: arg('link', p.link || content.uri || content.contentURI || ''), proposalType: 'UPDATE_METADATA_SETTINGS', expiration: Number(arg('expiration', p.expiration || 0)), baalGas: arg('baal-gas') == null && p.baalGas == null ? undefined : BigInt(arg('baal-gas', p.baalGas)), value: p.value == null ? undefined : BigInt(p.value), actions: [{ to: POSTER, value: 0, data: postData, operation: 0 }] }), { action: 'submitProposal', proposalKind: 'UPDATE_METADATA_SETTINGS', submissionTarget: 'BAAL', dao, recordTable: table });
-  } else if (command === 'tribute' || command === 'join-dao') {
+  } else if (command === 'tribute' || command === 'join-guild') {
     const dao = requireDao();
-    const title = arg('title', 'Tribute for DAO tokens');
+    const title = arg('title', 'Tribute for Guild tokens');
     const description = arg('description', '');
     const link = arg('link', '');
     const token = normalizeToken(arg('token'));
@@ -1295,7 +1308,7 @@ Ragequit is not a proposal. It burns caller shares/loot and should be treated as
       functionName: 'submitTributeProposal',
       args: [dao, token, amount, shares, loot, Number(arg('expiration', 0)), BigInt(arg('baal-gas', 0)), details({ title, description, link, proposalType: 'TOKENS_FOR_SHARES' })],
     });
-    out = withSummary(tx(TRIBUTE_MINION, data, value), { action: 'submitTributeProposal', proposalKind: 'TOKENS_FOR_SHARES', submissionTarget: 'TRIBUTE_MINION', dao, token, amount: amount.toString(), shares: shares.toString(), loot: loot.toString(), proposalOffering: value.toString(), sharesInput: sharesParsed.input, lootInput: lootParsed.input, shareLootUnitMode: sharesParsed.mode === lootParsed.mode ? sharesParsed.mode : 'mixed', note: 'ERC-20 tribute. Transaction value is the DAO proposal offering only. Approve the Tribute Minion before submitting if allowance is insufficient. Shares/loot are human 18-decimal units unless --shares-raw/--loot-raw is used.' });
+    out = withSummary(tx(TRIBUTE_MINION, data, value), { action: 'submitTributeProposal', proposalKind: 'TOKENS_FOR_SHARES', submissionTarget: 'TRIBUTE_MINION', dao, token, amount: amount.toString(), shares: shares.toString(), loot: loot.toString(), proposalOffering: value.toString(), sharesInput: sharesParsed.input, lootInput: lootParsed.input, shareLootUnitMode: sharesParsed.mode === lootParsed.mode ? sharesParsed.mode : 'mixed', note: 'ERC-20 tribute. Transaction value is the Guild proposal offering only. Approve the Tribute Minion before submitting if allowance is insufficient. Shares/loot are human 18-decimal units unless --shares-raw/--loot-raw is used.' });
   } else if (command === 'mint-shares') {
     const dao = requireDao();
     const title = arg('title', 'Mint voting shares');

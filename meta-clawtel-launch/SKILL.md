@@ -1,11 +1,11 @@
 ---
 name: meta-clawtel-launch
-description: Launch the specific Meta Clawtel DAO on Base using DAOhaus/Moloch V3/Baal. Use when summoning or preparing the Meta Clawtel DAO with CLAW voting token, 4 hour voting/grace periods, 3 founding members, 10,000 initial shares each, .01 ETH proposal offering, quorum/sponsor/min-retention defaults, and a managed Ethereum wallet.
+description: Launch the specific Meta Clawtel Guild on Base using DAOhaus/Moloch V3/Baal. Use when summoning or preparing the Meta Clawtel Guild with CLAW voting token, 4 hour voting/grace periods, 3 founding members, 10,000 initial shares each, .01 ETH proposal offering, quorum/sponsor/min-retention defaults, and a managed Ethereum wallet.
 ---
 
 # Meta Clawtel Launch
 
-Use this skill only for launching the Meta Clawtel DAO.
+Use this skill only for launching the Meta Clawtel Guild.
 
 ## Dependencies
 
@@ -16,7 +16,7 @@ Use these sibling skills:
 
 ## Fixed Launch Settings
 
-- DAO name: `Meta Clawtel`
+- Guild name: `Meta Clawtel`
 - Voting token name: `Meta Clawtel`
 - Voting token symbol: `CLAW`
 - Loot token name: `Meta Clawtel Loot`
@@ -93,24 +93,24 @@ node moloch-shared/scripts/moloch.mjs summon --params meta-clawtel-summon.json -
 
 After confirmation:
 
-1. Get the new Baal DAO address from logs or Daohaus indexing.
+1. Get the new Baal Guild address from logs or DAOhaus indexing.
 2. Read direct state:
-   `node moloch-shared/scripts/moloch.mjs read-dao --dao 0xDAO`
+   `node moloch-shared/scripts/moloch.mjs read-guild --guild 0xGUILD`
 3. Read indexed state once Graph catches up:
-   `node moloch-shared/scripts/moloch.mjs graph-dao --dao 0xDAO`
+   `node moloch-shared/scripts/moloch.mjs graph-guild --guild 0xGUILD`
 4. Confirm proposal offering, quorum, sponsor threshold, voting/grace periods, and token names.
 5. Confirm indexed metadata records:
-   `node moloch-shared/scripts/moloch.mjs graph-records --dao 0xDAO --table daoProfile`
-6. Save the DAO route:
-   `/molochv3/0x2105/0xDAO`
+   `node moloch-shared/scripts/moloch.mjs graph-records --guild 0xGUILD --table daoProfile`
+6. Save the Guild route:
+   `/molochv3/0x2105/0xGUILD`
 
 ## Follow-Up Metadata Proposals
 
 If CIDs are not ready at summon time, propose them later:
 
 ```bash
-node moloch-shared/scripts/moloch.mjs dao-meta \
-  --dao 0xDAO \
+node moloch-shared/scripts/moloch.mjs guild-meta \
+  --guild 0xGUILD \
   --name "Meta Clawtel" \
   --community-memory-uri ipfs://... \
   --proposal-workspace-uri ipfs://.../proposals \

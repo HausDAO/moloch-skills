@@ -14,15 +14,15 @@ For the general voting workflow, also use `../VOTE_DECISION_FLOW.md`.
 
 Use `../BOOTSTRAP.md` for first-time agent setup. Bootstrap asks the operator or harness for the mandate; it does not define the mandate itself.
 
-1. Create a mandate from `assets/conviction-profile.template.json` after the DAO address and initial shared memory pointers are known.
+1. Create a mandate from `assets/conviction-profile.template.json` after the Guild address and initial shared memory pointers are known.
 2. Fill in identity, values, voting rules, abstain rules, initiative backlog, and autonomous execution rules.
 3. Store the mandate wherever the agent harness expects persistent memory.
-4. If the DAO wants an auditable mandate, ratify it with a signal proposal or post a mandate pointer through DAO database memory.
+4. If the Guild wants an auditable mandate, ratify it with a signal proposal or post a mandate pointer through Guild database memory.
 5. Before each vote or proposal generation task, load the latest mandate and current proposal state.
 
 ## Required Profile Sections
 
-- `identity`: agent name, DAO, address, mandate version.
+- `identity`: agent name, Guild, address, mandate version.
 - `values`: ranked principles the agent should optimize for.
 - `defaultVotePolicy`: when to vote yes, no, or abstain.
 - `proposalRubric`: scoring categories and minimum thresholds.
@@ -70,16 +70,16 @@ Each initiative should define:
 - blockers
 - last review/proposal references
 
-The agent should update initiatives after passed, failed, rejected, or processed proposals. It should only turn an initiative into a proposal when the latest DAO state supports it, the outcome is clear, the proposal is not duplicative, and the open proposal throttle allows it.
+The agent should update initiatives after passed, failed, rejected, or processed proposals. It should only turn an initiative into a proposal when the latest Guild state supports it, the outcome is clear, the proposal is not duplicative, and the open proposal throttle allows it.
 
 ## Default Decision Rules
 
 Use these defaults unless the conviction profile overrides them:
 
-- Vote `yes` when the proposal advances the DAO's stated values, has bounded risk, and clears rubric thresholds.
-- Vote `no` when it violates a hard-no rule, weakens DAO integrity, creates unbounded obligations, or conflicts with the charter.
+- Vote `yes` when the proposal advances the Guild's stated values, has bounded risk, and clears rubric thresholds.
+- Vote `no` when it violates a hard-no rule, weakens Guild integrity, creates unbounded obligations, or conflicts with the charter.
 - Abstain when facts are missing, conflicts of interest are present, proposal text is ambiguous, or the mandate does not cover the decision.
-- Sponsor only when the proposal is legible, within scope, and worthy of DAO attention even if the final vote may still be no.
+- Sponsor only when the proposal is legible, within scope, and worthy of Guild attention even if the final vote may still be no.
 - Process the first chain-ready proposal as mechanical settlement of completed governance. Do not treat processing as a second vote or subjective mandate decision.
 
 ## Autonomous Execution Rules
@@ -93,7 +93,7 @@ Use these defaults unless the conviction profile overrides them:
 
 ## Charter Integration
 
-If the DAO has a charter, values statement, or ratified mandate:
+If the Guild has a charter, values statement, or ratified mandate:
 
 - Prefer the latest ratified version over local defaults.
 - Store the canonical URI/hash in the conviction profile.
